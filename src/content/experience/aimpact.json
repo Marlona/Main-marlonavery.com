@@ -1,0 +1,35 @@
+{
+    "company": "AImpact",
+    "role": "Head of AI & CEO — AI Training",
+    "level": "Founder / CEO",
+    "location": "Remote",
+    "startDate": "2023-05-01",
+    "endDate": null,
+    "description": "Founded an AI education organization dedicated to demystifying Generative AI for businesses, professionals, and underserved communities through hands-on workshops, keynotes, and corporate training.",
+    "achievements": [
+        "Contracted by Microsoft to architect and lead Azure OpenAI bootcamps — spotlighting OCR + Azure AI Document Intelligence solutions along with Jupyter Notebooks and Azure AI Studio — boosting engineer certification pass-rates 30% and shepherding cohorts from ideation to production.",
+        "Taught 10,000+ professionals across 80+ workshops and keynotes, delivering a 40% average productivity lift by translating frontier research (LLM-powered RAG, LangChain, vector DBs) into pragmatic workflows.",
+        "Commissioned by Dream Machine Innovation Labs — in partnership with Google — to author the curriculum and headline workshops for a five-city 'AI Library Project' tour, delivering GenAI training to underserved communities.",
+        "Bridged strategy and execution for Fortune 1000 and public-sector clients, cutting AI time-to-value 50% via bespoke roadmaps prioritizing high-impact GenAI, NLP, and automation use cases.",
+        "Spearheaded R&D and productization of ML/LLM solutions (summarization, multilingual Q&A, generative voice bots), accelerating project timelines 50% through modular architectures and third-party integrations."
+    ],
+    "skills": [
+        "AI Education",
+        "Azure OpenAI",
+        "OCR & Document Intelligence",
+        "LangChain & RAG",
+        "Vector Databases",
+        "Curriculum Design",
+        "Workshop Facilitation",
+        "Public Speaking",
+        "Microsoft Partnership",
+        "Google / Dream Machine Partnership"
+    ],
+    "domainTags": [
+        "Generative AI",
+        "Education",
+        "Microsoft",
+        "Google",
+        "Community"
+    ]
+}

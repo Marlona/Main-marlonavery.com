@@ -1,0 +1,15 @@
+{
+	"title": "TechPreneurCon",
+	"date": "2024-04-28",
+	"type": "panel",
+	"status": "past",
+	"city": "Atlanta, GA",
+	"description": "AI State of the Market",
+	"resources": [
+		{
+			"label": "Event page",
+			"url": "https://techpreneurcon.com/",
+			"kind": "link"
+		}
+	]
+}

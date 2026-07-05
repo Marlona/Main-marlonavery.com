@@ -1,0 +1,32 @@
+{
+	"title": "Prompt Engineering Masterclass",
+	"tagline": "Write prompts that actually work",
+	"description": "For professionals already using AI who want dramatically better results. A full day of deliberate practice on the craft of instructing AI systems — from structured frameworks through reusable team templates to grounding techniques that cut hallucinations on high-stakes work.",
+	"level": "intermediate",
+	"format": "hybrid",
+	"duration": "6 hours",
+	"audience": ["Analysts", "Managers", "Product teams", "Content creators"],
+	"objectives": [
+		"Master a structured prompting framework through repetition on real tasks",
+		"Build a reusable prompt template library with your team",
+		"Apply grounding techniques for trustworthy outputs"
+	],
+	"outcomes": [
+		"Master the Context → Constraint → Format → Example prompt framework",
+		"Build reusable prompt templates for your team",
+		"Reduce AI hallucinations by 80% with structured prompting techniques"
+	],
+	"deliverables": [
+		"Team prompt template library",
+		"Prompt evaluation rubric",
+		"Grounding and verification checklist"
+	],
+	"curriculum": [
+		{ "module": "Why prompts fail", "summary": "Live autopsies of weak prompts — and the framework that fixes them." },
+		{ "module": "Context → Constraint → Format → Example", "summary": "Deliberate practice with the structured framework on your real work." },
+		{ "module": "Templates that scale", "summary": "Turn one great prompt into a reusable asset your whole team can run." },
+		{ "module": "Trust and verification", "summary": "Grounding techniques and evaluation habits for high-stakes outputs." }
+	],
+	"industries": ["Technology", "Financial Services", "Healthcare", "Legal", "Education"],
+	"featured": true
+}

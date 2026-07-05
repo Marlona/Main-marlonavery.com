@@ -1,0 +1,169 @@
+---
+import { getCollection } from 'astro:content';
+import { Image } from 'astro:assets';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Section from '../components/Section.astro';
+import Timeline from '../components/Timeline.astro';
+
+import panelPortrait from '../assets/photos/portrait-1.jpg';
+import candid from '../assets/photos/candid-1.jpg';
+import stageTwo from '../assets/photos/stage-2.jpg';
+import whiteboard from '../assets/photos/live-whiteboard-session.jpg';
+
+const experience = (await getCollection('experience')).sort(
+	(a, b) => b.data.startDate.valueOf() - a.data.startDate.valueOf(),
+);
+
+const yearOf = (d: Date) => d.getUTCFullYear();
+const milestones = experience.map((e) => ({
+	period: e.data.endDate
+		? `${yearOf(e.data.startDate)} – ${yearOf(e.data.endDate)}`
+		: `${yearOf(e.data.startDate)} – Present`,
+	title: e.data.role,
+	org: e.data.company,
+	description: e.data.description,
+}));
+
+const values = [
+	{
+		title: 'Operator, Not Spectator',
+		text: 'Strategy without keyboard time produces decks. Marlon leads from inside the work — building, shipping, and iterating alongside the team.',
+	},
+	{
+		title: 'Reduce the Fear',
+		text: 'Most resistance to AI is anxiety in disguise. Demystification is leverage — for teams, customers, and entire industries.',
+	},
+	{
+		title: 'Voice as the New UI',
+		text: 'The most natural interface humans have is conversation. The next decade of software will sound, not just look.',
+	},
+	{
+		title: 'Equity by Design',
+		text: 'Access compounds, and so does its absence. Through NextSteps DevCon and Pledge to Equality, Marlon builds pipelines that widen who gets to build the future.',
+	},
+	{
+		title: 'Predict the Curve',
+		text: 'Generative AI moves on a quarterly cadence. Build for what is true 18 months from now, not just what shipped last week.',
+	},
+];
+
+const chapters = [
+	{
+		eyebrow: 'The origin',
+		title: 'It started with building.',
+		body: 'Before the titles and the stages, there was a developer who learned by shipping. Marlon’s career began in engineering — real products, real deadlines, real users — at companies like Uber and a string of early ventures where the fastest way to understand anything was to build it. That habit never left. It became the operating system for everything after.',
+	},
+	{
+		eyebrow: 'The teaching turn',
+		title: 'Then he discovered the “Aha!” moment.',
+		body: 'Working with education companies like Team Treehouse and Udacity, Marlon found the thing that would define his career: the exact moment a complicated idea clicks for someone. He learned to engineer that moment — to take the intimidating and make it inevitable. When generative AI arrived, he already knew what most experts were still learning: technology only transforms people when someone translates it.',
+	},
+	{
+		eyebrow: 'The ventures',
+		title: 'Build the future, then widen the door.',
+		body: 'VoicePath ships HIPAA-compliant voice agents into healthcare, finance, and legal operations. AImpact has trained over 10,000 professionals — including Microsoft-contracted Azure OpenAI bootcamps and the Google AI Library Project’s five-city tour. NextSteps DevCon and the Pledge to Equality Scholarship Program have granted 10,000+ scholarships, because Marlon believes the next generation of builders should look like the world they’re building for.',
+	},
+	{
+		eyebrow: 'The enterprise',
+		title: 'Applied AI at the highest stakes.',
+		body: 'Today Marlon serves as a Vice President of Applied AI at one of the world’s leading financial institutions — where “move fast and break things” is not an option, and AI must ship safely, governed, and at scale. It’s the hardest classroom he’s ever taught in, and the lessons flow straight back into every keynote and workshop.',
+	},
+];
+---
+
+<BaseLayout
+	title="About"
+	description="Marlon Avery's story: engineer, founder, educator, and Applied AI executive. From building products to training 10,000+ professionals — the world is his classroom."
+>
+	<!-- Editorial hero -->
+	<div class="bg-paper px-6 pt-36 pb-20 md:pt-44">
+		<div class="mx-auto max-w-7xl">
+			<p class="text-eyebrow reveal text-emerald-deep">About Marlon</p>
+			<h1 class="text-display-lg reveal mt-6 max-w-4xl">
+				The world is his <span class="text-emerald-deep">classroom.</span>
+			</h1>
+			<p class="reveal mt-8 max-w-2xl text-lg leading-relaxed text-slate">
+				This is not a résumé. It’s the story of someone who builds AI systems to understand them deeply,
+				learns by solving real problems, teaches what he learns — and then inspires others to become
+				builders themselves.
+			</p>
+		</div>
+	</div>
+
+	<!-- Story chapters with photography -->
+	<Section id="story">
+		<div class="grid items-start gap-16 lg:grid-cols-2">
+			<div class="space-y-16">
+				{
+					chapters.map((chapter) => (
+						<article class="reveal">
+							<p class="text-eyebrow text-emerald-deep">{chapter.eyebrow}</p>
+							<h2 class="text-display-sm mt-3">{chapter.title}</h2>
+							<p class="mt-4 leading-relaxed text-slate">{chapter.body}</p>
+						</article>
+					))
+				}
+			</div>
+			<div class="space-y-4 lg:sticky lg:top-24">
+				<figure class="reveal overflow-hidden rounded-2xl">
+					<Image src={panelPortrait} alt="Marlon Avery on a panel stage" widths={[600, 1000]} sizes="(max-width: 1024px) 100vw, 50vw" class="w-full object-cover" />
+				</figure>
+				<div class="grid grid-cols-2 gap-4">
+					<figure class="reveal overflow-hidden rounded-2xl">
+						<Image src={candid} alt="Marlon in conversation at an event" widths={[400, 700]} sizes="25vw" class="h-full w-full object-cover" />
+					</figure>
+					<figure class="reveal overflow-hidden rounded-2xl">
+						<Image src={whiteboard} alt="Marlon teaching at a whiteboard" widths={[400, 700]} sizes="25vw" class="h-full w-full object-cover" />
+					</figure>
+				</div>
+			</div>
+		</div>
+	</Section>
+
+	<!-- Timeline -->
+	<Section
+		tone="cream"
+		eyebrow="The journey"
+		title="Milestones."
+		intro="A decade of building, teaching, and leading — from first ventures to enterprise applied AI."
+	>
+		<Timeline milestones={milestones} />
+	</Section>
+
+	<!-- Values -->
+	<Section
+		tone="dark"
+		eyebrow="What he believes"
+		title="Values that ship."
+	>
+		<ul class="grid gap-10 md:grid-cols-2 lg:grid-cols-3">
+			{
+				values.map((value) => (
+					<li class="reveal border-t-2 border-emerald/50 pt-5">
+						<h3 class="font-display text-xl font-semibold">{value.title}</h3>
+						<p class="mt-2 leading-relaxed text-paper/70">{value.text}</p>
+					</li>
+				))
+			}
+		</ul>
+	</Section>
+
+	<!-- Mission + CTA -->
+	<Section
+		eyebrow="The mission"
+		title="Curiosity → Understanding → Confidence → Implementation."
+		intro="Marlon helps leaders, engineers, educators, and teams make that full journey — not just the first step. If your organization is somewhere on that path, he can meet you there."
+	>
+		<figure class="reveal mb-12 overflow-hidden rounded-2xl">
+			<Image src={stageTwo} alt="Marlon Avery speaking to an audience" widths={[800, 1400]} sizes="100vw" class="max-h-[32rem] w-full object-cover" />
+		</figure>
+		<div class="reveal flex flex-wrap gap-4">
+			<a href="/speaking" class="rounded-full bg-ink px-8 py-4 font-semibold text-paper transition-colors hover:bg-emerald-deep">
+				Book Marlon to Speak
+			</a>
+			<a href="/workshops" class="rounded-full border border-ink/30 px-8 py-4 font-semibold transition-colors hover:border-emerald-deep hover:text-emerald-deep">
+				Explore Workshops
+			</a>
+		</div>
+	</Section>
+</BaseLayout>

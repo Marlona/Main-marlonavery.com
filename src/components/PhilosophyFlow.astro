@@ -1,0 +1,48 @@
+---
+/**
+ * The Build → Learn → Teach → Inspire interactive philosophy strip.
+ * Each stage expands to reveal the story and links deeper into the site.
+ */
+interface Stage {
+	index: string;
+	title: string;
+	description: string;
+	links: Array<{ label: string; href: string }>;
+}
+
+interface Props {
+	stages: Stage[];
+}
+
+const { stages } = Astro.props;
+---
+
+<div class="grid gap-4 md:grid-cols-4" data-philosophy>
+	{
+		stages.map((stage, i) => (
+			<details
+				class="reveal group rounded-2xl bg-graphite p-6 text-paper transition-colors open:bg-emerald-deep md:[&[open]]:col-span-2"
+				open={i === 0}
+				name="philosophy"
+			>
+				<summary class="cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+					<span class="text-eyebrow text-emerald-glow">{stage.index}</span>
+					<span class="mt-2 block font-display text-3xl font-semibold">{stage.title}</span>
+				</summary>
+				<p class="mt-4 leading-relaxed text-paper/85">{stage.description}</p>
+				<ul class="mt-5 flex flex-wrap gap-3">
+					{stage.links.map((link) => (
+						<li>
+							<a
+								href={link.href}
+								class="inline-block rounded-full border border-paper/30 px-4 py-1.5 text-sm font-medium transition-colors hover:border-emerald-glow hover:text-emerald-glow"
+							>
+								{link.label} →
+							</a>
+						</li>
+					))}
+				</ul>
+			</details>
+		))
+	}
+</div>

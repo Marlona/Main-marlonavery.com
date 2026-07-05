@@ -1,0 +1,58 @@
+---
+interface Props {
+	href: string;
+	title: string;
+	description: string;
+	impact?: string;
+	tech?: string[];
+	date?: Date;
+	tone?: 'light' | 'dark';
+}
+
+const { href, title, description, impact, tech = [], date, tone = 'dark' } = Astro.props;
+const dateLabel = date
+	? new Intl.DateTimeFormat('en-US', { month: 'short', year: 'numeric' }).format(date)
+	: undefined;
+---
+
+<article
+	class:list={[
+		'reveal group relative flex h-full flex-col rounded-2xl p-8 transition-transform duration-300 hover:-translate-y-1',
+		tone === 'dark' ? 'bg-graphite text-paper hover:bg-charcoal' : 'bg-cream text-ink hover:bg-paper',
+	]}
+>
+	<div class="flex items-baseline justify-between gap-4">
+		<h3 class="font-display text-2xl font-semibold group-hover:text-emerald-glow">{title}</h3>
+		{dateLabel && <p class:list={['shrink-0 text-xs font-semibold tracking-wide uppercase', tone === 'dark' ? 'text-mist' : 'text-slate']}>{dateLabel}</p>}
+	</div>
+	<p class:list={['mt-3 leading-relaxed', tone === 'dark' ? 'text-paper/70' : 'text-slate']}>{description}</p>
+	{impact && <p class="mt-4 text-sm font-semibold text-emerald-glow">{impact}</p>}
+	{
+		tech.length > 0 && (
+			<ul class="mt-6 flex flex-wrap gap-2" aria-label="Tech stack and AI models">
+				{tech.slice(0, 6).map((t) => (
+					<li
+						class:list={[
+							'rounded-full px-3 py-1 text-xs font-medium',
+							tone === 'dark' ? 'bg-ink text-mist' : 'bg-paper text-slate',
+						]}
+					>
+						{t}
+					</li>
+				))}
+			</ul>
+		)
+	}
+	<div class="mt-auto pt-8">
+		<a
+			href={href}
+			class:list={[
+				'relative z-10 inline-block rounded-full px-5 py-2.5 text-sm font-bold transition-transform group-hover:scale-105',
+				tone === 'dark' ? 'bg-emerald text-ink' : 'bg-ink text-paper',
+			]}
+		>
+			Case study →<span class="sr-only"> for {title}</span>
+		</a>
+	</div>
+	<a href={href} class="absolute inset-0" tabindex="-1" aria-hidden="true"></a>
+</article>

@@ -1,0 +1,20 @@
+{
+	"title": "AI is Your Assistant Workshop Series",
+	"date": "2023-09-15",
+	"type": "workshop",
+	"status": "past",
+	"city": "Miami, FL",
+	"description": "Week 1 - Entrepreneurs",
+	"resources": [
+		{
+			"label": "Event page",
+			"url": "https://www.eventbrite.com/e/ai-is-your-assistant-workshop-series-tickets-717445939117",
+			"kind": "link"
+		},
+		{
+			"label": "Watch the recording",
+			"url": "https://www.youtube.com/watch?v=mrNpmvLoS90",
+			"kind": "video"
+		}
+	]
+}

@@ -1,0 +1,90 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Section from '../components/Section.astro';
+import BookingForm from '../components/BookingForm.astro';
+import { SITE_CONFIG, SOCIAL_LINKS } from '../config';
+
+const paths = [
+	{ title: 'Book Speaking', text: 'Keynotes, conference sessions, and executive briefings.', href: '/speaking' },
+	{ title: 'Book a Workshop', text: 'Hands-on AI training for your team or organization.', href: '/workshops' },
+	{ title: 'Enterprise Consulting', text: 'Voice AI engagements and applied AI advisory.', href: '#booking-form' },
+	{ title: 'Podcast & Media', text: 'Interviews, panels, and press inquiries.', href: '#booking-form' },
+	{ title: 'Community & Mentorship', text: 'NextSteps DevCon, scholarships, and emerging builders.', href: '#booking-form' },
+	{ title: 'General Inquiry', text: 'Everything else — Marlon reads every message.', href: '#booking-form' },
+];
+
+const faq = [
+	{
+		q: 'What topics do you speak on?',
+		a: 'Voice AI in production, applied LLMs and agents, AI for business operations, AI education and workforce enablement, and equity in the AI era. Every talk is tailored to the audience — operators, engineers, executives, or community.',
+	},
+	{
+		q: 'What is the best way to reach you?',
+		a: 'Email works best for new inquiries. LinkedIn is great for quick introductions. Marlon reads everything; responses can take a few days depending on travel and workshop load.',
+	},
+	{
+		q: 'Are you open to coffee chats or informal conversations?',
+		a: 'Yes — Marlon genuinely enjoys meeting builders, founders, and educators working on generative AI. If you are shipping something interesting, reach out. No agenda required.',
+	},
+	{
+		q: 'Do you take on advisory roles?',
+		a: 'Selectively — typically a few hours per month for executives and founders navigating AI strategy, voice product decisions, or responsible deployment. Best discussed live to align on scope.',
+	},
+];
+---
+
+<BaseLayout
+	title="Contact"
+	description="Book Marlon Avery for keynotes, corporate AI workshops, enterprise consulting, podcasts, and media. Every inquiry gets a personal reply."
+>
+	<div class="bg-paper px-6 pt-36 pb-20 md:pt-44">
+		<div class="mx-auto max-w-7xl">
+			<p class="text-eyebrow reveal text-emerald-deep">Contact</p>
+			<h1 class="text-display-lg reveal mt-6 max-w-4xl">Let’s talk.</h1>
+			<p class="reveal mt-8 max-w-2xl text-lg leading-relaxed text-slate">
+				Whether you’re planning a conference, training a team, or just building something interesting —
+				there’s a path for you here.
+			</p>
+		</div>
+	</div>
+
+	<Section eyebrow="Choose a path" title="What can Marlon help with?">
+		<div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+			{
+				paths.map((path) => (
+					<a
+						href={path.href}
+						class="reveal group rounded-2xl border border-ink/10 bg-cream p-8 transition-all hover:-translate-y-1 hover:border-emerald/60 hover:shadow-lg"
+					>
+						<h2 class="font-display text-xl font-semibold group-hover:text-emerald-deep">{path.title}</h2>
+						<p class="mt-2 text-sm leading-relaxed text-slate">{path.text}</p>
+					</a>
+				))
+			}
+		</div>
+		<p class="reveal mt-10 text-slate">
+			Prefer email? Write directly to
+			<a href={SOCIAL_LINKS.email} class="font-semibold text-emerald-deep underline-offset-4 hover:underline">{SITE_CONFIG.email}</a>
+			· Based in {SITE_CONFIG.location} (ET) · Replies usually within 2–3 business days.
+		</p>
+	</Section>
+
+	<Section tone="dark" eyebrow="The form" title="Tell Marlon what you're planning.">
+		<BookingForm heading="Send an inquiry" />
+	</Section>
+
+	<Section eyebrow="Common questions" title="Before you ask.">
+		<div class="mx-auto max-w-3xl space-y-4">
+			{
+				faq.map((item) => (
+					<details class="reveal group rounded-2xl bg-cream p-6">
+						<summary class="cursor-pointer list-none font-display text-lg font-semibold [&::-webkit-details-marker]:hidden">
+							{item.q}
+						</summary>
+						<p class="mt-3 leading-relaxed text-slate">{item.a}</p>
+					</details>
+				))
+			}
+		</div>
+	</Section>
+</BaseLayout>

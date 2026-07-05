@@ -1,0 +1,117 @@
+---
+/**
+ * ScrollSequence — a scroll-scrubbed cinematic video section.
+ *
+ * The video is pinned full-screen inside a tall scroll container; as the visitor
+ * scrolls through the container, playback position follows scroll progress.
+ * Reduced-motion users (and devices where scrubbing fails) get the static poster.
+ * The overlay slot renders content (headlines, CTAs) above the film layer.
+ */
+interface Props {
+	/** MP4 source, encoded with dense keyframes for smooth seeking */
+	src: string;
+	/** Poster frame shown before load and used as the reduced-motion fallback */
+	poster: string;
+	/** Total scroll distance driving the sequence, in viewport-heights */
+	scrollScreens?: number;
+	/** Accessible description of what the film shows */
+	label: string;
+	/** 'dark' adds a full-frame ink wash for bright footage that fights overlaid type */
+	overlay?: 'standard' | 'dark';
+	id?: string;
+}
+
+const { src, poster, scrollScreens = 3, label, overlay = 'standard', id } = Astro.props;
+---
+
+<section
+	id={id}
+	class="relative bg-ink"
+	style={`height: ${scrollScreens * 100}svh;`}
+	data-scroll-sequence
+	aria-label={label}
+>
+	<div class="sticky top-0 h-svh overflow-hidden">
+		<video
+			class="absolute inset-0 h-full w-full object-cover motion-reduce:hidden"
+			src={src}
+			poster={poster}
+			muted
+			playsinline
+			preload="metadata"
+			tabindex="-1"
+			aria-hidden="true"
+			data-sequence-video
+		></video>
+		<img
+			src={poster}
+			alt=""
+			class="absolute inset-0 hidden h-full w-full object-cover motion-reduce:block"
+			loading="lazy"
+			decoding="async"
+		/>
+		<!-- Film-grade vignette so overlaid type stays readable without flattening the image -->
+		{overlay === 'dark' && <div class="pointer-events-none absolute inset-0 bg-ink/45"></div>}
+		<div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink/70 via-transparent to-ink/40"></div>
+		<div class="absolute inset-0">
+			<slot />
+		</div>
+	</div>
+</section>
+
+<script>
+	const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+	if (!prefersReduced) {
+		for (const section of document.querySelectorAll<HTMLElement>('[data-scroll-sequence]')) {
+			const video = section.querySelector<HTMLVideoElement>('[data-sequence-video]');
+			if (!video) continue;
+
+			let targetTime = 0;
+			let currentTime = 0;
+			let rafId = 0;
+			let active = false;
+
+			const progress = () => {
+				const rect = section.getBoundingClientRect();
+				const scrollable = rect.height - window.innerHeight;
+				if (scrollable <= 0) return 0;
+				return Math.min(1, Math.max(0, -rect.top / scrollable));
+			};
+
+			const tick = () => {
+				if (!active) return;
+				// Lerp toward the scroll-derived time for a weighted, cinematic feel
+				currentTime += (targetTime - currentTime) * 0.12;
+				if (video.duration && Math.abs(video.currentTime - currentTime) > 0.02) {
+					video.currentTime = currentTime;
+				}
+				rafId = requestAnimationFrame(tick);
+			};
+
+			const onScroll = () => {
+				if (video.duration) {
+					// Hold just shy of the final frame so the sequence never flashes to black
+					targetTime = progress() * Math.max(0, video.duration - 0.05);
+				}
+			};
+
+			const observer = new IntersectionObserver((entries) => {
+				for (const entry of entries) {
+					active = entry.isIntersecting;
+					if (active) {
+						video.preload = 'auto';
+						onScroll();
+						rafId = requestAnimationFrame(tick);
+					} else {
+						cancelAnimationFrame(rafId);
+					}
+				}
+			});
+
+			observer.observe(section);
+			window.addEventListener('scroll', onScroll, { passive: true });
+			video.addEventListener('loadedmetadata', onScroll);
+		}
+	}
+</script>

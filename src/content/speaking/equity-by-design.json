@@ -1,0 +1,21 @@
+{
+	"title": "Equity by Design: Building AI That Works for Everyone",
+	"abstract": "AI systems reflect the priorities of the people who build them. This keynote challenges audiences to consider who benefits and who gets left behind — and gives them a practical framework for building AI that is both high-performing and genuinely equitable.",
+	"tier": "standard",
+	"duration": "25–40 min",
+	"format": "keynote",
+	"audience": ["Executive Teams", "Product Leaders", "Policy Makers", "DEI Leaders"],
+	"objectives": [
+		"See how design decisions encode who AI systems serve",
+		"Evaluate AI products through an access-and-equity lens",
+		"Leave with a framework for building high-performing, equitable AI"
+	],
+	"takeaways": [
+		"An equity-by-design review framework for AI products",
+		"Case studies from scholarship and pipeline programs that widened access",
+		"Practical questions to ask before an AI system ships"
+	],
+	"industries": ["Education", "Government", "Non-Profit", "Technology"],
+	"featured": false,
+	"order": 4
+}

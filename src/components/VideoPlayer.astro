@@ -1,0 +1,20 @@
+---
+interface Props {
+	src: string;
+	poster?: string;
+	title: string;
+	class?: string;
+}
+
+const { src, poster, title, class: className } = Astro.props;
+---
+
+<video
+	class:list={['w-full rounded-2xl', className]}
+	src={src}
+	poster={poster}
+	controls
+	preload="none"
+	playsinline
+	title={title}
+></video>

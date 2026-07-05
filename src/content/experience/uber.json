@@ -1,0 +1,23 @@
+{
+    "company": "Uber",
+    "role": "Technical Support Manager",
+    "level": "Manager",
+    "location": "Atlanta, GA",
+    "startDate": "2016-06-01",
+    "endDate": "2017-08-31",
+    "description": "Provided in-person and virtual technical support to Uber Earners, blending sales, customer service, and problem-solving to help drivers and couriers get more value from the platform.",
+    "achievements": [
+        "Supported Uber Earners through in-person and virtual interactions, blending sales, customer service, and technical troubleshooting.",
+        "Helped drivers and couriers maximize earnings through hands-on platform coaching."
+    ],
+    "skills": [
+        "Customer Operations",
+        "Technical Support",
+        "Field Operations",
+        "Sales & Coaching"
+    ],
+    "domainTags": [
+        "Operations",
+        "Consumer"
+    ]
+}

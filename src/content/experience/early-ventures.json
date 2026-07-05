@@ -1,0 +1,26 @@
+{
+    "company": "Early Consumer Ventures",
+    "role": "Founder & Builder",
+    "level": "Founder",
+    "location": "Atlanta, GA / Bay Area, CA",
+    "startDate": "2014-01-01",
+    "endDate": "2017-12-31",
+    "description": "Built and shipped a series of consumer products demonstrating an early instinct for engaging, design-forward technology.",
+    "achievements": [
+        "Founded Rekure, a mobile platform that lets sneaker enthusiasts identify, organize, and purchase sneakers — built around a wish-list-as-search-engine that finds any sneaker in a direct size.",
+        "Created the HaHa Davis iOS Messaging App — a sticker pack based on comedian HaHa Davis that became #1 in the App Store for three weeks straight, surpassing the movie Black Panther.",
+        "Launched Wallet Clicks, a digital business card platform reimagining everyday networking tools.",
+        "Sharpened product instincts and engineering range across iOS, web, and consumer marketplace mechanics."
+    ],
+    "skills": [
+        "iOS Development",
+        "Consumer Product",
+        "Marketplace Design",
+        "Founder Operations",
+        "Brand & Community"
+    ],
+    "domainTags": [
+        "Consumer",
+        "Founder"
+    ]
+}

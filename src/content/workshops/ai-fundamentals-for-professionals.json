@@ -1,0 +1,32 @@
+{
+	"title": "AI Fundamentals for Professionals",
+	"tagline": "Go from curious to capable in one day",
+	"description": "The workshop for anyone who has heard the noise about AI and wants the signal. No computer science degree required — just curiosity. You'll understand how large language models actually work, put them to use on your real tasks, and leave with a personal AI workflow you can run the very next morning.",
+	"level": "beginner",
+	"format": "virtual",
+	"duration": "4 hours",
+	"audience": ["Business professionals", "Team leads", "Executives", "Educators"],
+	"objectives": [
+		"Demystify how large language models work — in plain language",
+		"Practice hands-on with real AI tools on your own tasks",
+		"Design a personal AI workflow for your role"
+	],
+	"outcomes": [
+		"Understand how large language models work without needing a technical background",
+		"Build and use your first AI assistant using real tools",
+		"Leave with a personal AI workflow you can use on Monday"
+	],
+	"deliverables": [
+		"Personal AI workflow playbook",
+		"Prompt starter library for your role",
+		"30-day practice plan"
+	],
+	"curriculum": [
+		{ "module": "How AI actually works", "summary": "LLMs explained through live demonstrations — what they can do, what they can't, and why." },
+		{ "module": "Your first real workflow", "summary": "Hands-on: apply AI to a task you actually do every week, guided step by step." },
+		{ "module": "Building your assistant", "summary": "Set up a personal AI assistant with instructions tailored to your role." },
+		{ "module": "The Monday plan", "summary": "Turn the day's wins into a durable practice — your personal AI adoption roadmap." }
+	],
+	"industries": ["Healthcare", "Financial Services", "Education", "Retail", "Government"],
+	"featured": true
+}

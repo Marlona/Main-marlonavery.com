@@ -1,0 +1,33 @@
+{
+    "company": "VoicePath AI",
+    "role": "Founder & CEO / Chief AI Officer",
+    "level": "Founder / CAO",
+    "location": "Washington, DC",
+    "startDate": "2025-01-01",
+    "endDate": null,
+    "description": "Founded an AI agency specializing in custom voice solutions that automate business operations and enhance customer experiences across healthcare, finance, insurance, and legal.",
+    "achievements": [
+        "Improved patient communication response times by 60% and reduced administrative workload by 50% by integrating an AI Phone Agent into a Neuroscience Office's Medical Practice Management system — handling incoming calls, appointment scheduling, and after-visit summaries.",
+        "Accelerated patient outreach 60% and reduced admin workload 50% by deploying a HIPAA-compliant AI Phone Agent integrated with Veradigm EHR to automate inbound calls, scheduling, and after-visit summaries.",
+        "Launched a portfolio of outbound and receptionist voice agents (CRM updates, insurance verification, payments) cutting customer-service costs up to 40% for early adopters in healthcare, finance, legal, and insurance.",
+        "Shortened deployment cycles 50% by leading a cross-functional team of engineers and compliance advisors through a secure, reusable voice-AI framework aligned with HIPAA and SOC-2 controls."
+    ],
+    "skills": [
+        "Voice AI",
+        "Conversational AI",
+        "OpenAI GPT-4o",
+        "Anthropic Claude",
+        "RAG / Vector Databases",
+        "HIPAA Compliance",
+        "SOC 2",
+        "Veradigm EHR",
+        "Product Strategy",
+        "AI Agency Operations"
+    ],
+    "domainTags": [
+        "Generative AI",
+        "Voice",
+        "Healthcare",
+        "Founder"
+    ]
+}

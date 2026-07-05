@@ -1,0 +1,15 @@
+{
+	"title": "TheTechHustle Podcast",
+	"date": "2024-09-24",
+	"type": "podcast",
+	"status": "past",
+	"city": "West Palm Beach, FL",
+	"description": "Podcast engagement in West Palm Beach, FL",
+	"resources": [
+		{
+			"label": "Event page",
+			"url": "https://www.youtube.com/@thetechhustle",
+			"kind": "link"
+		}
+	]
+}

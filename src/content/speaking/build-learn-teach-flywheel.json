@@ -1,0 +1,21 @@
+{
+	"title": "The Build → Learn → Teach Flywheel",
+	"abstract": "The philosophy behind everything Marlon does: you don't just build AI systems — you extract the lessons and then multiply impact by teaching them. This keynote shows how this flywheel drives innovation at the individual, team, and organizational level.",
+	"tier": "standard",
+	"duration": "20–30 min",
+	"format": "keynote",
+	"audience": ["All audiences", "Educators", "Leaders", "Practitioners"],
+	"objectives": [
+		"Understand why building is the fastest path to real AI understanding",
+		"Learn how teaching compounds individual lessons into organizational capability",
+		"Apply the flywheel to your own team's learning culture"
+	],
+	"takeaways": [
+		"The Build → Learn → Teach → Inspire operating model",
+		"A template for turning project retrospectives into teachable playbooks",
+		"Ways to create 'Aha!' moments that change how teams see AI"
+	],
+	"industries": ["Education", "Technology", "Media & Entertainment", "Non-Profit"],
+	"featured": false,
+	"order": 6
+}

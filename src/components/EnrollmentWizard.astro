@@ -1,0 +1,316 @@
+---
+import { SITE_CONFIG } from '../config';
+
+/**
+ * Workshop enrollment onboarding: four quick questions build a profile,
+ * then the wizard recommends a workshop and collects engagement details.
+ * Static-host friendly — final submission composes a structured email.
+ */
+interface WorkshopSummary {
+	id: string;
+	title: string;
+	tagline: string;
+	level: string;
+	duration: string;
+	href: string;
+}
+
+interface Props {
+	workshops: WorkshopSummary[];
+}
+
+const { workshops } = Astro.props;
+
+const steps = [
+	{
+		id: 'role',
+		legend: 'Who are you?',
+		multi: false,
+		options: [
+			{ value: 'executive', label: 'Executive', hint: 'I set direction and need an AI strategy' },
+			{ value: 'manager', label: 'Manager', hint: 'I lead a team that needs AI capability' },
+			{ value: 'founder', label: 'Founder', hint: 'I am building a company with AI in it' },
+			{ value: 'engineer', label: 'Engineer', hint: 'I build software and want to go deeper' },
+			{ value: 'educator', label: 'Educator', hint: 'I teach others and want AI in my practice' },
+			{ value: 'student', label: 'Student', hint: 'I am building skills for what comes next' },
+			{ value: 'other', label: 'Other', hint: 'None of these quite fit' },
+		],
+	},
+	{
+		id: 'goal',
+		legend: 'Why are you here?',
+		multi: false,
+		options: [
+			{ value: 'team-workshop', label: 'Book a team workshop', hint: 'Bring AI training to my organization' },
+			{ value: 'attend', label: 'Attend a workshop', hint: 'Join a session myself' },
+			{ value: 'learn', label: 'Learn AI', hint: 'Start my own AI journey' },
+			{ value: 'explore', label: 'Explore', hint: 'Just looking around — impress me' },
+			{ value: 'speaking', label: 'Book Marlon to speak', hint: 'Keynote or conference session' },
+		],
+	},
+	{
+		id: 'comfort',
+		legend: 'How comfortable are you with AI today?',
+		multi: false,
+		options: [
+			{ value: 'beginner', label: 'Beginner', hint: 'Heard of it, have not really used it' },
+			{ value: 'curious', label: 'Curious', hint: 'Tried ChatGPT or Claude a few times' },
+			{ value: 'intermediate', label: 'Intermediate', hint: 'Use AI tools regularly' },
+			{ value: 'advanced', label: 'Advanced', hint: 'I build workflows with AI' },
+			{ value: 'technical', label: 'Technical', hint: 'I write code and ship AI systems' },
+		],
+	},
+	{
+		id: 'interests',
+		legend: 'What are you most excited about?',
+		multi: true,
+		options: [
+			{ value: 'automation', label: 'Automation', hint: 'Workflows that run themselves' },
+			{ value: 'assistants', label: 'AI Assistants', hint: 'Agents that do real work' },
+			{ value: 'leadership', label: 'Leadership', hint: 'Leading teams through the AI shift' },
+			{ value: 'prompting', label: 'Prompting', hint: 'Getting great results from AI' },
+			{ value: 'building', label: 'Building', hint: 'Creating AI products' },
+			{ value: 'teaching', label: 'Teaching', hint: 'Helping others learn AI' },
+			{ value: 'strategy', label: 'Strategy', hint: 'AI roadmaps and adoption' },
+			{ value: 'productivity', label: 'Productivity', hint: 'Doing more of what matters' },
+		],
+	},
+] as const;
+---
+
+<div
+	class="mx-auto max-w-3xl rounded-3xl bg-graphite p-8 text-paper md:p-12"
+	data-wizard
+	data-email={SITE_CONFIG.email}
+	data-workshops={JSON.stringify(workshops)}
+>
+	<p class="text-eyebrow text-emerald-glow" aria-live="polite" data-wizard-progress>Step 1 of 5</p>
+
+	{
+		steps.map((step, i) => (
+			<fieldset data-wizard-step={i} hidden={i !== 0} class="mt-6 border-0 p-0">
+				<legend class="font-display text-3xl font-semibold">{step.legend}</legend>
+				<div class="mt-8 grid gap-3 sm:grid-cols-2">
+					{step.options.map((opt) => (
+						<label class="flex cursor-pointer items-start gap-3 rounded-xl border border-paper/15 p-4 transition-colors hover:border-emerald-glow has-checked:border-emerald has-checked:bg-emerald-deep/40">
+							<input
+								type={step.multi ? 'checkbox' : 'radio'}
+								name={step.id}
+								value={opt.value}
+								class="mt-1 accent-emerald"
+							/>
+							<span>
+								<span class="block font-semibold">{opt.label}</span>
+								<span class="block text-sm text-paper/60">{opt.hint}</span>
+							</span>
+						</label>
+					))}
+				</div>
+			</fieldset>
+		))
+	}
+
+	<div data-wizard-step="4" hidden class="mt-6">
+		<div data-recommendation></div>
+
+		<h3 class="mt-10 font-display text-2xl font-semibold">Let's make it happen</h3>
+		<div class="mt-6 grid gap-5 md:grid-cols-2">
+			<div>
+				<label for="wz-name" class="block text-sm font-semibold">Name *</label>
+				<input id="wz-name" name="name" type="text" required autocomplete="name" class="mt-2 w-full rounded-lg border border-paper/20 bg-ink px-4 py-3 text-sm text-paper focus:border-emerald" />
+			</div>
+			<div>
+				<label for="wz-email" class="block text-sm font-semibold">Email *</label>
+				<input id="wz-email" name="email" type="email" required autocomplete="email" class="mt-2 w-full rounded-lg border border-paper/20 bg-ink px-4 py-3 text-sm text-paper focus:border-emerald" />
+			</div>
+			<div>
+				<label for="wz-org" class="block text-sm font-semibold">Organization</label>
+				<input id="wz-org" name="organization" type="text" autocomplete="organization" class="mt-2 w-full rounded-lg border border-paper/20 bg-ink px-4 py-3 text-sm text-paper focus:border-emerald" />
+			</div>
+			<div>
+				<label for="wz-industry" class="block text-sm font-semibold">Industry</label>
+				<input id="wz-industry" name="industry" type="text" class="mt-2 w-full rounded-lg border border-paper/20 bg-ink px-4 py-3 text-sm text-paper focus:border-emerald" />
+			</div>
+			<div>
+				<label for="wz-team" class="block text-sm font-semibold">Team size</label>
+				<input id="wz-team" name="teamSize" type="text" placeholder="e.g. 25" class="mt-2 w-full rounded-lg border border-paper/20 bg-ink px-4 py-3 text-sm text-paper focus:border-emerald" />
+			</div>
+			<div>
+				<label for="wz-timeline" class="block text-sm font-semibold">Timeline</label>
+				<input id="wz-timeline" name="timeline" type="text" placeholder="e.g. Q4 2026" class="mt-2 w-full rounded-lg border border-paper/20 bg-ink px-4 py-3 text-sm text-paper focus:border-emerald" />
+			</div>
+			<div>
+				<label for="wz-location" class="block text-sm font-semibold">Location</label>
+				<input id="wz-location" name="location" type="text" placeholder="City, or fully remote" class="mt-2 w-full rounded-lg border border-paper/20 bg-ink px-4 py-3 text-sm text-paper focus:border-emerald" />
+			</div>
+			<div>
+				<label for="wz-format" class="block text-sm font-semibold">Preferred format</label>
+				<select id="wz-format" name="format" class="mt-2 w-full rounded-lg border border-paper/20 bg-ink px-4 py-3 text-sm text-paper focus:border-emerald">
+					<option value="">No preference</option>
+					<option>Virtual</option>
+					<option>In-person</option>
+					<option>Hybrid</option>
+				</select>
+			</div>
+			<div>
+				<label for="wz-budget" class="block text-sm font-semibold">Budget <span class="font-normal text-paper/50">(optional)</span></label>
+				<input id="wz-budget" name="budget" type="text" class="mt-2 w-full rounded-lg border border-paper/20 bg-ink px-4 py-3 text-sm text-paper focus:border-emerald" />
+			</div>
+			<div class="md:col-span-2">
+				<label for="wz-goals" class="block text-sm font-semibold">What would success look like? *</label>
+				<textarea id="wz-goals" name="goals" rows="4" required class="mt-2 w-full rounded-lg border border-paper/20 bg-ink px-4 py-3 text-sm text-paper focus:border-emerald"></textarea>
+			</div>
+		</div>
+	</div>
+
+	<div class="mt-10 flex items-center justify-between gap-4">
+		<button
+			type="button"
+			data-wizard-back
+			hidden
+			class="cursor-pointer rounded-full border border-paper/30 px-6 py-3 text-sm font-semibold transition-colors hover:border-emerald-glow"
+		>
+			← Back
+		</button>
+		<p class="text-sm text-terracotta" role="alert" data-wizard-error hidden>Pick an option to continue.</p>
+		<button
+			type="button"
+			data-wizard-next
+			class="ml-auto cursor-pointer rounded-full bg-emerald px-8 py-3 text-sm font-bold text-ink transition-transform hover:scale-105"
+		>
+			Continue →
+		</button>
+	</div>
+</div>
+
+<script>
+	interface WorkshopSummary {
+		id: string;
+		title: string;
+		tagline: string;
+		level: string;
+		duration: string;
+		href: string;
+	}
+
+	for (const wizard of document.querySelectorAll<HTMLElement>('[data-wizard]')) {
+		const workshops: WorkshopSummary[] = JSON.parse(wizard.dataset.workshops ?? '[]');
+		const stepEls = [...wizard.querySelectorAll<HTMLElement>('[data-wizard-step]')];
+		const progress = wizard.querySelector<HTMLElement>('[data-wizard-progress]');
+		const backBtn = wizard.querySelector<HTMLButtonElement>('[data-wizard-back]');
+		const nextBtn = wizard.querySelector<HTMLButtonElement>('[data-wizard-next]');
+		const errorEl = wizard.querySelector<HTMLElement>('[data-wizard-error]');
+		const recommendationEl = wizard.querySelector<HTMLElement>('[data-recommendation]');
+		let current = 0;
+
+		const answers = (name: string) =>
+			[...wizard.querySelectorAll<HTMLInputElement>(`input[name="${name}"]:checked`)].map((i) => i.value);
+
+		const recommend = (): WorkshopSummary | undefined => {
+			const [role] = answers('role');
+			const [comfort] = answers('comfort');
+			const interests = new Set(answers('interests'));
+			const find = (id: string) => workshops.find((w) => w.id === id);
+
+			if (
+				role === 'executive' ||
+				role === 'manager' ||
+				interests.has('strategy') ||
+				interests.has('leadership')
+			) {
+				return find('ai-strategy-for-executives') ?? workshops[0];
+			}
+			if (
+				comfort === 'advanced' ||
+				comfort === 'technical' ||
+				interests.has('building') ||
+				interests.has('prompting')
+			) {
+				return find('prompt-engineering-masterclass') ?? workshops[0];
+			}
+			return find('ai-fundamentals-for-professionals') ?? workshops[0];
+		};
+
+		const show = (index: number) => {
+			current = index;
+			stepEls.forEach((el, i) => {
+				el.hidden = i !== index;
+			});
+			if (progress) progress.textContent = `Step ${index + 1} of ${stepEls.length}`;
+			if (backBtn) backBtn.hidden = index === 0;
+			if (nextBtn) nextBtn.textContent = index === stepEls.length - 1 ? 'Send my request →' : 'Continue →';
+			if (errorEl) errorEl.hidden = true;
+
+			if (index === stepEls.length - 1 && recommendationEl) {
+				const goal = answers('goal')[0];
+				if (goal === 'speaking') {
+					recommendationEl.innerHTML = `
+						<div class="rounded-2xl border border-emerald/50 bg-ink p-6">
+							<p class="text-eyebrow text-emerald-glow">Our recommendation</p>
+							<h3 class="mt-2 font-display text-2xl font-semibold">Head to the Speaking page</h3>
+							<p class="mt-2 text-paper/70">Sounds like you're planning an event. Marlon's signature keynotes live there — or finish this form and it will route as a speaking inquiry.</p>
+							<a href="/speaking" class="mt-4 inline-block rounded-full bg-emerald px-5 py-2 text-sm font-bold text-ink">Explore keynotes →</a>
+						</div>`;
+				} else {
+					const pick = recommend();
+					if (pick) {
+						recommendationEl.innerHTML = `
+							<div class="rounded-2xl border border-emerald/50 bg-ink p-6">
+								<p class="text-eyebrow text-emerald-glow">Recommended for you</p>
+								<h3 class="mt-2 font-display text-2xl font-semibold">${pick.title}</h3>
+								<p class="mt-2 text-paper/70">${pick.tagline}</p>
+								<p class="mt-3 text-sm text-paper/60">${pick.level.charAt(0).toUpperCase() + pick.level.slice(1)} · ${pick.duration}</p>
+								<a href="${pick.href}" class="mt-4 inline-block text-sm font-semibold text-emerald-glow hover:underline">See the full curriculum →</a>
+							</div>`;
+					}
+				}
+			}
+		};
+
+		const submit = () => {
+			const required = wizard.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>(
+				'[data-wizard-step="4"] [required]',
+			);
+			for (const field of required) {
+				if (!field.reportValidity()) return;
+			}
+			const get = (name: string) =>
+				wizard.querySelector<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(`[name="${name}"]`)?.value || '—';
+			const lines = [
+				`Name: ${get('name')}`,
+				`Email: ${get('email')}`,
+				`Organization: ${get('organization')}`,
+				`Industry: ${get('industry')}`,
+				`Team size: ${get('teamSize')}`,
+				`Timeline: ${get('timeline')}`,
+				`Location: ${get('location')}`,
+				`Preferred format: ${get('format')}`,
+				`Budget: ${get('budget')}`,
+				'',
+				`Profile — role: ${answers('role')[0] ?? '—'}, goal: ${answers('goal')[0] ?? '—'}, comfort: ${answers('comfort')[0] ?? '—'}, interests: ${answers('interests').join(', ') || '—'}`,
+				`Recommended workshop: ${recommend()?.title ?? '—'}`,
+				'',
+				`Goals: ${get('goals')}`,
+			];
+			const subject = encodeURIComponent('[marlonavery.com] Workshop enrollment request');
+			window.location.href = `mailto:${wizard.dataset.email}?subject=${subject}&body=${encodeURIComponent(lines.join('\n'))}`;
+		};
+
+		nextBtn?.addEventListener('click', () => {
+			if (current === stepEls.length - 1) {
+				submit();
+				return;
+			}
+			// Steps 0–3 require at least one selection before advancing
+			const name = ['role', 'goal', 'comfort', 'interests'][current];
+			if (name && answers(name).length === 0) {
+				if (errorEl) errorEl.hidden = false;
+				return;
+			}
+			show(current + 1);
+		});
+
+		backBtn?.addEventListener('click', () => show(Math.max(0, current - 1)));
+		show(0);
+	}
+</script>

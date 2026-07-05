@@ -1,0 +1,29 @@
+{
+    "company": "JPMorgan Chase",
+    "role": "VP, Applied AI Lead",
+    "level": "Vice President",
+    "location": "Remote",
+    "startDate": "2025-05-01",
+    "endDate": null,
+    "description": "Lead applied AI initiatives that move generative and conversational AI from experiment to production at one of the world's largest financial institutions.",
+    "achievements": [
+        "Lead applied AI strategy and execution across business operations.",
+        "Translate generative AI research into shippable products with measurable business impact.",
+        "Partner across engineering, risk, and product to deploy AI safely inside a regulated financial environment.",
+        "Mentor practitioners on responsible AI patterns and production deployment of LLMs and agents."
+    ],
+    "skills": [
+        "Generative AI",
+        "Applied Machine Learning",
+        "AI Strategy",
+        "LLM Productization",
+        "Responsible AI",
+        "Cross-Functional Leadership",
+        "Enterprise AI"
+    ],
+    "domainTags": [
+        "Generative AI",
+        "Enterprise",
+        "Leadership"
+    ]
+}

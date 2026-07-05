@@ -1,0 +1,21 @@
+{
+	"title": "The Applied AI Executive: Leading in the Age of Intelligent Systems",
+	"abstract": "For senior leaders navigating the AI transition: what separates organizations that thrive from those that stall isn't the technology — it's leadership clarity. This session gives executives a practical roadmap for AI strategy, adoption, and governance that moves beyond the buzzwords.",
+	"tier": "signature",
+	"duration": "45–60 min",
+	"format": "keynote",
+	"audience": ["C-Suite", "Board Members", "VPs and Directors", "Senior Leaders"],
+	"objectives": [
+		"Separate durable AI strategy from quarterly hype cycles",
+		"Understand where AI creates measurable enterprise value today",
+		"Design governance that enables adoption instead of blocking it"
+	],
+	"takeaways": [
+		"An executive AI roadmap spanning strategy, adoption, and governance",
+		"A shared vocabulary for AI decisions across the leadership team",
+		"Criteria for sequencing AI investments by risk and return"
+	],
+	"industries": ["Financial Services", "Healthcare", "Insurance", "Government", "Manufacturing"],
+	"featured": true,
+	"order": 3
+}

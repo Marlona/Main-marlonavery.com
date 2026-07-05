@@ -1,0 +1,192 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Section from '../components/Section.astro';
+import EventCard from '../components/EventCard.astro';
+
+const events = (await getCollection('events')).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+const upcoming = events
+	.filter((e) => e.data.status === 'upcoming')
+	.sort((a, b) => a.data.date.valueOf() - b.data.date.valueOf());
+const past = events.filter((e) => e.data.status === 'past');
+
+/** Recent highlights get full cards; the rest live in the archive overlay */
+const pastHighlights = past.slice(0, 6);
+const archive = past;
+
+/** Group the archive by year for the overlay */
+const archiveByYear = [...new Set(archive.map((e) => e.data.date.getUTCFullYear()))]
+	.sort((a, b) => b - a)
+	.map((year) => ({
+		year,
+		items: archive.filter((e) => e.data.date.getUTCFullYear() === year),
+	}));
+
+const monthFmt = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+
+const typeLabels: Record<string, string> = {
+	keynote: 'Keynote',
+	workshop: 'Workshop',
+	panel: 'Panel',
+	conference: 'Conference',
+	podcast: 'Podcast',
+	meetup: 'Meetup',
+	live: 'Live Session',
+};
+---
+
+<BaseLayout
+	title="Events"
+	description={`Where to catch Marlon Avery live — upcoming keynotes and workshops, plus an archive of ${past.length}+ past engagements across the country.`}
+>
+	<div class="bg-paper px-6 pt-36 pb-20 md:pt-44">
+		<div class="mx-auto max-w-7xl">
+			<p class="text-eyebrow reveal text-emerald-deep">Events</p>
+			<h1 class="text-display-lg reveal mt-6 max-w-4xl">On stage and in the room.</h1>
+			<p class="reveal mt-8 max-w-2xl text-lg leading-relaxed text-slate">
+				Keynotes, workshops, panels, and live sessions — catch Marlon live or explore
+				{past.length}+ past engagements.
+			</p>
+		</div>
+	</div>
+
+	<Section eyebrow="Up next" title="Upcoming.">
+		{
+			upcoming.length > 0 ? (
+				<div class="grid gap-6 md:grid-cols-2">
+					{upcoming.map((e) => (
+						<EventCard
+							title={e.data.title}
+							date={e.data.date}
+							endDate={e.data.endDate}
+							type={e.data.type}
+							city={e.data.city}
+							venue={e.data.venue}
+							description={e.data.description}
+							upcoming
+						/>
+					))}
+				</div>
+			) : (
+				<p class="reveal text-lg text-slate">
+					New dates are being confirmed now —{' '}
+					<a href="/contact" class="font-semibold text-emerald-deep underline-offset-4 hover:underline">
+						invite Marlon to your event
+					</a>
+					.
+				</p>
+			)
+		}
+	</Section>
+
+	<Section tone="cream" eyebrow="The archive" title="Recent engagements.">
+		<div class="grid gap-6 md:grid-cols-2">
+			{
+				pastHighlights.map((e) => (
+					<EventCard
+						title={e.data.title}
+						date={e.data.date}
+						endDate={e.data.endDate}
+						type={e.data.type}
+						city={e.data.city}
+						venue={e.data.venue}
+						description={e.data.description}
+						recap={e.data.recap}
+					/>
+				))
+			}
+		</div>
+
+		<div class="reveal mt-12 text-center">
+			<button
+				type="button"
+				data-archive-open
+				class="cursor-pointer rounded-full bg-ink px-8 py-4 font-semibold text-paper transition-colors hover:bg-emerald-deep"
+			>
+				See all {archive.length} past engagements →
+			</button>
+		</div>
+	</Section>
+
+	<!-- Full archive overlay -->
+	<dialog
+		data-archive-dialog
+		class="m-auto max-h-[85vh] w-[min(56rem,92vw)] rounded-3xl bg-paper p-0 text-ink shadow-2xl backdrop:bg-ink/70 backdrop:backdrop-blur-sm"
+	>
+		<div class="sticky top-0 flex items-center justify-between gap-4 border-b border-ink/10 bg-paper px-8 py-5">
+			<h2 class="font-display text-2xl font-semibold">Every engagement</h2>
+			<button
+				type="button"
+				data-archive-close
+				class="cursor-pointer rounded-full border border-ink/20 px-4 py-2 text-sm font-semibold hover:border-emerald-deep hover:text-emerald-deep"
+				aria-label="Close event archive"
+			>
+				Close ✕
+			</button>
+		</div>
+		<div class="max-h-[calc(85vh-4.5rem)] overflow-y-auto px-8 py-6">
+			{
+				archiveByYear.map(({ year, items }) => (
+					<section class="mb-10 last:mb-2">
+						<h3 class="text-eyebrow sticky top-0 bg-paper py-2 text-emerald-deep">
+							{year} · {items.length} engagements
+						</h3>
+						<ul class="mt-3 divide-y divide-ink/8">
+							{items.map((e) => (
+								<li class="flex flex-wrap items-baseline gap-x-4 gap-y-1 py-3">
+									<time datetime={e.data.date.toISOString().slice(0, 10)} class="w-16 shrink-0 text-sm font-semibold tabular-nums text-slate">
+										{monthFmt.format(e.data.date)}
+									</time>
+									<span class="w-20 shrink-0 text-xs font-semibold tracking-wide text-emerald-deep uppercase">
+										{typeLabels[e.data.type] ?? e.data.type}
+									</span>
+									<div class="min-w-0 flex-1">
+										<p class="font-medium">{e.data.title}</p>
+										<p class="text-sm text-slate">
+											{[e.data.description !== e.data.title ? e.data.description : null, e.data.city ?? e.data.venue]
+												.filter(Boolean)
+												.join(' · ')}
+										</p>
+									</div>
+									{e.data.resources.length > 0 && (
+										<a
+											href={e.data.resources[0].url}
+											rel="noopener"
+											class="shrink-0 text-sm font-semibold text-emerald-deep underline-offset-4 hover:underline"
+										>
+											{e.data.resources[0].kind === 'video' ? 'Watch ↗' : 'Details ↗'}
+										</a>
+									)}
+								</li>
+							))}
+						</ul>
+					</section>
+				))
+			}
+		</div>
+	</dialog>
+
+	<Section tone="dark" eyebrow="Your stage next" title="Planning an event?">
+		<div class="reveal flex flex-wrap gap-4">
+			<a href="/speaking" class="rounded-full bg-emerald px-8 py-4 font-semibold text-ink transition-transform hover:scale-105">
+				Explore keynotes
+			</a>
+			<a href="/contact" class="rounded-full border border-paper/40 px-8 py-4 font-semibold text-paper transition-colors hover:border-emerald-glow hover:text-emerald-glow">
+				Get in touch
+			</a>
+		</div>
+	</Section>
+
+	<script>
+		const dialog = document.querySelector<HTMLDialogElement>('[data-archive-dialog]');
+		document.querySelector('[data-archive-open]')?.addEventListener('click', () => dialog?.showModal());
+		document.querySelector('[data-archive-close]')?.addEventListener('click', () => dialog?.close());
+		// Close when clicking the backdrop (outside the dialog's content box)
+		dialog?.addEventListener('click', (e) => {
+			const rect = dialog.getBoundingClientRect();
+			const inside =
+				e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom;
+			if (!inside) dialog.close();
+		});
+	</script>
+</BaseLayout>

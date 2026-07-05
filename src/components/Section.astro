@@ -1,0 +1,37 @@
+---
+interface Props {
+	eyebrow?: string;
+	title?: string;
+	intro?: string;
+	tone?: 'light' | 'dark' | 'cream';
+	/** compact halves the vertical rhythm for connective sections */
+	pad?: 'normal' | 'compact';
+	id?: string;
+	class?: string;
+}
+
+const { eyebrow, title, intro, tone = 'light', pad = 'normal', id, class: className } = Astro.props;
+
+const tones = {
+	light: 'bg-paper text-ink',
+	cream: 'bg-cream text-ink',
+	dark: 'bg-ink text-paper',
+};
+
+const padding = pad === 'compact' ? 'px-6 py-14 md:py-20' : 'px-6 py-24 md:py-32';
+---
+
+<section id={id} class:list={[tones[tone], padding, className]}>
+	<div class="mx-auto max-w-7xl">
+		{
+			(eyebrow || title) && (
+				<header class="reveal mb-14 max-w-3xl md:mb-20">
+					{eyebrow && <p class:list={['text-eyebrow mb-4', tone === 'dark' ? 'text-emerald-glow' : 'text-emerald-deep']}>{eyebrow}</p>}
+					{title && <h2 class="text-display-md">{title}</h2>}
+					{intro && <p class:list={['mt-6 text-lg leading-relaxed', tone === 'dark' ? 'text-paper/75' : 'text-slate']}>{intro}</p>}
+				</header>
+			)
+		}
+		<slot />
+	</div>
+</section>

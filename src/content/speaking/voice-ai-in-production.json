@@ -1,0 +1,21 @@
+{
+	"title": "Voice AI in Production",
+	"abstract": "What it actually takes to ship a voice agent that works in the real world — covering architecture decisions, failure modes, and the gap between demos and production. This talk goes beyond the hype to show what's technically required and organizationally challenging when deploying voice AI at scale.",
+	"tier": "signature",
+	"duration": "30–45 min",
+	"format": "keynote",
+	"audience": ["Founders", "Product Leaders", "AI Engineers", "CTOs"],
+	"objectives": [
+		"Understand the full architecture of a production voice agent: STT, LLM reasoning, grounding, and TTS",
+		"Recognize the failure modes that separate demos from deployed systems",
+		"Learn the organizational patterns that make voice AI stick"
+	],
+	"takeaways": [
+		"A reference architecture for voice agents in regulated industries",
+		"A checklist of production failure modes and mitigations",
+		"A realistic build-vs-buy decision framework"
+	],
+	"industries": ["Healthcare", "Financial Services", "Legal", "Insurance", "Technology"],
+	"featured": true,
+	"order": 1
+}

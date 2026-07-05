@@ -1,0 +1,21 @@
+{
+	"title": "Building with Claude: Agentic AI in the Enterprise",
+	"abstract": "A technical-forward talk on agentic AI systems — what they are, how they work, and where they create the most value in enterprise environments. Covers real examples from production deployments, with lessons on trust, oversight, and keeping humans in the loop.",
+	"tier": "standard",
+	"duration": "30–45 min",
+	"format": "keynote",
+	"audience": ["AI Engineers", "Technical Leaders", "Product Managers"],
+	"objectives": [
+		"Understand agent design patterns: planner, executor, critic",
+		"Identify where agentic systems create enterprise value versus overhead",
+		"Design oversight and escalation patterns that keep humans in control"
+	],
+	"takeaways": [
+		"Production-tested agent architecture patterns",
+		"A trust-and-oversight checklist for agentic deployments",
+		"Cost and latency tuning strategies for always-on workflows"
+	],
+	"industries": ["Technology", "Financial Services", "Healthcare", "Legal"],
+	"featured": false,
+	"order": 5
+}

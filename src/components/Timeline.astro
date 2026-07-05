@@ -1,0 +1,29 @@
+---
+interface Milestone {
+	period: string;
+	title: string;
+	org: string;
+	description: string;
+}
+
+interface Props {
+	milestones: Milestone[];
+}
+
+const { milestones } = Astro.props;
+---
+
+<ol class="relative ml-3 border-l-2 border-emerald/30">
+	{
+		milestones.map((m) => (
+			<li class="reveal relative mb-12 pl-8 last:mb-0">
+				<span class="absolute top-1.5 -left-[7px] h-3 w-3 rounded-full bg-emerald" aria-hidden="true" />
+				<p class="text-eyebrow text-emerald-deep">{m.period}</p>
+				<h3 class="mt-2 font-display text-xl font-semibold">
+					{m.title} <span class="font-sans text-base font-normal text-slate">· {m.org}</span>
+				</h3>
+				<p class="mt-2 max-w-2xl leading-relaxed text-slate">{m.description}</p>
+			</li>
+		))
+	}
+</ol>

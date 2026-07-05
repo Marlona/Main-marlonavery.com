@@ -1,0 +1,68 @@
+---
+interface Stat {
+	value: string;
+	label: string;
+}
+
+interface Props {
+	stats: Stat[];
+	tone?: 'light' | 'dark';
+}
+
+const { stats, tone = 'light' } = Astro.props;
+---
+
+<dl class="grid grid-cols-2 gap-x-8 gap-y-12 md:grid-cols-4" data-stats>
+	{
+		stats.map((stat) => (
+			<div class="reveal">
+				<dd
+					class:list={[
+						'text-display-md tabular-nums',
+						tone === 'dark' ? 'text-emerald-glow' : 'text-emerald-deep',
+					]}
+					data-count={stat.value}
+				>
+					{stat.value}
+				</dd>
+				<dt class:list={['mt-2 text-sm font-medium', tone === 'dark' ? 'text-paper/70' : 'text-slate']}>{stat.label}</dt>
+			</div>
+		))
+	}
+</dl>
+
+<script>
+	// Count-up animation for numeric stats; suffix (+, K+, %) is preserved.
+	const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+	if (!reduced) {
+		const counters = document.querySelectorAll<HTMLElement>('[data-count]');
+		const animate = (el: HTMLElement) => {
+			const raw = el.dataset.count ?? '';
+			const match = raw.match(/^([\d,.]+)(.*)$/);
+			if (!match) return;
+			const target = parseFloat(match[1].replace(/,/g, ''));
+			const suffix = match[2] ?? '';
+			const start = performance.now();
+			const duration = 1400;
+			const step = (now: number) => {
+				const t = Math.min(1, (now - start) / duration);
+				const eased = 1 - Math.pow(1 - t, 3);
+				el.textContent = `${Math.round(target * eased).toLocaleString()}${suffix}`;
+				if (t < 1) requestAnimationFrame(step);
+			};
+			requestAnimationFrame(step);
+		};
+		const observer = new IntersectionObserver(
+			(entries) => {
+				for (const entry of entries) {
+					if (entry.isIntersecting) {
+						animate(entry.target as HTMLElement);
+						observer.unobserve(entry.target);
+					}
+				}
+			},
+			{ threshold: 0.5 },
+		);
+		counters.forEach((el) => observer.observe(el));
+	}
+</script>

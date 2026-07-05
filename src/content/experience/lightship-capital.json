@@ -1,0 +1,30 @@
+{
+    "company": "Lightship Capital",
+    "role": "Engineering Director — Venture Capital Fund",
+    "level": "Director / Interim CTO",
+    "location": "Remote",
+    "startDate": "2020-04-01",
+    "endDate": "2022-04-30",
+    "description": "Spearheaded engineering value creation at Lightship Capital, directing a high-caliber team of engineers and advising portfolio companies on AI integration, engineering processes, and product development strategy.",
+    "achievements": [
+        "Served as interim CTO leading a diverse team of 25+ engineers across 7 portfolio companies, advising on advanced AI integration, engineering processes, and product development strategies.",
+        "Built one of the first AI Grant Writers on GPT-3 (2021): a text-generation tool that united company knowledge and semantic search to generate prompts for grant submissions, enhancing grant response throughput 2.5x and delivering a 60% reduction in work labor.",
+        "Led the design and implementation of a transformative time-efficiency initiative, harnessing data analytics to optimize organizational productivity by 50%.",
+        "Helped shape Lightship's perspective on Generative AI before the post-ChatGPT inflection point."
+    ],
+    "skills": [
+        "Generative AI",
+        "GPT-3",
+        "Semantic Search",
+        "Technical Due Diligence",
+        "Startup Engineering",
+        "Interim CTO",
+        "Portfolio Advisory",
+        "Engineering Leadership"
+    ],
+    "domainTags": [
+        "Generative AI",
+        "Venture",
+        "Leadership"
+    ]
+}

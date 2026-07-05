@@ -1,0 +1,20 @@
+{
+	"title": "Tech Is The New Black Podcast",
+	"date": "2023-10-20",
+	"type": "podcast",
+	"status": "past",
+	"city": "Fort Lauderdale, FL",
+	"description": "Podcast engagement in Fort Lauderdale, FL",
+	"resources": [
+		{
+			"label": "Event page",
+			"url": "https://www.blkmenintech.com/thrive-conference",
+			"kind": "link"
+		},
+		{
+			"label": "Watch the recording",
+			"url": "https://www.youtube.com/watch?v=KB_6udL275A",
+			"kind": "video"
+		}
+	]
+}

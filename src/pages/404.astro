@@ -1,0 +1,16 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Page not found" description="That page doesn't exist — but the journey continues.">
+	<div class="flex min-h-[70vh] flex-col items-center justify-center bg-ink px-6 pt-24 text-center text-paper">
+		<p class="text-eyebrow text-emerald-glow">404</p>
+		<h1 class="text-display-lg mt-6">Off the map.</h1>
+		<p class="mt-6 max-w-md text-lg text-paper/70">
+			This page doesn’t exist — yet. Everything worth exploring is one scroll away.
+		</p>
+		<a href="/" class="mt-10 rounded-full bg-emerald px-8 py-4 font-semibold text-ink transition-transform hover:scale-105">
+			Back home
+		</a>
+	</div>
+</BaseLayout>

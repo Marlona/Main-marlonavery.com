@@ -1,0 +1,15 @@
+{
+	"title": "Thrive Conference",
+	"date": "2024-10-12",
+	"type": "panel",
+	"status": "past",
+	"city": "Fort Lauderdale, FL",
+	"description": "Beyond the Algorithm: AI's Impact on the Black Community",
+	"resources": [
+		{
+			"label": "Event page",
+			"url": "https://www.blkmenintech.com/",
+			"kind": "link"
+		}
+	]
+}

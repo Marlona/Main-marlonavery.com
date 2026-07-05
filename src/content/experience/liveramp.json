@@ -1,0 +1,30 @@
+{
+    "company": "LiveRamp",
+    "role": "Staff Technical Program Manager — Data Connectivity Platform",
+    "level": "Staff TPM",
+    "location": "Remote",
+    "startDate": "2022-04-01",
+    "endDate": "2023-01-31",
+    "description": "Led the Activation organization on LiveRamp's data connectivity platform, driving cross-team programs spanning release management, CI/CD, velocity, and vulnerability scanning.",
+    "achievements": [
+        "Directed cross-team and dependency alignment, defining clear and predictable processes to launch LiveRamp's Authenticated Traffic Solution (ATS) Forecasting tool — enabling a 20% increase in client adoption.",
+        "Led a cost-tracking program that increased coverage of $55M+ yearly GCP customer cost from 25% to 60%.",
+        "Spearheaded planning, road mapping, and review preparation across Engineering, Product Intelligence, and Finance.",
+        "Drove API integration, onboarding, support, and documentation programs that streamlined cross-team execution.",
+        "Partnered with executive leadership (CTO, Head of TPM, Head of Product) to align team KPIs with company initiatives."
+    ],
+    "skills": [
+        "Technical Program Management",
+        "Release Management",
+        "CI/CD",
+        "Cost Optimization",
+        "GCP",
+        "Cross-Functional Leadership",
+        "Velocity Management"
+    ],
+    "domainTags": [
+        "Platform",
+        "Enterprise",
+        "Leadership"
+    ]
+}

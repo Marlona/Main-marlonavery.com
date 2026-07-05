@@ -1,0 +1,15 @@
+{
+	"title": "Georgia Educational Technology Conference",
+	"date": "2024-11-07",
+	"type": "workshop",
+	"status": "past",
+	"city": "Atlanta, GA",
+	"description": "Future of Education Powered by AI",
+	"resources": [
+		{
+			"label": "Event page",
+			"url": "https://conference.gaetc.org/",
+			"kind": "link"
+		}
+	]
+}

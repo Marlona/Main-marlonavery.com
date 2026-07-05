@@ -1,0 +1,256 @@
+---
+import { getCollection } from 'astro:content';
+import { Image } from 'astro:assets';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Section from '../components/Section.astro';
+import SpeakingCard from '../components/SpeakingCard.astro';
+import BookingForm from '../components/BookingForm.astro';
+import Gallery from '../components/Gallery.astro';
+import IndustrySelector from '../components/IndustrySelector.astro';
+
+import stageLecture from '../assets/photos/stage-1.jpg';
+import stageTwo from '../assets/photos/stage-2.jpg';
+import panelPortrait from '../assets/photos/portrait-2.jpg';
+import breakout from '../assets/photos/audience-breakout-collaboration.jpg';
+
+const talks = (await getCollection('speaking')).sort((a, b) => a.data.order - b.data.order);
+const signatureTalks = talks.filter((t) => t.data.tier === 'signature');
+const standardTalks = talks.filter((t) => t.data.tier === 'standard');
+
+/** Recently delivered — real keynotes and panels from the engagement archive, deduped by series */
+const events = (await getCollection('events')).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+const delivered: typeof events = [];
+const seenSeries = new Set<string>();
+for (const e of events) {
+	if (e.data.status !== 'past' || (e.data.type !== 'keynote' && e.data.type !== 'panel')) continue;
+	const series = e.data.title.replace(/#?\s*\d+$/, '').trim().toLowerCase();
+	if (seenSeries.has(series)) continue;
+	seenSeries.add(series);
+	delivered.push(e);
+	if (delivered.length === 6) break;
+}
+const deliveredFmt = new Intl.DateTimeFormat('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' });
+
+/** Industry explorer (moved here from the home page) */
+const workshops = await getCollection('workshops');
+const allProjects = await getCollection('projects', ({ data }) => !data.confidential);
+
+const INDUSTRY_MAP: Array<{ label: string; match: string[]; projectTags: string[] }> = [
+	{ label: 'Finance', match: ['Financial Services', 'Insurance'], projectTags: ['finance', 'fintech'] },
+	{ label: 'Healthcare', match: ['Healthcare'], projectTags: ['healthcare', 'hipaa'] },
+	{ label: 'Education', match: ['Education'], projectTags: ['education', 'curriculum'] },
+	{ label: 'Marketing', match: ['Media & Entertainment', 'Retail'], projectTags: ['marketing', 'content'] },
+	{ label: 'Government', match: ['Government'], projectTags: ['government', 'civic'] },
+	{ label: 'Startups', match: ['Technology'], projectTags: ['founder', 'startup', 'saas'] },
+	{ label: 'Creative', match: ['Media & Entertainment'], projectTags: ['voice-ai', 'content'] },
+	{ label: 'Nonprofit', match: ['Non-Profit'], projectTags: ['community', 'equity'] },
+];
+
+const industryPanels = INDUSTRY_MAP.map(({ label, match, projectTags }) => ({
+	industry: label,
+	workshops: workshops
+		.filter((w) => w.data.industries.some((i) => match.includes(i)))
+		.map((w) => ({ title: w.data.title, href: `/workshops/${w.id}`, meta: `${w.data.level} · ${w.data.duration}` })),
+	talks: talks
+		.filter((t) => t.data.industries.some((i) => match.includes(i)))
+		.slice(0, 3)
+		.map((t) => ({ title: t.data.title, href: '#signature-talks', meta: t.data.duration })),
+	projects: allProjects
+		.filter((p) => p.data.tags.some((tag) => projectTags.includes(tag)))
+		.slice(0, 3)
+		.map((p) => ({ title: p.data.title.split('—')[0].trim(), href: `/projects/${p.id}`, meta: p.data.organization })),
+}));
+---
+
+<BaseLayout
+	darkHero
+	title="Speaking"
+	description="Book Marlon Avery: executive AI keynotes and conference talks from a builder who ships production AI — voice agents, agentic systems, and enterprise adoption."
+>
+	<!-- Dark cinematic hero -->
+	<div class="relative isolate overflow-hidden bg-ink px-6 pt-40 pb-24 text-paper md:pt-48 md:pb-32">
+		<Image
+			src={stageTwo}
+			alt=""
+			widths={[800, 1600]}
+			sizes="100vw"
+			class="absolute inset-0 -z-10 h-full w-full object-cover opacity-25"
+			aria-hidden="true"
+			loading="eager"
+		/>
+		<div class="absolute inset-0 -z-10 bg-gradient-to-t from-ink via-ink/70 to-ink/40" aria-hidden="true"></div>
+		<div class="mx-auto max-w-7xl">
+			<p class="text-eyebrow reveal text-emerald-glow">Speaking</p>
+			<h1 class="text-display-lg reveal mt-6 max-w-4xl">The AI voice that changes the room.</h1>
+			<p class="reveal mt-8 max-w-2xl text-lg leading-relaxed text-paper/80">
+				“I don’t talk about AI from a distance. I build it, deploy it, and then teach everything I learned
+				so your audience can do the same.”
+			</p>
+			<div class="reveal mt-10 flex flex-wrap gap-4">
+				<a href="#booking-form" class="rounded-full bg-emerald px-8 py-4 font-semibold text-ink transition-transform hover:scale-105">
+					Book Marlon
+				</a>
+				<a href="/press" class="rounded-full border border-paper/40 px-8 py-4 font-semibold text-paper transition-colors hover:border-emerald-glow hover:text-emerald-glow">
+					Speaking & Press Kit
+				</a>
+			</div>
+		</div>
+	</div>
+
+	<!-- Why Marlon -->
+	<Section
+		eyebrow="Why audiences remember him"
+		title="Keynotes from the builder, not the commentator."
+		intro="Most AI speakers describe the future. Marlon builds it — voice agents in hospitals, agentic systems in a global bank, workshops in five-city library tours — and brings the receipts to your stage. Audiences leave with capability, not just inspiration."
+	>
+		<Gallery
+			images={[
+				{ src: stageLecture, alt: 'Marlon Avery delivering an AI career-path lecture', span: true },
+				{ src: panelPortrait, alt: 'Marlon Avery holding a microphone on a panel stage' },
+				{ src: breakout, alt: 'Conference audience collaborating during a session' },
+			]}
+		/>
+	</Section>
+
+	<!-- Signature talks -->
+	<Section
+		tone="dark"
+		id="signature-talks"
+		eyebrow="Signature keynotes"
+		title="Talks that move rooms."
+		intro="Every talk is tailored to your audience, industry, and moment — these are the starting points."
+	>
+		<div class="grid gap-6 lg:grid-cols-3">
+			{
+				signatureTalks.map((talk) => (
+					<SpeakingCard
+						title={talk.data.title}
+						abstract={talk.data.abstract}
+						tier={talk.data.tier}
+						duration={talk.data.duration}
+						audience={talk.data.audience}
+						objectives={talk.data.objectives}
+						takeaways={talk.data.takeaways}
+					/>
+				))
+			}
+		</div>
+		<h3 class="reveal mt-16 mb-6 font-display text-2xl font-semibold">More topics</h3>
+		<div class="grid gap-6 lg:grid-cols-3">
+			{
+				standardTalks.map((talk) => (
+					<SpeakingCard
+						title={talk.data.title}
+						abstract={talk.data.abstract}
+						tier={talk.data.tier}
+						duration={talk.data.duration}
+						audience={talk.data.audience}
+						objectives={talk.data.objectives}
+						takeaways={talk.data.takeaways}
+					/>
+				))
+			}
+		</div>
+
+		<!-- Recently delivered -->
+		<h3 class="reveal mt-16 mb-2 font-display text-2xl font-semibold">Recently delivered</h3>
+		<p class="reveal text-sm text-paper/60">
+			A sample from 75+ engagements — the full archive lives on the
+			<a href="/events" class="text-emerald-glow underline-offset-4 hover:underline">events page</a>.
+		</p>
+		<ul class="mt-6 grid gap-x-12 md:grid-cols-2">
+			{
+				delivered.map((e) => (
+					<li class="reveal flex flex-wrap items-baseline gap-x-4 gap-y-1 border-b border-paper/10 py-4">
+						<time datetime={e.data.date.toISOString().slice(0, 10)} class="w-24 shrink-0 text-sm font-semibold text-mist">
+							{deliveredFmt.format(e.data.date)}
+						</time>
+						<div class="min-w-0 flex-1">
+							<p class="font-semibold">{e.data.title}</p>
+							<p class="text-sm text-paper/60">
+								{[e.data.description !== e.data.title ? e.data.description : null, e.data.city].filter(Boolean).join(' · ')}
+							</p>
+						</div>
+						<span class="text-xs font-semibold tracking-wide text-emerald-glow uppercase">{e.data.type}</span>
+					</li>
+				))
+			}
+		</ul>
+	</Section>
+
+	<!-- Audience outcomes -->
+	<Section eyebrow="Audience outcomes" title="What your audience walks away with.">
+		<div class="grid gap-10 md:grid-cols-3">
+			{
+				[
+					{
+						title: 'A New Mental Model',
+						items: [
+							'Shift from fear of AI to curiosity-driven exploration',
+							'Understand where AI creates real value vs. hype',
+							'See their own work through an AI-augmented lens',
+						],
+					},
+					{
+						title: 'Practical Tools',
+						items: [
+							'Frameworks they can apply to their specific context',
+							'Prompting techniques that work in real workflows',
+							'A personal AI adoption roadmap to start Monday',
+						],
+					},
+					{
+						title: 'Organizational Momentum',
+						items: [
+							'Shared vocabulary for AI discussions across teams',
+							'Clarity on where to start and what to prioritize',
+							'Confidence to experiment without breaking things',
+						],
+					},
+				].map((group) => (
+					<div class="reveal border-t-2 border-emerald/40 pt-5">
+						<h3 class="font-display text-xl font-semibold">{group.title}</h3>
+						<ul class="mt-4 space-y-3">
+							{group.items.map((item) => (
+								<li class="flex gap-3 text-slate">
+									<span class="text-emerald-deep" aria-hidden="true">
+										◆
+									</span>
+									{item}
+								</li>
+							))}
+						</ul>
+					</div>
+				))
+			}
+		</div>
+	</Section>
+
+	<!-- Industry explorer -->
+	<Section
+		tone="cream"
+		eyebrow="Your industry"
+		title="AI, translated for your sector."
+		intro="Select an industry to see the talks, workshops, and shipped work most relevant to your audience."
+	>
+		<IndustrySelector panels={industryPanels} />
+	</Section>
+
+	<!-- Press kit pointer -->
+	<Section pad="compact">
+		<div class="reveal flex flex-wrap items-center justify-between gap-6 rounded-3xl bg-cream p-8 md:p-10">
+			<div>
+				<h2 class="font-display text-2xl font-semibold">Planning your program?</h2>
+				<p class="mt-2 text-slate">Copy-ready bios, downloadable photos, talk topics, and the podcast — all in one place.</p>
+			</div>
+			<a href="/press" class="rounded-full bg-ink px-8 py-4 font-semibold text-paper transition-colors hover:bg-emerald-deep">
+				Open the Speaking & Press Kit →
+			</a>
+		</div>
+	</Section>
+
+	<!-- Booking form -->
+	<Section tone="dark" eyebrow="Check availability" title="Bring Marlon to your stage.">
+		<BookingForm heading="Speaking inquiry" kind="speaking" />
+	</Section>
+</BaseLayout>

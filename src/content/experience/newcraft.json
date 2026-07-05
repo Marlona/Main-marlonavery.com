@@ -1,0 +1,30 @@
+{
+    "company": "NewCraft (Acquired)",
+    "role": "Software Engineer",
+    "level": "Software Engineer",
+    "location": "Atlanta, GA",
+    "startDate": "2019-02-01",
+    "endDate": "2019-12-31",
+    "description": "Built client-facing eCommerce and informatics applications in JavaScript, ReactJS, and Redux, with a focus on performance, code quality, and reducing technical debt.",
+    "achievements": [
+        "Developed 3+ client-facing eCommerce and informatics applications in JavaScript, ReactJS, and Redux — wireframed in Sketch and Adobe XD — saving the company ~$90K annually.",
+        "Optimized page load speed from 5,000ms to 25ms (99.5% improvement) by implementing more efficient data structures to store, sort, and process Bitcoin data queries (JavaScript, Node.js, Express, MySQL).",
+        "Built an interactive phone-carrier coverage map using Mapbox GL JS and React for a major telecom company.",
+        "Managed code quality with 20+ unit tests using Jest/Enzyme to reduce technical debt."
+    ],
+    "skills": [
+        "JavaScript",
+        "ReactJS",
+        "Redux",
+        "Node.js / Express",
+        "MySQL",
+        "Mapbox GL JS",
+        "Jest / Enzyme",
+        "Performance Optimization"
+    ],
+    "domainTags": [
+        "Frontend",
+        "Performance",
+        "Engineering"
+    ]
+}

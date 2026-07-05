@@ -1,0 +1,109 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Section from '../../components/Section.astro';
+import WorkshopCard from '../../components/WorkshopCard.astro';
+import EnrollmentWizard from '../../components/EnrollmentWizard.astro';
+import Stats from '../../components/Stats.astro';
+import Gallery from '../../components/Gallery.astro';
+
+import workshopFloor from '../../assets/photos/workshop-floor-facilitation.jpg';
+import whiteboard from '../../assets/photos/live-whiteboard-session.jpg';
+import breakout from '../../assets/photos/audience-breakout-collaboration.jpg';
+
+const workshops = (await getCollection('workshops')).sort((a, b) =>
+	a.data.title.localeCompare(b.data.title),
+);
+
+const wizardWorkshops = workshops.map((w) => ({
+	id: w.id,
+	title: w.data.title,
+	tagline: w.data.tagline,
+	level: w.data.level,
+	duration: w.data.duration,
+	href: `/workshops/${w.id}`,
+}));
+
+const stats = [
+	{ value: '100+', label: 'Workshops Delivered' },
+	{ value: '10,000+', label: 'Professionals Trained' },
+	{ value: '40%', label: 'Avg Productivity Lift' },
+	{ value: '10+', label: 'Industries Served' },
+];
+---
+
+<BaseLayout
+	title="Workshops"
+	description="Corporate AI workshops and enterprise AI training with Marlon Avery — from AI fundamentals to executive strategy. Hands-on sessions that create Aha! moments."
+>
+	<div class="bg-paper px-6 pt-36 pb-20 md:pt-44">
+		<div class="mx-auto max-w-7xl">
+			<p class="text-eyebrow reveal text-emerald-deep">Workshops</p>
+			<h1 class="text-display-lg reveal mt-6 max-w-4xl">
+				AI education that creates <span class="text-emerald-deep">“Aha!”</span> moments.
+			</h1>
+			<p class="reveal mt-8 max-w-2xl text-lg leading-relaxed text-slate">
+				These sessions go beyond theory to hands-on capability. Whether you’re a complete beginner or a
+				seasoned professional, every workshop meets you where you are — and leaves you with something you
+				can actually use.
+			</p>
+			<a
+				href="#enroll"
+				class="reveal mt-10 inline-block rounded-full bg-ink px-8 py-4 font-semibold text-paper transition-colors hover:bg-emerald-deep"
+			>
+				Find your workshop →
+			</a>
+		</div>
+	</div>
+
+	<Section tone="cream">
+		<Stats stats={stats} />
+	</Section>
+
+	<Section
+		eyebrow="The catalog"
+		title="Choose your starting point."
+		intro="Every workshop is available as a private engagement for your team — virtual, in-person, or hybrid — and tailored to your industry."
+	>
+		<div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+			{
+				workshops.map((w) => (
+					<WorkshopCard
+						href={`/workshops/${w.id}`}
+						title={w.data.title}
+						tagline={w.data.tagline}
+						level={w.data.level}
+						format={w.data.format}
+						duration={w.data.duration}
+						audience={w.data.audience}
+					/>
+				))
+			}
+		</div>
+	</Section>
+
+	<Section
+		tone="cream"
+		eyebrow="Inside the room"
+		title="What a session actually looks like."
+		intro="Real workshops. Real whiteboards. Real people having the moment where it clicks."
+	>
+		<Gallery
+			images={[
+				{ src: workshopFloor, alt: 'Marlon coaching a participant through an exercise at a laptop', span: true },
+				{ src: whiteboard, alt: 'Live whiteboard session mapping an AI workflow' },
+				{ src: breakout, alt: 'Participants collaborating during a breakout exercise' },
+			]}
+		/>
+	</Section>
+
+	<Section
+		tone="dark"
+		id="enroll"
+		eyebrow="Start here"
+		title="Find the right workshop in 60 seconds."
+		intro="Four quick questions. A recommendation built for you. No email required until you're ready."
+	>
+		<EnrollmentWizard workshops={wizardWorkshops} />
+	</Section>
+</BaseLayout>

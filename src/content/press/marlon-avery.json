@@ -1,0 +1,65 @@
+{
+	"bios": [
+		{
+			"label": "One-liner",
+			"wordCount": 22,
+			"content": "Applied AI executive, founder, and educator with 10+ years taking frontier AI from lab to market — JPMorgan Chase, VoicePath, AImpact."
+		},
+		{
+			"label": "Short Bio",
+			"wordCount": 96,
+			"content": "Marlon Avery is VP, Applied AI Lead at JPMorgan Chase and Founder & CEO of VoicePath, an AI agency specializing in HIPAA-compliant voice systems. With 10+ years in generative AI, he has shipped tools like the AI Receptionist integrated with Veradigm EHR — improving patient communication response times by 60%. As Head of AI at AImpact, he has been contracted by Microsoft to lead Azure OpenAI bootcamps and commissioned by Google and Dream Machine for the AI Library Project tour. He has trained 10,000+ professionals across 100+ workshops and granted 10,000+ Pledge to Equality scholarships."
+		},
+		{
+			"label": "Full Bio",
+			"wordCount": 191,
+			"content": "Marlon Avery is an Applied AI executive, engineer, founder, educator, and speaker who builds the future and then teaches everyone else how to build it too. He serves as VP, Applied AI Lead at JPMorgan Chase, where he moves generative and conversational AI from experiment to production inside one of the world's largest financial institutions. He is the Founder & CEO of VoicePath, an AI agency shipping HIPAA-compliant voice agents into healthcare, finance, insurance, and legal operations — including an AI Phone Agent integrated with Veradigm EHR that improved patient communication response times by 60% and cut administrative workload in half. As Head of AI & CEO of AImpact, Marlon has delivered 100+ workshops to more than 10,000 professionals, led Microsoft-contracted Azure OpenAI bootcamps, and headlined the Google + Dream Machine AI Library Project's five-city tour. He is the founder of NextSteps DevCon and the Pledge to Equality Scholarship Program, which has granted 10,000+ scholarships to widen who gets to build the future. Marlon co-hosts the AI With Friends podcast and studied Artificial Intelligence: Cloud and Edge Implementations at the University of Oxford. He is based in Washington, DC."
+		}
+	],
+	"photos": [
+		{
+			"label": "Headshot",
+			"thumbnail": "/press/marlon-avery-headshot.jpg",
+			"fullRes": "/press/marlon-avery-headshot.jpg",
+			"dimensions": "1333×2000"
+		},
+		{
+			"label": "Speaking",
+			"thumbnail": "/press/marlon-avery-speaking.jpg",
+			"fullRes": "/press/marlon-avery-speaking.jpg",
+			"dimensions": "2000×1333"
+		},
+		{
+			"label": "Action shot",
+			"thumbnail": "/press/marlon-avery-action.jpg",
+			"fullRes": "/press/marlon-avery-action.jpg",
+			"dimensions": "2000×1125"
+		}
+	],
+	"topics": [
+		{
+			"title": "Voice AI in Production",
+			"abstract": "What it actually takes to ship a voice agent customers trust — latency, grounding, escalation, and the operational patterns that separate demos from deployments.",
+			"duration": "30–45 min",
+			"audience": ["Founders", "Product Leaders", "AI Engineers"]
+		},
+		{
+			"title": "AI Without Fear: Building a Culture of Curiosity",
+			"abstract": "Lessons from training 10,000+ professionals across 100+ workshops — a framework for moving teams from fear to capability.",
+			"duration": "30–45 min",
+			"audience": ["Executives", "HR & L&D Leaders", "Team Managers"]
+		},
+		{
+			"title": "The Applied AI Executive",
+			"abstract": "A practical roadmap for AI strategy, adoption, and governance — beyond the buzzwords.",
+			"duration": "45–60 min",
+			"audience": ["C-Suite", "Boards", "Senior Leaders"]
+		},
+		{
+			"title": "Equity by Design",
+			"abstract": "How NextSteps DevCon and the Pledge to Equality Scholarship Program granted 10,000+ scholarships — a blueprint for technologists who want their work to widen access.",
+			"duration": "25–40 min",
+			"audience": ["DEI Leaders", "Conference Organizers", "Technologists"]
+		}
+	]
+}

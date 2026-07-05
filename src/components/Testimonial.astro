@@ -1,0 +1,25 @@
+---
+interface Props {
+	quote: string;
+	name: string;
+	title?: string;
+	org?: string;
+	tone?: 'light' | 'dark';
+}
+
+const { quote, name, title, org, tone = 'light' } = Astro.props;
+const attribution = [title, org].filter(Boolean).join(', ');
+---
+
+<figure
+	class:list={[
+		'reveal rounded-2xl p-8',
+		tone === 'dark' ? 'bg-graphite text-paper' : 'bg-cream text-ink',
+	]}
+>
+	<blockquote class="font-display text-xl leading-relaxed">“{quote}”</blockquote>
+	<figcaption class:list={['mt-6 text-sm', tone === 'dark' ? 'text-paper/70' : 'text-slate']}>
+		<strong class:list={[tone === 'dark' ? 'text-paper' : 'text-ink']}>{name}</strong>
+		{attribution && <span> — {attribution}</span>}
+	</figcaption>
+</figure>

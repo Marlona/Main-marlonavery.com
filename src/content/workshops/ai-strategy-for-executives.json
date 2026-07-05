@@ -1,0 +1,32 @@
+{
+	"title": "AI Strategy for Executives",
+	"tagline": "Lead the AI transformation — don't just survive it",
+	"description": "A working session for leadership teams who need more than a trends briefing. Built from patterns observed deploying AI inside regulated enterprises, this half-day gets your executive team to a shared vocabulary, an honest readiness assessment, and a 90-day roadmap you own by the time you leave the room.",
+	"level": "executive",
+	"format": "in-person",
+	"duration": "Half-day (3 hours)",
+	"audience": ["C-suite leaders", "VPs and Directors", "Board members", "Senior decision-makers"],
+	"objectives": [
+		"Establish a shared, hype-free vocabulary for AI decisions",
+		"Assess organizational AI readiness honestly",
+		"Leave with a 90-day roadmap the leadership team co-authored"
+	],
+	"outcomes": [
+		"Assess your organization's AI readiness across people, process, and infrastructure",
+		"Build a 90-day AI adoption roadmap your team can execute",
+		"Navigate responsible AI adoption with a practical ethics framework"
+	],
+	"deliverables": [
+		"AI readiness assessment scorecard",
+		"Co-authored 90-day adoption roadmap",
+		"Responsible AI governance checklist"
+	],
+	"curriculum": [
+		{ "module": "The real state of enterprise AI", "summary": "What is actually shipping inside large organizations — and what stalls." },
+		{ "module": "Readiness, honestly assessed", "summary": "A structured audit of your people, processes, data, and risk posture." },
+		{ "module": "The 90-day roadmap", "summary": "Working session: prioritize use cases by value and feasibility, assign ownership." },
+		{ "module": "Governance that enables", "summary": "Responsible AI patterns that accelerate adoption instead of blocking it." }
+	],
+	"industries": ["Financial Services", "Healthcare", "Technology", "Retail", "Manufacturing"],
+	"featured": true
+}

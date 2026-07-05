@@ -1,0 +1,28 @@
+{
+    "company": "Udacity",
+    "role": "Engineering Manager, Programs — Ed Tech",
+    "level": "Engineering Manager",
+    "location": "Mountain View, CA",
+    "startDate": "2019-08-01",
+    "endDate": "2020-08-31",
+    "description": "Led technical program management across five Nanodegree programs at Udacity, overseeing mentors and reviewers, user-testing course materials, and contributing curriculum feedback.",
+    "achievements": [
+        "Led technical program management for 5 Nanodegree programs, overseeing mentors and reviewers and feeding curriculum insights back to the content team.",
+        "Doubled student graduation rates by leading scalable techniques that delivered more personalized support compared to the control group.",
+        "Reviewed code and project submissions for 150+ students across the Full Stack, Front-End, and JavaScript Nanodegree programs.",
+        "Leveraged JIRA structure formulas to power dashboards and reports, encouraging data-driven decision making across the org.",
+        "Mentored students on technical skills and career growth alongside code review responsibilities."
+    ],
+    "skills": [
+        "Technical Program Management",
+        "Curriculum & Mentorship",
+        "Code Review",
+        "JIRA",
+        "Ed Tech",
+        "Full-Stack JavaScript"
+    ],
+    "domainTags": [
+        "Education",
+        "Engineering Leadership"
+    ]
+}

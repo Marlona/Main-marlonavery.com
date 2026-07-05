@@ -1,0 +1,28 @@
+{
+    "company": "NextSteps DevCon",
+    "role": "Founder — Engineering Conference",
+    "level": "Founder",
+    "location": "Remote",
+    "startDate": "2020-04-01",
+    "endDate": "2023-03-31",
+    "description": "Founded an AI and data science innovation conference and mentorship platform empowering aspiring developers through curated conversations with engineering leaders, mentorship, and direct learning opportunities.",
+    "achievements": [
+        "Curated conversations with engineering leaders from Netflix, Google, Microsoft, and more — sharing learnings and insights on engineering, AI, and data science topics.",
+        "Coached 20+ engineers on career paths, providing regular feedback, growth opportunities, and mentorship to foster professional development and a culture of continuous learning.",
+        "Created a recurring platform for emerging developers from underserved backgrounds to plug into the engineering community.",
+        "Paired the conference with the Pledge to Equality Scholarship Program, granting 10,000+ scholarships to underserved communities."
+    ],
+    "skills": [
+        "Conference Production",
+        "Mentorship",
+        "Curriculum Design",
+        "Community Building",
+        "DEI in Tech",
+        "Scholarship Program Design"
+    ],
+    "domainTags": [
+        "Education",
+        "Community",
+        "Equity"
+    ]
+}

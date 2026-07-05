@@ -1,0 +1,28 @@
+{
+    "company": "Team Treehouse",
+    "role": "Engineering Manager, Programs — Ed Tech",
+    "level": "Engineering Manager",
+    "location": "Remote",
+    "startDate": "2017-12-01",
+    "endDate": "2019-03-31",
+    "description": "Oversaw a 3-city software engineering apprenticeship program teaching JavaScript, React, and Node.js, and led e-learning programs spanning technical training and equity, diversity, and inclusion.",
+    "achievements": [
+        "Lifted apprentice success rate from 30% to 95% by restructuring and managing a program designed to convert apprentices into full-time engineers.",
+        "Built pathways into tech for under-represented technologists, helping companies focus their hiring pipelines.",
+        "Headed e-learning programs focused on technical training and equity, diversity, and inclusion for students and partner companies.",
+        "Oversaw all technical aspects of scaling the apprentice program, including managing 45+ apprentices."
+    ],
+    "skills": [
+        "Apprenticeship Program Design",
+        "Engineering Management",
+        "JavaScript / React / Node",
+        "DEI in Tech",
+        "Curriculum Design",
+        "Hiring Pipelines"
+    ],
+    "domainTags": [
+        "Education",
+        "Equity",
+        "Engineering Leadership"
+    ]
+}

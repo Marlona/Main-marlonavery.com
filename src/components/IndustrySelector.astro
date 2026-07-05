@@ -1,0 +1,109 @@
+---
+/**
+ * Accessible tabbed industry explorer. Selecting an industry reveals the
+ * workshops, talks, and projects relevant to that sector — all precomputed
+ * server-side from content collections, toggled client-side.
+ */
+interface IndustryLink {
+	title: string;
+	href: string;
+	meta?: string;
+}
+
+interface IndustryPanel {
+	industry: string;
+	workshops: IndustryLink[];
+	talks: IndustryLink[];
+	projects: IndustryLink[];
+}
+
+interface Props {
+	panels: IndustryPanel[];
+}
+
+const { panels } = Astro.props;
+const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+
+const groups: Array<{ key: keyof Omit<IndustryPanel, 'industry'>; label: string }> = [
+	{ key: 'workshops', label: 'Workshops' },
+	{ key: 'talks', label: 'Speaking topics' },
+	{ key: 'projects', label: 'Related work' },
+];
+---
+
+<div data-industry-selector>
+	<div role="tablist" aria-label="Industries" class="flex flex-wrap gap-2">
+		{
+			panels.map((panel, i) => (
+				<button
+					role="tab"
+					id={`industry-tab-${slug(panel.industry)}`}
+					aria-selected={i === 0 ? 'true' : 'false'}
+					aria-controls={`industry-panel-${slug(panel.industry)}`}
+					tabindex={i === 0 ? 0 : -1}
+					class="cursor-pointer rounded-full border border-ink/15 px-4 py-2 text-sm font-medium transition-colors aria-selected:border-emerald aria-selected:bg-emerald aria-selected:text-ink hover:border-emerald"
+				>
+					{panel.industry}
+				</button>
+			))
+		}
+	</div>
+
+	{
+		panels.map((panel, i) => (
+			<div
+				role="tabpanel"
+				id={`industry-panel-${slug(panel.industry)}`}
+				aria-labelledby={`industry-tab-${slug(panel.industry)}`}
+				hidden={i !== 0}
+				class="mt-10 grid gap-8 md:grid-cols-3"
+			>
+				{groups.map(({ key, label }) => (
+					<div>
+						<h3 class="text-eyebrow text-emerald-deep">{label}</h3>
+						<ul class="mt-4 space-y-3">
+							{panel[key].length === 0 && <li class="text-sm text-slate">Ask about a custom engagement →</li>}
+							{panel[key].map((item) => (
+								<li>
+									<a href={item.href} class="group block rounded-lg border border-ink/10 p-4 transition-colors hover:border-emerald/60">
+										<span class="font-medium group-hover:text-emerald-deep">{item.title}</span>
+										{item.meta && <span class="mt-1 block text-xs text-slate">{item.meta}</span>}
+									</a>
+								</li>
+							))}
+						</ul>
+					</div>
+				))}
+			</div>
+		))
+	}
+</div>
+
+<script>
+	for (const root of document.querySelectorAll('[data-industry-selector]')) {
+		const tabs = [...root.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
+		const panels = [...root.querySelectorAll<HTMLElement>('[role="tabpanel"]')];
+
+		const select = (index: number) => {
+			tabs.forEach((tab, i) => {
+				tab.setAttribute('aria-selected', String(i === index));
+				tab.tabIndex = i === index ? 0 : -1;
+			});
+			panels.forEach((panel, i) => {
+				panel.hidden = i !== index;
+			});
+		};
+
+		tabs.forEach((tab, i) => {
+			tab.addEventListener('click', () => select(i));
+			tab.addEventListener('keydown', (e) => {
+				const dir = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+				if (!dir) return;
+				e.preventDefault();
+				const next = (i + dir + tabs.length) % tabs.length;
+				select(next);
+				tabs[next].focus();
+			});
+		});
+	}
+</script>

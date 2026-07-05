@@ -1,0 +1,43 @@
+---
+interface Props {
+	href: string;
+	title: string;
+	tagline: string;
+	level: string;
+	format: string;
+	duration: string;
+	audience?: string[];
+}
+
+const { href, title, tagline, level, format, duration, audience = [] } = Astro.props;
+
+const levelStyles: Record<string, string> = {
+	beginner: 'bg-emerald/15 text-emerald-deep',
+	intermediate: 'bg-gold/20 text-ink',
+	advanced: 'bg-terracotta/20 text-ink',
+	executive: 'bg-ink text-paper',
+};
+---
+
+<a
+	href={href}
+	class="reveal group flex h-full flex-col rounded-2xl border border-ink/10 bg-paper p-8 transition-all duration-300 hover:-translate-y-1 hover:border-emerald/50 hover:shadow-xl"
+>
+	<div class="flex flex-wrap items-center gap-2">
+		<span class:list={['rounded-full px-3 py-1 text-xs font-semibold capitalize', levelStyles[level] ?? levelStyles.beginner]}>
+			{level}
+		</span>
+		<span class="rounded-full bg-cream px-3 py-1 text-xs font-medium capitalize text-slate">{format}</span>
+		<span class="rounded-full bg-cream px-3 py-1 text-xs font-medium text-slate">{duration}</span>
+	</div>
+	<h3 class="mt-5 font-display text-2xl font-semibold group-hover:text-emerald-deep">{title}</h3>
+	<p class="mt-2 leading-relaxed text-slate">{tagline}</p>
+	{
+		audience.length > 0 && (
+			<p class="mt-4 text-sm text-slate">
+				<span class="font-semibold text-ink">For:</span> {audience.join(' · ')}
+			</p>
+		)
+	}
+	<span class="mt-auto pt-6 text-sm font-semibold text-emerald-deep group-hover:underline">View curriculum →</span>
+</a>

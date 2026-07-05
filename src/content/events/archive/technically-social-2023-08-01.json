@@ -1,0 +1,14 @@
+{
+	"title": "Technically Social",
+	"date": "2023-08-01",
+	"type": "podcast",
+	"status": "past",
+	"description": "Unleashing the Power of ChatGPT",
+	"resources": [
+		{
+			"label": "Watch the recording",
+			"url": "https://www.youtube.com/watch?v=YH6KWpbfk8Q",
+			"kind": "video"
+		}
+	]
+}

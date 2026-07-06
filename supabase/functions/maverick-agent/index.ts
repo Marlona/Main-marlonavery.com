@@ -27,8 +27,8 @@ const OPENROUTER_API_KEY = Deno.env.get('OPENROUTER_API_KEY');
 
 const MODEL_PROFILES = {
 	fast: Deno.env.get('MODEL_FAST') ?? 'anthropic/claude-haiku-4.5',
-	reasoning: Deno.env.get('MODEL_REASONING') ?? 'anthropic/claude-sonnet-4.5',
-	writing: Deno.env.get('MODEL_WRITING') ?? 'anthropic/claude-sonnet-4.5',
+	reasoning: Deno.env.get('MODEL_REASONING') ?? 'anthropic/claude-sonnet-5',
+	writing: Deno.env.get('MODEL_WRITING') ?? 'anthropic/claude-sonnet-5',
 } as const;
 
 const ALLOWED_ORIGINS = new Set([

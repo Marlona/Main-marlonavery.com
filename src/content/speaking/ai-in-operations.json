@@ -1,0 +1,21 @@
+{
+	"title": "AI in Operations",
+	"abstract": "The flagship hour: how AI actually automates business operations — voice agents answering the phones, document intelligence clearing the backlog, assistants running the workflows your team dreads. Built from systems Marlon has shipped into production and delivered on stages from Earn Your Leisure to Microsoft's AI 404 Day, this talk leaves operators with an automation map for their own business.",
+	"tier": "signature",
+	"duration": "60 min",
+	"format": "keynote",
+	"audience": ["Founders", "Operators", "Executives", "Small Business Owners"],
+	"objectives": [
+		"Identify the operations in your business AI can automate today",
+		"Understand the anatomy of a production automation: voice, documents, workflows",
+		"Learn the adoption sequence that keeps teams in control"
+	],
+	"takeaways": [
+		"An automation opportunity map for your own operations",
+		"Real production examples — what worked, what broke, what it cost",
+		"A 90-day starting sequence for operational AI"
+	],
+	"industries": ["Financial Services", "Healthcare", "Retail", "Legal", "Technology"],
+	"featured": true,
+	"order": 0
+}

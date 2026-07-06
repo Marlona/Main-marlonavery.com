@@ -64,10 +64,39 @@
 	}
 }
 
+/* ---------------------------------------------------------------------------
+   Theme: light (default) / dark. The dark theme remaps the semantic surface
+   tokens site-wide. Blocks that must keep their cinematic dark styling in BOTH
+   themes (hero films, tone="dark" sections, footer) carry `.theme-fixed`,
+   which restores the original token values for that subtree.
+--------------------------------------------------------------------------- */
+[data-theme='dark'] {
+	--color-paper: #0e0e10;
+	--color-cream: #17171a;
+	--color-ink: #f5f3ef;
+	--color-slate: #a4a6ad;
+	--color-mist: #6e7076;
+	/* Deep emerald has too little contrast on dark surfaces — brighten accents */
+	--color-emerald-deep: #34d399;
+}
+
+[data-theme='dark'] .theme-fixed {
+	--color-paper: #faf8f4;
+	--color-cream: #f3f0e9;
+	--color-ink: #0a0a0b;
+	--color-slate: #6e7076;
+	--color-mist: #a8aab0;
+	--color-emerald-deep: #065f46;
+}
+
 @layer base {
 	html {
 		scroll-behavior: smooth;
 		-webkit-text-size-adjust: 100%;
+	}
+
+	body {
+		transition: background-color 0.35s ease;
 	}
 
 	body {

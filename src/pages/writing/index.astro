@@ -1,0 +1,72 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Section from '../../components/Section.astro';
+
+const posts = (await getCollection('blog', ({ data }) => !data.draft)).sort(
+	(a, b) => b.data.publishDate.valueOf() - a.data.publishDate.valueOf(),
+);
+
+const fmt = new Intl.DateTimeFormat('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' });
+const readingTime = (body: string | undefined) => Math.max(1, Math.round((body ?? '').split(/\s+/).length / 200));
+---
+
+<BaseLayout
+	title="Writing"
+	description="Essays and field notes from Marlon Avery on generative AI, voice, agents, and the future of work — written from what actually ships."
+>
+	<div class="bg-paper px-6 pt-36 pb-16 md:pt-44">
+		<div class="mx-auto max-w-7xl">
+			<p class="text-eyebrow reveal text-emerald-deep">Writing</p>
+			<h1 class="text-display-lg reveal mt-6 max-w-4xl">
+				Notes from the <span class="text-emerald-deep">build.</span>
+			</h1>
+			<p class="reveal mt-8 max-w-2xl text-lg leading-relaxed text-slate">
+				Long-form thinking on generative AI, voice, agents, and the future of work — written from
+				production systems, not press releases.
+			</p>
+		</div>
+	</div>
+
+	<Section pad="compact">
+		{
+			posts.length > 0 ? (
+				<ul class="divide-y divide-ink/10">
+					{posts.map((post) => (
+						<li class="reveal">
+							<a href={`/writing/${post.id}`} class="group grid gap-2 py-8 md:grid-cols-12 md:gap-8">
+								<div class="text-sm font-semibold text-slate md:col-span-2">
+									<time datetime={post.data.publishDate.toISOString().slice(0, 10)}>{fmt.format(post.data.publishDate)}</time>
+									<span class="mt-1 block font-normal">{readingTime(post.body)} min read</span>
+								</div>
+								<div class="md:col-span-10">
+									<h2 class="font-display text-2xl font-semibold group-hover:text-emerald-deep">{post.data.title}</h2>
+									<p class="mt-2 max-w-2xl leading-relaxed text-slate">{post.data.description}</p>
+									{post.data.tags.length > 0 && (
+										<ul class="mt-3 flex flex-wrap gap-2">
+											{post.data.tags.map((tag) => (
+												<li class="rounded-full bg-cream px-3 py-1 text-xs font-medium text-slate">{tag}</li>
+											))}
+										</ul>
+									)}
+								</div>
+							</a>
+						</li>
+					))}
+				</ul>
+			) : (
+				<p class="reveal text-lg text-slate">First essays are on the way.</p>
+			)
+		}
+	</Section>
+
+	<Section tone="dark" pad="compact" eyebrow="Prefer to listen?" title="AI With Friends.">
+		<p class="reveal max-w-2xl text-lg text-paper/75">
+			Weekly conversations on generative AI, agents, voice, and the future of work — with co-hosts
+			Adrian Green and Sekou Doumbouya.
+		</p>
+		<a href="/press#press-kit" class="reveal mt-6 inline-block font-semibold text-emerald-glow hover:underline">
+			Find the show →
+		</a>
+	</Section>
+</BaseLayout>

@@ -78,25 +78,25 @@ const intentCards = [
 	{
 		title: 'Book a Keynote',
 		text: 'Premium AI keynotes for conferences, summits, and executive events.',
-		href: '/speaking#booking-form',
+		href: '/book?intent=keynote',
 		cta: 'Book a keynote',
 	},
 	{
 		title: 'Book a Workshop',
 		text: 'Hands-on corporate AI training for your team — fundamentals to executive strategy.',
-		href: '/workshops#enroll',
+		href: '/book?intent=workshop',
 		cta: 'Book a workshop',
 	},
 	{
 		title: 'Learn AI',
 		text: 'Start where you are. A guided path from curiosity to capability.',
-		href: '/workshops#enroll',
+		href: '/book?intent=learn',
 		cta: 'Start learning',
 	},
 	{
 		title: 'Build an AI Curriculum',
 		text: 'Custom AI curricula for your organization, university, or program — designed and taught by a builder.',
-		href: '/contact',
+		href: '/book?intent=curriculum',
 		cta: 'Book a consult',
 	},
 ];
@@ -261,6 +261,7 @@ const credibilityStats = [
 						impact={project.data.impactSummary}
 						tech={project.data.primaryTech}
 						date={project.data.publishDate}
+						videoUrl={project.data.videoUrl}
 					/>
 				))
 			}
@@ -389,15 +390,15 @@ const credibilityStats = [
 	</Section>
 
 	<!-- FINAL CTA -->
-	<section class="bg-ink px-6 py-28 text-paper md:py-40">
+	<section class="theme-fixed bg-ink px-6 py-28 text-paper md:py-40">
 		<div class="mx-auto max-w-7xl">
 			<h2 class="text-display-lg reveal max-w-4xl">Let’s build what’s next.</h2>
 			<div class="reveal mt-10 flex flex-wrap gap-4">
-				<a href="/contact" class="rounded-full bg-emerald px-8 py-4 font-semibold text-ink transition-transform hover:scale-105">
+				<a href="/book?intent=keynote" class="rounded-full bg-emerald px-8 py-4 font-semibold text-ink transition-transform hover:scale-105">
 					Book Marlon to Speak
 				</a>
-				<a href="/workshops#enroll" class="rounded-full border border-paper/40 px-8 py-4 font-semibold text-paper transition-colors hover:border-emerald-glow hover:text-emerald-glow">
-					Start Your AI Journey
+				<a href="/projects" class="rounded-full border border-paper/40 px-8 py-4 font-semibold text-paper transition-colors hover:border-emerald-glow hover:text-emerald-glow">
+					Explore His Work
 				</a>
 			</div>
 		</div>

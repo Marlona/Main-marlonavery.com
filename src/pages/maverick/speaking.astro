@@ -1,0 +1,455 @@
+---
+import MaverickLayout from '../../layouts/MaverickLayout.astro';
+---
+
+<MaverickLayout title="Maverick — Speaking & Revenue" active="speaking">
+	<div class="mt-8 flex flex-wrap items-center justify-between gap-4">
+		<h1 class="text-display-sm">Speaking & revenue.</h1>
+		<button
+			type="button"
+			data-eng-new
+			class="cursor-pointer rounded-full bg-emerald px-6 py-2.5 text-sm font-bold text-ink transition-transform hover:scale-105"
+		>
+			+ New engagement
+		</button>
+	</div>
+
+	<!-- Pipeline -->
+	<h2 class="text-eyebrow mt-8 text-mist">Pipeline</h2>
+	<div class="mt-4 -mx-2 overflow-x-auto pb-3" tabindex="0" role="region" aria-label="Engagement pipeline by stage">
+		<div class="flex min-w-max gap-3 px-2" data-pipeline>
+			<p class="text-paper/55">Loading…</p>
+		</div>
+	</div>
+
+	<!-- Revenue dashboard -->
+	<h2 class="text-eyebrow mt-12 text-mist">Revenue</h2>
+	<dl class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+		{
+			[
+				{ id: 'booked', label: 'Booked (all)' },
+				{ id: 'collected', label: 'Collected' },
+				{ id: 'outstanding', label: 'Outstanding' },
+			].map((s) => (
+				<div class="rounded-2xl bg-graphite p-5">
+					<dt class="text-xs font-semibold tracking-wide text-paper/55 uppercase">{s.label}</dt>
+					<dd class="mt-1 font-display text-3xl font-semibold" data-rev-stat={s.id}>
+						—
+					</dd>
+				</div>
+			))
+		}
+	</dl>
+
+	<div class="mt-6 flex flex-wrap items-center justify-between gap-4">
+		<h3 class="font-display text-xl font-semibold">Line items</h3>
+		<button
+			type="button"
+			data-rev-new
+			class="cursor-pointer rounded-full border border-paper/25 px-5 py-2 text-sm font-bold hover:border-emerald-glow hover:text-emerald-glow"
+		>
+			+ Add revenue item
+		</button>
+	</div>
+	<div class="mt-4 overflow-x-auto rounded-2xl bg-graphite">
+		<table class="w-full min-w-[640px] text-left text-sm">
+			<thead>
+				<tr class="border-b border-paper/15 text-xs tracking-wide text-paper/55 uppercase">
+					<th scope="col" class="px-5 py-3 font-semibold">Source</th>
+					<th scope="col" class="px-5 py-3 font-semibold">Client</th>
+					<th scope="col" class="px-5 py-3 font-semibold">Amount</th>
+					<th scope="col" class="px-5 py-3 font-semibold">Status</th>
+					<th scope="col" class="px-5 py-3 font-semibold">Due</th>
+					<th scope="col" class="px-5 py-3"><span class="sr-only">Actions</span></th>
+				</tr>
+			</thead>
+			<tbody data-rev-list>
+				<tr><td colspan="6" class="px-5 py-4 text-paper/55">Loading…</td></tr>
+			</tbody>
+		</table>
+	</div>
+
+	<!-- Engagement dialog -->
+	<dialog data-eng-dialog class="m-auto w-[min(94vw,680px)] rounded-2xl border border-paper/20 bg-graphite p-0 text-paper backdrop:bg-ink/70">
+		<form method="dialog" data-eng-form class="p-7">
+			<h2 class="font-display text-2xl font-semibold" data-eng-dialog-title>New engagement</h2>
+			<div class="mt-6 grid gap-4 md:grid-cols-2">
+				<div class="md:col-span-2">
+					<label for="en-name" class="block text-sm font-semibold">Event name *</label>
+					<input id="en-name" name="event_name" type="text" required class="mt-1.5 w-full rounded-lg border border-paper/20 bg-ink px-3 py-2 text-sm text-paper focus:border-emerald" />
+				</div>
+				<div>
+					<label for="en-org" class="block text-sm font-semibold">Organization</label>
+					<input id="en-org" name="organization" type="text" class="mt-1.5 w-full rounded-lg border border-paper/20 bg-ink px-3 py-2 text-sm text-paper focus:border-emerald" />
+				</div>
+				<div>
+					<label for="en-date" class="block text-sm font-semibold">Event date</label>
+					<input id="en-date" name="event_date" type="date" class="mt-1.5 w-full rounded-lg border border-paper/20 bg-ink px-3 py-2 text-sm text-paper focus:border-emerald" />
+				</div>
+				<div>
+					<label for="en-contact" class="block text-sm font-semibold">Contact name</label>
+					<input id="en-contact" name="contact_name" type="text" class="mt-1.5 w-full rounded-lg border border-paper/20 bg-ink px-3 py-2 text-sm text-paper focus:border-emerald" />
+				</div>
+				<div>
+					<label for="en-email" class="block text-sm font-semibold">Contact email</label>
+					<input id="en-email" name="contact_email" type="email" class="mt-1.5 w-full rounded-lg border border-paper/20 bg-ink px-3 py-2 text-sm text-paper focus:border-emerald" />
+				</div>
+				<div>
+					<label for="en-location" class="block text-sm font-semibold">Location</label>
+					<input id="en-location" name="location" type="text" class="mt-1.5 w-full rounded-lg border border-paper/20 bg-ink px-3 py-2 text-sm text-paper focus:border-emerald" />
+				</div>
+				<div>
+					<label for="en-format" class="block text-sm font-semibold">Format</label>
+					<select id="en-format" name="format" class="mt-1.5 w-full rounded-lg border border-paper/20 bg-ink px-3 py-2 text-sm text-paper focus:border-emerald">
+						<option value="">—</option>
+						<option value="in_person">In person</option>
+						<option value="virtual">Virtual</option>
+					</select>
+				</div>
+				<div class="md:col-span-2">
+					<label for="en-topic" class="block text-sm font-semibold">Topic</label>
+					<input id="en-topic" name="topic" type="text" class="mt-1.5 w-full rounded-lg border border-paper/20 bg-ink px-3 py-2 text-sm text-paper focus:border-emerald" />
+				</div>
+				<div>
+					<label for="en-status" class="block text-sm font-semibold">Stage</label>
+					<select id="en-status" name="status" data-eng-stages class="mt-1.5 w-full rounded-lg border border-paper/20 bg-ink px-3 py-2 text-sm text-paper focus:border-emerald"></select>
+				</div>
+				<div>
+					<label for="en-fee" class="block text-sm font-semibold">Fee ($)</label>
+					<input id="en-fee" name="fee" type="number" min="0" step="100" class="mt-1.5 w-full rounded-lg border border-paper/20 bg-ink px-3 py-2 text-sm text-paper focus:border-emerald" />
+				</div>
+				<div>
+					<label for="en-deposit" class="block text-sm font-semibold">Deposit paid ($)</label>
+					<input id="en-deposit" name="deposit_paid" type="number" min="0" step="100" class="mt-1.5 w-full rounded-lg border border-paper/20 bg-ink px-3 py-2 text-sm text-paper focus:border-emerald" />
+				</div>
+				<div>
+					<label for="en-balance" class="block text-sm font-semibold">Balance due ($)</label>
+					<input id="en-balance" name="balance_due" type="number" min="0" step="100" class="mt-1.5 w-full rounded-lg border border-paper/20 bg-ink px-3 py-2 text-sm text-paper focus:border-emerald" />
+				</div>
+				<div class="md:col-span-2">
+					<label for="en-prep" class="block text-sm font-semibold">Prep status</label>
+					<input id="en-prep" name="prep_status" type="text" class="mt-1.5 w-full rounded-lg border border-paper/20 bg-ink px-3 py-2 text-sm text-paper focus:border-emerald" />
+				</div>
+				<fieldset class="flex flex-wrap gap-x-6 gap-y-2 md:col-span-2">
+					<legend class="mb-2 text-sm font-semibold">Flags</legend>
+					{
+						[
+							{ name: 'contract_signed', label: 'Contract signed' },
+							{ name: 'invoice_sent', label: 'Invoice sent' },
+							{ name: 'payment_received', label: 'Payment received' },
+							{ name: 'follow_up_needed', label: 'Follow-up needed' },
+						].map((flag) => (
+							<label class="flex items-center gap-2 text-sm">
+								<input type="checkbox" name={flag.name} class="h-4 w-4 accent-emerald" />
+								{flag.label}
+							</label>
+						))
+					}
+				</fieldset>
+				<div class="md:col-span-2">
+					<label for="en-notes" class="block text-sm font-semibold">Notes</label>
+					<textarea id="en-notes" name="notes" rows="2" class="mt-1.5 w-full rounded-lg border border-paper/20 bg-ink px-3 py-2 text-sm text-paper focus:border-emerald"></textarea>
+				</div>
+			</div>
+			<div class="mt-7 flex flex-wrap items-center gap-3">
+				<button type="submit" value="save" class="cursor-pointer rounded-full bg-emerald px-7 py-2.5 text-sm font-bold text-ink transition-transform hover:scale-105">Save</button>
+				<button type="submit" value="cancel" formnovalidate class="cursor-pointer rounded-full border border-paper/30 px-6 py-2.5 text-sm font-semibold hover:border-emerald-glow">Cancel</button>
+				<button type="button" data-eng-delete hidden class="ml-auto cursor-pointer rounded-full border border-terracotta/60 px-5 py-2.5 text-sm font-semibold text-terracotta hover:bg-terracotta hover:text-ink">Delete</button>
+			</div>
+		</form>
+	</dialog>
+
+	<!-- Revenue item dialog -->
+	<dialog data-rev-dialog class="m-auto w-[min(94vw,540px)] rounded-2xl border border-paper/20 bg-graphite p-0 text-paper backdrop:bg-ink/70">
+		<form method="dialog" data-rev-form class="p-7">
+			<h2 class="font-display text-2xl font-semibold">Add revenue item</h2>
+			<div class="mt-6 grid gap-4 md:grid-cols-2">
+				<div>
+					<label for="rv-source" class="block text-sm font-semibold">Source *</label>
+					<select id="rv-source" name="source" required class="mt-1.5 w-full rounded-lg border border-paper/20 bg-ink px-3 py-2 text-sm text-paper focus:border-emerald">
+						<option value="speaking">Speaking</option>
+						<option value="workshop">Workshop</option>
+						<option value="consulting">Consulting</option>
+						<option value="voicepath_retainer">VoicePath retainer</option>
+						<option value="implementation">Implementation</option>
+						<option value="partner">Partner</option>
+					</select>
+				</div>
+				<div>
+					<label for="rv-line" class="block text-sm font-semibold">Business line</label>
+					<select id="rv-line" name="business_line" class="mt-1.5 w-full rounded-lg border border-paper/20 bg-ink px-3 py-2 text-sm text-paper focus:border-emerald">
+						<option value="">—</option>
+						<option value="voicepath">VoicePath</option>
+						<option value="ai_impact">AImpact</option>
+						<option value="personal">Personal</option>
+					</select>
+				</div>
+				<div>
+					<label for="rv-client" class="block text-sm font-semibold">Client</label>
+					<input id="rv-client" name="client" type="text" class="mt-1.5 w-full rounded-lg border border-paper/20 bg-ink px-3 py-2 text-sm text-paper focus:border-emerald" />
+				</div>
+				<div>
+					<label for="rv-amount" class="block text-sm font-semibold">Amount ($) *</label>
+					<input id="rv-amount" name="amount" type="number" min="0" step="50" required class="mt-1.5 w-full rounded-lg border border-paper/20 bg-ink px-3 py-2 text-sm text-paper focus:border-emerald" />
+				</div>
+				<div>
+					<label for="rv-status" class="block text-sm font-semibold">Status</label>
+					<select id="rv-status" name="status" class="mt-1.5 w-full rounded-lg border border-paper/20 bg-ink px-3 py-2 text-sm text-paper focus:border-emerald">
+						<option value="expected">Expected</option>
+						<option value="invoiced">Invoiced</option>
+						<option value="paid">Paid</option>
+					</select>
+				</div>
+				<div>
+					<label for="rv-due" class="block text-sm font-semibold">Due date</label>
+					<input id="rv-due" name="due_date" type="date" class="mt-1.5 w-full rounded-lg border border-paper/20 bg-ink px-3 py-2 text-sm text-paper focus:border-emerald" />
+				</div>
+				<div class="md:col-span-2">
+					<label for="rv-engagement" class="block text-sm font-semibold">Linked engagement</label>
+					<select id="rv-engagement" name="engagement_id" data-rev-engagements class="mt-1.5 w-full rounded-lg border border-paper/20 bg-ink px-3 py-2 text-sm text-paper focus:border-emerald">
+						<option value="">—</option>
+					</select>
+				</div>
+			</div>
+			<div class="mt-7 flex gap-3">
+				<button type="submit" value="save" class="cursor-pointer rounded-full bg-emerald px-7 py-2.5 text-sm font-bold text-ink transition-transform hover:scale-105">Save</button>
+				<button type="submit" value="cancel" formnovalidate class="cursor-pointer rounded-full border border-paper/30 px-6 py-2.5 text-sm font-semibold hover:border-emerald-glow">Cancel</button>
+			</div>
+		</form>
+	</dialog>
+</MaverickLayout>
+
+<script>
+	import { initMaverick, esc, fmtMoney, fmtDate, label, ENGAGEMENT_STAGES } from '../../lib/maverick/client';
+	import type { Tables } from '../../lib/maverick/db-types';
+
+	type Engagement = Tables<'engagements'>;
+	type RevenueItem = Tables<'revenue_items'>;
+
+	const db = await initMaverick();
+
+	const pipelineEl = document.querySelector<HTMLElement>('[data-pipeline]')!;
+	const revListEl = document.querySelector<HTMLElement>('[data-rev-list]')!;
+	const engDialog = document.querySelector<HTMLDialogElement>('[data-eng-dialog]')!;
+	const engForm = document.querySelector<HTMLFormElement>('[data-eng-form]')!;
+	const engDeleteBtn = document.querySelector<HTMLButtonElement>('[data-eng-delete]')!;
+	const revDialog = document.querySelector<HTMLDialogElement>('[data-rev-dialog]')!;
+	const revForm = document.querySelector<HTMLFormElement>('[data-rev-form]')!;
+
+	// Populate the stage <select> from the canonical list
+	document.querySelector<HTMLSelectElement>('[data-eng-stages]')!.innerHTML = ENGAGEMENT_STAGES.map(
+		(s) => `<option value="${s}">${label(s)}</option>`,
+	).join('');
+
+	let engagements: Engagement[] = [];
+	let revenueItems: RevenueItem[] = [];
+	let editingEngId: string | null = null;
+
+	const load = async () => {
+		const [engRes, revRes] = await Promise.all([
+			db.from('engagements').select('*').order('event_date', { ascending: true, nullsFirst: false }),
+			db.from('revenue_items').select('*').order('created_at', { ascending: false }),
+		]);
+		engagements = engRes.data ?? [];
+		revenueItems = revRes.data ?? [];
+		renderPipeline();
+		renderRevenue();
+	};
+
+	// --- Pipeline ---
+	const renderPipeline = () => {
+		pipelineEl.innerHTML = ENGAGEMENT_STAGES.map((stage) => {
+			const cards = engagements.filter((e) => e.status === stage);
+			return `
+			<section class="w-60 shrink-0 rounded-2xl bg-graphite/70 p-3" aria-label="${esc(label(stage))} — ${cards.length}">
+				<h3 class="flex items-baseline justify-between px-1 text-xs font-bold tracking-wide text-paper/60 uppercase">
+					${esc(label(stage))} <span class="text-paper/40">${cards.length}</span>
+				</h3>
+				<div class="mt-2 space-y-2">
+					${cards
+						.map((e) => {
+							const flags = [
+								e.contract_signed ? '✓ contract' : null,
+								e.invoice_sent ? '✓ invoice' : null,
+								e.payment_received ? '✓ paid' : null,
+							].filter(Boolean);
+							const i = ENGAGEMENT_STAGES.indexOf(stage);
+							return `
+						<article class="rounded-xl bg-ink p-3 ${e.follow_up_needed ? 'border border-gold/50' : ''}">
+							<p class="text-sm leading-snug font-semibold">${esc(e.event_name)}</p>
+							<p class="mt-1 text-xs text-paper/55">${[e.organization, e.event_date ? fmtDate(e.event_date) : null].filter(Boolean).map(esc).join(' · ') || '&nbsp;'}</p>
+							${Number(e.fee) > 0 ? `<p class="mt-1 text-xs font-bold text-emerald-glow">${fmtMoney(Number(e.fee))}</p>` : ''}
+							${flags.length ? `<p class="mt-1 text-[11px] text-paper/50">${flags.join(' · ')}</p>` : ''}
+							${e.follow_up_needed ? '<p class="mt-1 text-[11px] font-bold text-gold">Follow up</p>' : ''}
+							<div class="mt-2 flex items-center gap-1.5">
+								<button type="button" data-stage-move="${esc(e.id)}:-1" ${i === 0 ? 'disabled' : ''} aria-label="Move ${esc(e.event_name)} back a stage" class="cursor-pointer rounded-full border border-paper/20 px-2 py-0.5 text-xs text-paper/70 hover:border-emerald-glow disabled:cursor-default disabled:opacity-30">←</button>
+								<button type="button" data-stage-move="${esc(e.id)}:1" ${i === ENGAGEMENT_STAGES.length - 1 ? 'disabled' : ''} aria-label="Advance ${esc(e.event_name)} a stage" class="cursor-pointer rounded-full border border-paper/20 px-2 py-0.5 text-xs text-paper/70 hover:border-emerald-glow disabled:cursor-default disabled:opacity-30">→</button>
+								<button type="button" data-eng-edit="${esc(e.id)}" class="ml-auto cursor-pointer rounded-full border border-paper/20 px-2.5 py-0.5 text-[11px] font-bold text-paper/70 hover:border-emerald-glow hover:text-emerald-glow">Edit</button>
+							</div>
+						</article>`;
+						})
+						.join('')}
+				</div>
+			</section>`;
+		}).join('');
+
+		pipelineEl.querySelectorAll<HTMLButtonElement>('[data-stage-move]').forEach((btn) => {
+			btn.addEventListener('click', async () => {
+				const [id, dir] = btn.dataset.stageMove!.split(':');
+				const eng = engagements.find((e) => e.id === id);
+				if (!eng) return;
+				const next = ENGAGEMENT_STAGES[ENGAGEMENT_STAGES.indexOf(eng.status as (typeof ENGAGEMENT_STAGES)[number]) + Number(dir)];
+				if (!next) return;
+				await db.from('engagements').update({ status: next }).eq('id', id);
+				load();
+			});
+		});
+		pipelineEl.querySelectorAll<HTMLButtonElement>('[data-eng-edit]').forEach((btn) => {
+			btn.addEventListener('click', () => openEngDialog(engagements.find((e) => e.id === btn.dataset.engEdit) ?? null));
+		});
+	};
+
+	// --- Revenue ---
+	const revStat = (id: string) => document.querySelector<HTMLElement>(`[data-rev-stat="${id}"]`)!;
+
+	const renderRevenue = () => {
+		const sum = (items: RevenueItem[]) => items.reduce((total, r) => total + Number(r.amount), 0);
+		revStat('booked').textContent = fmtMoney(sum(revenueItems));
+		revStat('collected').textContent = fmtMoney(sum(revenueItems.filter((r) => r.status === 'paid')));
+		revStat('outstanding').textContent = fmtMoney(sum(revenueItems.filter((r) => r.status !== 'paid')));
+
+		revListEl.innerHTML = revenueItems.length
+			? revenueItems
+					.map(
+						(r) => `
+			<tr class="border-b border-paper/8 last:border-0">
+				<td class="px-5 py-3">${esc(label(r.source))}</td>
+				<td class="px-5 py-3 text-paper/75">${esc(r.client ?? '—')}</td>
+				<td class="px-5 py-3 font-semibold">${fmtMoney(Number(r.amount))}</td>
+				<td class="px-5 py-3">
+					<select data-rev-status="${esc(r.id)}" aria-label="Status of ${esc(r.client ?? r.source)} item" class="rounded-lg border border-paper/20 bg-ink px-2 py-1 text-xs font-semibold text-paper focus:border-emerald">
+						${['expected', 'invoiced', 'paid'].map((s) => `<option value="${s}" ${r.status === s ? 'selected' : ''}>${label(s)}</option>`).join('')}
+					</select>
+				</td>
+				<td class="px-5 py-3 text-paper/60">${fmtDate(r.due_date)}</td>
+				<td class="px-5 py-3 text-right">
+					<button type="button" data-rev-delete="${esc(r.id)}" aria-label="Delete revenue item" class="cursor-pointer px-1 text-paper/40 hover:text-terracotta">×</button>
+				</td>
+			</tr>`,
+					)
+					.join('')
+			: '<tr><td colspan="6" class="px-5 py-4 text-paper/55">No revenue items yet — add speaking fees, retainers, and implementations as they land.</td></tr>';
+
+		revListEl.querySelectorAll<HTMLSelectElement>('[data-rev-status]').forEach((sel) => {
+			sel.addEventListener('change', async () => {
+				await db
+					.from('revenue_items')
+					.update({ status: sel.value, paid_date: sel.value === 'paid' ? new Date().toISOString().slice(0, 10) : null })
+					.eq('id', sel.dataset.revStatus!);
+				load();
+			});
+		});
+		revListEl.querySelectorAll<HTMLButtonElement>('[data-rev-delete]').forEach((btn) => {
+			btn.addEventListener('click', async () => {
+				if (!confirm('Delete this revenue item?')) return;
+				await db.from('revenue_items').delete().eq('id', btn.dataset.revDelete!);
+				load();
+			});
+		});
+	};
+
+	// --- Engagement dialog ---
+	const engField = (name: string) => engForm.elements.namedItem(name) as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
+	const engFlag = (name: string) => engForm.elements.namedItem(name) as HTMLInputElement;
+
+	const openEngDialog = (eng: Engagement | null) => {
+		editingEngId = eng?.id ?? null;
+		document.querySelector('[data-eng-dialog-title]')!.textContent = eng ? 'Edit engagement' : 'New engagement';
+		engDeleteBtn.hidden = !eng;
+		engForm.reset();
+		if (eng) {
+			engField('event_name').value = eng.event_name;
+			engField('organization').value = eng.organization ?? '';
+			engField('event_date').value = eng.event_date ?? '';
+			engField('contact_name').value = eng.contact_name ?? '';
+			engField('contact_email').value = eng.contact_email ?? '';
+			engField('location').value = eng.location ?? '';
+			engField('format').value = eng.format ?? '';
+			engField('topic').value = eng.topic ?? '';
+			engField('status').value = eng.status;
+			engField('fee').value = eng.fee != null ? String(eng.fee) : '';
+			engField('deposit_paid').value = eng.deposit_paid != null ? String(eng.deposit_paid) : '';
+			engField('balance_due').value = eng.balance_due != null ? String(eng.balance_due) : '';
+			engField('prep_status').value = eng.prep_status ?? '';
+			engField('notes').value = eng.notes ?? '';
+			engFlag('contract_signed').checked = !!eng.contract_signed;
+			engFlag('invoice_sent').checked = !!eng.invoice_sent;
+			engFlag('payment_received').checked = !!eng.payment_received;
+			engFlag('follow_up_needed').checked = !!eng.follow_up_needed;
+		}
+		engDialog.showModal();
+	};
+
+	document.querySelector('[data-eng-new]')?.addEventListener('click', () => openEngDialog(null));
+
+	engForm.addEventListener('submit', async (e) => {
+		if ((e.submitter as HTMLButtonElement | null)?.value !== 'save') return;
+		const payload = {
+			event_name: engField('event_name').value.trim(),
+			organization: engField('organization').value.trim() || null,
+			event_date: engField('event_date').value || null,
+			contact_name: engField('contact_name').value.trim() || null,
+			contact_email: engField('contact_email').value.trim() || null,
+			location: engField('location').value.trim() || null,
+			format: engField('format').value || null,
+			topic: engField('topic').value.trim() || null,
+			status: engField('status').value,
+			fee: engField('fee').value ? Number(engField('fee').value) : 0,
+			deposit_paid: engField('deposit_paid').value ? Number(engField('deposit_paid').value) : 0,
+			balance_due: engField('balance_due').value ? Number(engField('balance_due').value) : 0,
+			prep_status: engField('prep_status').value.trim() || null,
+			notes: engField('notes').value.trim() || null,
+			contract_signed: engFlag('contract_signed').checked,
+			invoice_sent: engFlag('invoice_sent').checked,
+			payment_received: engFlag('payment_received').checked,
+			follow_up_needed: engFlag('follow_up_needed').checked,
+		};
+		if (editingEngId) await db.from('engagements').update(payload).eq('id', editingEngId);
+		else await db.from('engagements').insert(payload);
+		load();
+	});
+
+	engDeleteBtn.addEventListener('click', async () => {
+		if (!editingEngId || !confirm('Delete this engagement?')) return;
+		await db.from('engagements').delete().eq('id', editingEngId);
+		engDialog.close();
+		load();
+	});
+
+	// --- Revenue item dialog ---
+	document.querySelector('[data-rev-new]')?.addEventListener('click', () => {
+		revForm.reset();
+		document.querySelector<HTMLSelectElement>('[data-rev-engagements]')!.innerHTML =
+			'<option value="">—</option>' +
+			engagements.map((e) => `<option value="${esc(e.id)}">${esc(e.event_name)}</option>`).join('');
+		revDialog.showModal();
+	});
+
+	revForm.addEventListener('submit', async (e) => {
+		if ((e.submitter as HTMLButtonElement | null)?.value !== 'save') return;
+		const revField = (name: string) => (revForm.elements.namedItem(name) as HTMLInputElement | HTMLSelectElement).value;
+		await db.from('revenue_items').insert({
+			source: revField('source'),
+			business_line: (revField('business_line') || null) as RevenueItem['business_line'],
+			client: revField('client').trim() || null,
+			amount: Number(revField('amount')),
+			status: revField('status'),
+			due_date: revField('due_date') || null,
+			paid_date: revField('status') === 'paid' ? new Date().toISOString().slice(0, 10) : null,
+			engagement_id: revField('engagement_id') || null,
+		});
+		load();
+	});
+
+	load();
+</script>

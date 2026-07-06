@@ -1,0 +1,69 @@
+---
+import MaverickLayout from '../../layouts/MaverickLayout.astro';
+---
+
+<MaverickLayout title="Maverick — Inquiries" active="inquiries">
+	<h1 class="text-display-md mt-8">Inquiries.</h1>
+	<p class="mt-2 text-paper/60" data-mav-inquiry-count>Loading…</p>
+	<div class="mt-8 space-y-4" data-mav-inquiries></div>
+</MaverickLayout>
+
+<script>
+	import { initMaverick, esc } from '../../lib/maverick/client';
+
+	const db = await initMaverick();
+
+	const loadInquiries = async () => {
+		const list = document.querySelector<HTMLElement>('[data-mav-inquiries]')!;
+		const count = document.querySelector<HTMLElement>('[data-mav-inquiry-count]')!;
+		const { data, error } = await db
+			.from('inquiries')
+			.select('*')
+			.order('created_at', { ascending: false })
+			.limit(100);
+
+		if (error) {
+			count.textContent = `Could not load inquiries: ${error.message}`;
+			return;
+		}
+		const fresh = data.filter((i) => i.status === 'new').length;
+		count.textContent = data.length
+			? `${data.length} total · ${fresh} new`
+			: 'No inquiries yet — they land here the moment someone hits send.';
+
+		list.innerHTML = data
+			.map(
+				(i) => `
+			<details class="rounded-2xl bg-graphite p-6 ${i.status === 'new' ? 'border border-emerald/50' : ''}">
+				<summary class="flex cursor-pointer list-none flex-wrap items-baseline gap-x-4 gap-y-1 [&::-webkit-details-marker]:hidden">
+					<span class="text-xs font-bold tracking-wide text-emerald-glow uppercase">${esc(i.intent)}</span>
+					<span class="font-semibold">${esc(i.name ?? i.email)}</span>
+					<span class="text-sm text-paper/50">${esc(i.organization ?? '')}</span>
+					<span class="ml-auto text-xs text-paper/50">${new Date(i.created_at).toLocaleString()}</span>
+					${i.status === 'new' ? '<span class="rounded-full bg-emerald px-2 py-0.5 text-[10px] font-bold text-ink uppercase">new</span>' : ''}
+				</summary>
+				<dl class="mt-4 space-y-2 text-sm">
+					<div><dt class="inline font-semibold">Email:</dt> <dd class="inline text-paper/80"><a class="text-emerald-glow hover:underline" href="mailto:${esc(i.email)}">${esc(i.email)}</a></dd></div>
+					${Object.entries((i.answers as Record<string, unknown>) ?? {})
+						.map(([k, v]) => `<div><dt class="inline font-semibold">${esc(k)}:</dt> <dd class="inline text-paper/80">${esc(v)}</dd></div>`)
+						.join('')}
+				</dl>
+				${
+					i.status === 'new'
+						? `<button data-mark-read="${esc(i.id)}" class="mt-4 cursor-pointer rounded-full border border-paper/30 px-4 py-1.5 text-xs font-bold hover:border-emerald-glow hover:text-emerald-glow">Mark as read</button>`
+						: ''
+				}
+			</details>`,
+			)
+			.join('');
+
+		list.querySelectorAll<HTMLButtonElement>('[data-mark-read]').forEach((btn) => {
+			btn.addEventListener('click', async () => {
+				await db.from('inquiries').update({ status: 'read' }).eq('id', btn.dataset.markRead!);
+				loadInquiries();
+			});
+		});
+	};
+
+	loadInquiries();
+</script>

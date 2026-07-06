@@ -1,0 +1,107 @@
+---
+import BaseLayout from './BaseLayout.astro';
+
+/**
+ * Shell for every Maverick Command Center page: noindex, the always-dark
+ * studio surface, the Supabase login gate, and section navigation. Page
+ * scripts call initMaverick() from src/lib/maverick/client.ts — it wires the
+ * gate markup below and resolves once Marlon is signed in.
+ */
+interface Props {
+	title: string;
+	active: 'home' | 'projects' | 'speaking' | 'growth' | 'review' | 'inquiries' | 'write';
+}
+
+const { title, active } = Astro.props;
+
+const NAV = [
+	{ id: 'home', label: 'Home', href: '/maverick' },
+	{ id: 'projects', label: 'Projects', href: '/maverick/projects' },
+	{ id: 'speaking', label: 'Speaking & Revenue', href: '/maverick/speaking' },
+	{ id: 'growth', label: 'Growth', href: '/maverick/growth' },
+	{ id: 'review', label: 'Review', href: '/maverick/review' },
+	{ id: 'inquiries', label: 'Inquiries', href: '/maverick/inquiries' },
+	{ id: 'write', label: 'Write', href: '/maverick/write' },
+] as const;
+---
+
+<BaseLayout title={title} description="Marlon's private studio.">
+	<Fragment slot="head">
+		<meta name="robots" content="noindex, nofollow" />
+	</Fragment>
+
+	<div class="theme-fixed min-h-screen bg-ink px-6 pt-32 pb-24 text-paper md:pt-40">
+		<div class="mx-auto max-w-6xl">
+			<!-- Login gate -->
+			<div data-mav-gate hidden>
+				<p class="text-eyebrow text-emerald-glow">Maverick</p>
+				<h1 class="text-display-md mt-5">Who goes there?</h1>
+				<p class="mt-4 max-w-md text-paper/70">
+					This studio is for MA. Everyone else — the good stuff is on the
+					<a href="/writing" class="text-emerald-glow hover:underline">writing page</a>.
+				</p>
+				<form data-mav-login class="mt-8 max-w-md space-y-4">
+					<div>
+						<label for="mav-email" class="block text-sm font-semibold">Email</label>
+						<input
+							id="mav-email"
+							type="email"
+							required
+							autocomplete="username"
+							class="mt-2 w-full rounded-lg border border-paper/25 bg-graphite px-4 py-3 text-paper focus:border-emerald"
+						/>
+					</div>
+					<div>
+						<label for="mav-pass" class="block text-sm font-semibold">Password</label>
+						<input
+							id="mav-pass"
+							type="password"
+							required
+							autocomplete="current-password"
+							class="mt-2 w-full rounded-lg border border-paper/25 bg-graphite px-4 py-3 text-paper focus:border-emerald"
+						/>
+					</div>
+					<button type="submit" class="cursor-pointer rounded-full bg-emerald px-8 py-3.5 font-bold text-ink transition-transform hover:scale-105">
+						Sign in
+					</button>
+					<p data-mav-error hidden class="text-sm text-terracotta" role="alert">Sign-in failed. Check your credentials.</p>
+				</form>
+			</div>
+
+			<!-- Studio -->
+			<div data-mav-studio hidden>
+				<div class="flex flex-wrap items-center justify-between gap-4">
+					<p class="text-eyebrow text-emerald-glow">Maverick Command Center</p>
+					<button
+						type="button"
+						data-mav-signout
+						class="cursor-pointer rounded-full border border-paper/30 px-5 py-2 text-sm font-semibold hover:border-emerald-glow hover:text-emerald-glow"
+					>
+						Sign out
+					</button>
+				</div>
+
+				<nav aria-label="Command center sections" class="mt-6 flex flex-wrap gap-2 border-b border-paper/15 pb-5">
+					{
+						NAV.map((item) => (
+							<a
+								href={item.href}
+								aria-current={item.id === active ? 'page' : undefined}
+								class:list={[
+									'rounded-full px-4 py-2 text-sm font-semibold transition-colors',
+									item.id === active
+										? 'bg-emerald text-ink'
+										: 'border border-paper/20 text-paper/75 hover:border-emerald-glow hover:text-emerald-glow',
+								]}
+							>
+								{item.label}
+							</a>
+						))
+					}
+				</nav>
+
+				<slot />
+			</div>
+		</div>
+	</div>
+</BaseLayout>

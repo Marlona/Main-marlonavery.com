@@ -1,0 +1,69 @@
+---
+import { getCollection, render, type CollectionEntry } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+export async function getStaticPaths() {
+	const posts = await getCollection('blog', ({ data }) => !data.draft);
+	return posts.map((post) => ({
+		params: { id: post.id },
+		props: { post },
+	}));
+}
+
+interface Props {
+	post: CollectionEntry<'blog'>;
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+
+const fmt = new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+const readingTime = Math.max(1, Math.round((post.body ?? '').split(/\s+/).length / 200));
+---
+
+<BaseLayout title={post.data.title} description={post.data.description}>
+	<article class="bg-paper px-6 pt-36 pb-24 md:pt-44 md:pb-32">
+		<div class="mx-auto max-w-3xl">
+			<header>
+				<p class="text-eyebrow reveal text-emerald-deep">
+					<a href="/writing" class="hover:underline">Writing</a>
+				</p>
+				<h1 class="text-display-md reveal mt-5">{post.data.title}</h1>
+				<p class="reveal mt-5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate">
+					<span class="font-semibold text-ink">Marlon Avery</span>
+					<span aria-hidden="true">·</span>
+					<time datetime={post.data.publishDate.toISOString().slice(0, 10)}>{fmt.format(post.data.publishDate)}</time>
+					<span aria-hidden="true">·</span>
+					<span>{readingTime} min read</span>
+				</p>
+				{
+					post.data.tags.length > 0 && (
+						<ul class="reveal mt-4 flex flex-wrap gap-2">
+							{post.data.tags.map((tag) => (
+								<li class="rounded-full bg-cream px-3 py-1 text-xs font-medium text-slate">{tag}</li>
+							))}
+						</ul>
+					)
+				}
+			</header>
+
+			<div
+				class="prose prose-lg mt-12 max-w-none prose-headings:font-display prose-a:text-emerald-deep prose-blockquote:border-emerald prose-p:text-ink/85 prose-headings:text-ink prose-strong:text-ink prose-li:text-ink/85"
+			>
+				<Content />
+			</div>
+
+			<footer class="mt-16 border-t border-ink/10 pt-8">
+				<p class="font-display text-xl font-semibold">MA</p>
+				<div class="mt-6 flex flex-wrap gap-4">
+					<a href="/writing" class="rounded-full border border-ink/25 px-6 py-3 text-sm font-semibold transition-colors hover:border-emerald-deep hover:text-emerald-deep">
+						← More writing
+					</a>
+					<a href="/book" class="rounded-full bg-ink px-6 py-3 text-sm font-semibold text-paper transition-colors hover:bg-emerald-deep">
+						Work with Marlon →
+					</a>
+				</div>
+			</footer>
+		</div>
+	</article>
+</BaseLayout>

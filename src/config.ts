@@ -35,6 +35,7 @@ export const NAV_LINKS = [
 	{ href: '/speaking', label: 'Speaking' },
 	{ href: '/workshops', label: 'Workshops' },
 	{ href: '/events', label: 'Events' },
+	{ href: '/writing', label: 'Writing' },
 	{ href: '/contact', label: 'Contact' },
 ] as const;
 
@@ -45,6 +46,7 @@ export const FOOTER_LINKS = [
 	{ href: '/press', label: 'Press Kit' },
 	{ href: '/workshops', label: 'Workshops' },
 	{ href: '/events', label: 'Events' },
+	{ href: '/writing', label: 'Writing' },
 	{ href: '/contact', label: 'Contact' },
 ] as const;
 

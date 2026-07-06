@@ -53,8 +53,8 @@ const pressPhotos = [
 								Copy
 							</button>
 						</div>
-						<p class="mt-4 text-sm leading-relaxed text-ink/85">{bio.content}</p>
-						<p class="mt-auto pt-4 text-xs text-slate">{bio.wordCount} words</p>
+						<div class="mt-4 h-56 overflow-y-auto pr-2 text-sm leading-relaxed text-ink/85">{bio.content}</div>
+						<p class="pt-4 text-xs text-slate">{bio.wordCount} words</p>
 					</div>
 				))
 			}
@@ -108,7 +108,7 @@ const pressPhotos = [
 		</a>
 
 		<!-- Podcast -->
-		<div class="reveal mt-16 rounded-3xl bg-ink p-8 text-paper md:p-12">
+		<div class="theme-fixed reveal mt-16 rounded-3xl bg-ink p-8 text-paper md:p-12">
 			<p class="text-eyebrow text-emerald-glow">The podcast</p>
 			<h2 class="mt-3 font-display text-3xl font-semibold">{PODCAST.name}</h2>
 			<p class="mt-3 max-w-2xl leading-relaxed text-paper/75">{PODCAST.tagline}</p>
@@ -145,7 +145,7 @@ const pressPhotos = [
 				Get in touch with the details about your conference, audience, and the moment you're planning.
 			</p>
 			<div class="mt-8 flex flex-wrap justify-center gap-4">
-				<a href="/speaking#booking-form" class="rounded-full bg-ink px-8 py-4 font-semibold text-paper transition-colors hover:bg-emerald-deep">
+				<a href="/book?intent=keynote" class="rounded-full bg-ink px-8 py-4 font-semibold text-paper transition-colors hover:bg-emerald-deep">
 					Speaker inquiry →
 				</a>
 				<a

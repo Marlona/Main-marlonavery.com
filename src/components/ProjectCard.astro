@@ -6,10 +6,11 @@ interface Props {
 	impact?: string;
 	tech?: string[];
 	date?: Date;
+	videoUrl?: string;
 	tone?: 'light' | 'dark';
 }
 
-const { href, title, description, impact, tech = [], date, tone = 'dark' } = Astro.props;
+const { href, title, description, impact, tech = [], date, videoUrl, tone = 'dark' } = Astro.props;
 const dateLabel = date
 	? new Intl.DateTimeFormat('en-US', { month: 'short', year: 'numeric' }).format(date)
 	: undefined;
@@ -43,7 +44,7 @@ const dateLabel = date
 			</ul>
 		)
 	}
-	<div class="mt-auto pt-8">
+	<div class="mt-auto flex flex-wrap gap-3 pt-8">
 		<a
 			href={href}
 			class:list={[
@@ -53,6 +54,22 @@ const dateLabel = date
 		>
 			Case study →<span class="sr-only"> for {title}</span>
 		</a>
+		{
+			videoUrl && (
+				<a
+					href={videoUrl}
+					rel="noopener"
+					class:list={[
+						'relative z-10 inline-block rounded-full border px-5 py-2.5 text-sm font-bold transition-colors',
+						tone === 'dark'
+							? 'border-paper/30 text-paper hover:border-emerald-glow hover:text-emerald-glow'
+							: 'border-ink/25 text-ink hover:border-emerald-deep hover:text-emerald-deep',
+					]}
+				>
+					Watch video ▸<span class="sr-only"> about {title}</span>
+				</a>
+			)
+		}
 	</div>
 	<a href={href} class="absolute inset-0" tabindex="-1" aria-hidden="true"></a>
 </article>

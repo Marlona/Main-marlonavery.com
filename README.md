@@ -25,9 +25,10 @@ npm run build      # production build → dist/
 
 ## Deployment flow
 
-- `main` deploys production via `.github/workflows/deploy.yml`.
-- `staging` deploys preview builds via `.github/workflows/deploy-staging.yml`.
-- Feature branches should open PRs into `staging`, then promote `staging` into `main`.
+- `main` deploys production (marlonavery.com) via `.github/workflows/deploy.yml`.
+- PRs and pushes to `staging` run CI (type check + build) via `.github/workflows/deploy-staging.yml` — no Pages deploy from this repo except `main`.
+- The staging site (staging.marlonavery.com) is served by the separate `Main-marlonavery-staging` repository. Promote staging content to it with: `git push staging-origin staging:main`.
+- Feature branches open PRs into `staging`, then promote `staging` into `main`.
 
 ## Domain cutover (Webflow -> GitHub Pages)
 

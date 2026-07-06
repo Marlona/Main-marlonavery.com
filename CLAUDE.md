@@ -51,6 +51,32 @@ Astro 5 + Tailwind CSS v4 + TypeScript (strict). Static output, deployed to GitH
 - Accessibility is non-negotiable: semantic HTML, keyboard-operable interactive components,
   focus-visible states, WCAG AA contrast.
 
+## The "let's write" pathway
+
+When Marlon says **"let's write"** (optionally pasting a Maverick brief from `/maverick`):
+
+1. Read ALL files in `.claude/rules/` — `voice-reference.md` is mandatory; pick the matching style
+   guide (`writing-blog-posts.md`, `writing-case-studies.md`, `writing-project-descriptions.md`).
+2. Draft into the right collection (`src/content/blog/` for posts) with correct frontmatter,
+   `draft: true` until Marlon approves.
+3. The UI is already built: `/writing` lists non-draft posts; `/writing/[id]` renders them.
+   Verify the rendered post in the preview before hand-off.
+4. Marlon reviews → flip `draft: false` → ship through the branch flow (feature → staging → main).
+
+## Theming
+
+Light/dark toggle lives in the Nav; state on `<html data-theme>`, persisted in localStorage.
+Dark theme remaps the semantic tokens (paper/cream/ink/slate/mist) in `global.css`. Surfaces that
+must stay cinematic-dark in BOTH themes carry the `theme-fixed` class (hero films, `tone="dark"`
+sections, footer, page heroes). Any new always-dark block needs `theme-fixed`.
+
+## Booking flows
+
+All booking/contact CTAs route to `/book` (deep-linkable via `?intent=keynote|workshop|podcast|
+curriculum|learn|advisory|other`). Flows are data-driven in `src/data/bookingFlows.ts` — add a new
+intent there and it appears automatically. Submissions compose structured email until the
+Cloudflare Worker + D1 backend lands.
+
 ## Content source
 
 `/Users/marlonavery/Main-Marlon-Site/Marlon-Avery-2026` (Next.js 16) is the read-only content

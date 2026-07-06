@@ -3,131 +3,227 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import { SITE_CONFIG } from '../config';
 
 /**
- * Maverick — Marlon's private writing studio.
+ * Maverick — Marlon's private studio.
  *
- * Speak (or type) a writing idea; Maverick structures it into a writing brief
- * ready for the Claude Code "let's write" pathway (see CLAUDE.md), which
- * drafts the post against `.claude/rules/`.
+ * Real authentication via Supabase (email + password; signups disabled, so
+ * hi@marlonavery.com is the only account). Row Level Security means inquiry
+ * data is unreadable without this session — the login isn't decoration.
  *
- * NOTE: this page is client-side only. The passphrase gate is a courtesy
- * screen, NOT real security — nothing sensitive is stored here. Real auth
- * and saved drafts arrive with the Cloudflare Worker backend.
+ * Inside: the inquiries dashboard (stored by the submit-inquiry edge
+ * function) and the voice-driven writing brief studio for the
+ * Claude Code "let's write" pathway (see CLAUDE.md).
  */
 ---
 
-<BaseLayout title="Maverick" description="Marlon's private writing studio.">
+<BaseLayout title="Maverick" description="Marlon's private studio.">
 	<Fragment slot="head">
 		<meta name="robots" content="noindex, nofollow" />
 	</Fragment>
 
 	<div class="theme-fixed min-h-screen bg-ink px-6 pt-36 pb-24 text-paper md:pt-44">
-		<div class="mx-auto max-w-3xl">
-			<!-- Gate -->
-			<div data-mav-gate>
+		<div class="mx-auto max-w-4xl">
+			<!-- Login -->
+			<div data-mav-gate hidden>
 				<p class="text-eyebrow text-emerald-glow">Maverick</p>
 				<h1 class="text-display-md mt-5">Who goes there?</h1>
-				<p class="mt-4 max-w-md text-paper/70">This studio is for MA. Everyone else — the good stuff is on the <a href="/writing" class="text-emerald-glow hover:underline">writing page</a>.</p>
-				<form data-mav-form class="mt-8 flex max-w-md gap-3">
-					<label for="mav-pass" class="sr-only">Passphrase</label>
-					<input
-						id="mav-pass"
-						type="password"
-						autocomplete="off"
-						placeholder="Passphrase"
-						class="w-full rounded-full border border-paper/25 bg-graphite px-6 py-3.5 text-paper focus:border-emerald"
-					/>
-					<button type="submit" class="cursor-pointer rounded-full bg-emerald px-7 py-3.5 font-bold text-ink transition-transform hover:scale-105">
-						Enter
+				<p class="mt-4 max-w-md text-paper/70">
+					This studio is for MA. Everyone else — the good stuff is on the
+					<a href="/writing" class="text-emerald-glow hover:underline">writing page</a>.
+				</p>
+				<form data-mav-login class="mt-8 max-w-md space-y-4">
+					<div>
+						<label for="mav-email" class="block text-sm font-semibold">Email</label>
+						<input
+							id="mav-email"
+							type="email"
+							required
+							autocomplete="username"
+							class="mt-2 w-full rounded-lg border border-paper/25 bg-graphite px-4 py-3 text-paper focus:border-emerald"
+						/>
+					</div>
+					<div>
+						<label for="mav-pass" class="block text-sm font-semibold">Password</label>
+						<input
+							id="mav-pass"
+							type="password"
+							required
+							autocomplete="current-password"
+							class="mt-2 w-full rounded-lg border border-paper/25 bg-graphite px-4 py-3 text-paper focus:border-emerald"
+						/>
+					</div>
+					<button type="submit" class="cursor-pointer rounded-full bg-emerald px-8 py-3.5 font-bold text-ink transition-transform hover:scale-105">
+						Sign in
 					</button>
+					<p data-mav-error hidden class="text-sm text-terracotta" role="alert">Sign-in failed. Check your credentials.</p>
 				</form>
-				<p data-mav-wrong hidden class="mt-3 text-sm text-terracotta">Not it. Try again.</p>
 			</div>
 
 			<!-- Studio -->
 			<div data-mav-studio hidden>
-				<p class="text-eyebrow text-emerald-glow">Maverick — writing studio</p>
-				<h1 class="text-display-md mt-5">What are we writing, MA?</h1>
-				<p class="mt-4 max-w-xl text-paper/70">
-					Hit the mic and talk it out — the idea, the angle, who it's for. Maverick turns it into a
-					structured brief for the <em>“let's write”</em> pathway.
-				</p>
-
-				<div class="mt-10 flex flex-wrap items-center gap-4">
-					<button
-						type="button"
-						data-mav-mic
-						class="flex cursor-pointer items-center gap-3 rounded-full bg-emerald px-8 py-4 font-bold text-ink transition-transform hover:scale-105"
-					>
-						<span data-mav-mic-dot class="inline-block h-3 w-3 rounded-full bg-ink" aria-hidden="true"></span>
-						<span data-mav-mic-label>Start talking</span>
+				<div class="flex flex-wrap items-center justify-between gap-4">
+					<p class="text-eyebrow text-emerald-glow">Maverick — signed in as MA</p>
+					<button type="button" data-mav-signout class="cursor-pointer rounded-full border border-paper/30 px-5 py-2 text-sm font-semibold hover:border-emerald-glow hover:text-emerald-glow">
+						Sign out
 					</button>
-					<p data-mav-mic-status class="text-sm text-paper/60">Mic is off.</p>
 				</div>
 
-				<label for="mav-transcript" class="mt-10 block text-sm font-semibold">The idea (spoken words land here — edit freely)</label>
-				<textarea
-					id="mav-transcript"
-					data-mav-transcript
-					rows="8"
-					class="mt-2 w-full rounded-2xl border border-paper/20 bg-graphite px-5 py-4 text-paper focus:border-emerald"
-					placeholder="e.g. I want to write about why every small business should have a voice agent answering their phone by 2027…"
-				></textarea>
+				<!-- Inquiries dashboard -->
+				<h1 class="text-display-md mt-8">Inquiries.</h1>
+				<p class="mt-2 text-paper/60" data-mav-inquiry-count>Loading…</p>
+				<div class="mt-8 space-y-4" data-mav-inquiries></div>
 
-				<div class="mt-6 grid gap-5 md:grid-cols-2">
-					<div>
-						<label for="mav-kind" class="block text-sm font-semibold">What is it?</label>
-						<select id="mav-kind" data-mav-kind class="mt-2 w-full rounded-lg border border-paper/20 bg-graphite px-4 py-3 text-sm text-paper focus:border-emerald">
-							<option>Blog post</option>
-							<option>Case study</option>
-							<option>Project description</option>
-							<option>Newsletter</option>
-						</select>
+				<!-- Writing studio -->
+				<div class="mt-20 border-t border-paper/15 pt-12">
+					<h2 class="text-display-sm">What are we writing, MA?</h2>
+					<p class="mt-3 max-w-xl text-paper/70">
+						Hit the mic and talk it out. Maverick turns it into a structured brief for the
+						<em>“let's write”</em> pathway.
+					</p>
+
+					<div class="mt-8 flex flex-wrap items-center gap-4">
+						<button
+							type="button"
+							data-mav-mic
+							class="flex cursor-pointer items-center gap-3 rounded-full bg-emerald px-8 py-4 font-bold text-ink transition-transform hover:scale-105"
+						>
+							<span data-mav-mic-dot class="inline-block h-3 w-3 rounded-full bg-ink" aria-hidden="true"></span>
+							<span data-mav-mic-label>Start talking</span>
+						</button>
+						<p data-mav-mic-status class="text-sm text-paper/60">Mic is off.</p>
 					</div>
-					<div>
-						<label for="mav-audience" class="block text-sm font-semibold">Who's it for?</label>
-						<input id="mav-audience" data-mav-audience type="text" placeholder="e.g. small business owners" class="mt-2 w-full rounded-lg border border-paper/20 bg-graphite px-4 py-3 text-sm text-paper focus:border-emerald" />
-					</div>
-				</div>
 
-				<div class="mt-8 flex flex-wrap gap-4">
-					<button type="button" data-mav-copy class="cursor-pointer rounded-full bg-paper px-7 py-3.5 font-bold text-ink transition-colors hover:bg-emerald">
-						Copy writing brief
-					</button>
-					<a data-mav-mail href={`mailto:${SITE_CONFIG.email}`} class="rounded-full border border-paper/30 px-7 py-3.5 font-semibold transition-colors hover:border-emerald-glow hover:text-emerald-glow">
-						Email me the brief
-					</a>
+					<label for="mav-transcript" class="mt-8 block text-sm font-semibold">The idea (spoken words land here — edit freely)</label>
+					<textarea
+						id="mav-transcript"
+						data-mav-transcript
+						rows="7"
+						class="mt-2 w-full rounded-2xl border border-paper/20 bg-graphite px-5 py-4 text-paper focus:border-emerald"
+						placeholder="e.g. I want to write about why every small business should have a voice agent answering their phone by 2027…"
+					></textarea>
+
+					<div class="mt-5 grid gap-5 md:grid-cols-2">
+						<div>
+							<label for="mav-kind" class="block text-sm font-semibold">What is it?</label>
+							<select id="mav-kind" data-mav-kind class="mt-2 w-full rounded-lg border border-paper/20 bg-graphite px-4 py-3 text-sm text-paper focus:border-emerald">
+								<option>Blog post</option>
+								<option>Case study</option>
+								<option>Project description</option>
+								<option>Newsletter</option>
+							</select>
+						</div>
+						<div>
+							<label for="mav-audience" class="block text-sm font-semibold">Who's it for?</label>
+							<input id="mav-audience" data-mav-audience type="text" placeholder="e.g. small business owners" class="mt-2 w-full rounded-lg border border-paper/20 bg-graphite px-4 py-3 text-sm text-paper focus:border-emerald" />
+						</div>
+					</div>
+
+					<div class="mt-8 flex flex-wrap gap-4">
+						<button type="button" data-mav-copy class="cursor-pointer rounded-full bg-paper px-7 py-3.5 font-bold text-ink transition-colors hover:bg-emerald">
+							Copy writing brief
+						</button>
+						<a data-mav-mail href={`mailto:${SITE_CONFIG.email}`} class="rounded-full border border-paper/30 px-7 py-3.5 font-semibold transition-colors hover:border-emerald-glow hover:text-emerald-glow">
+							Email me the brief
+						</a>
+					</div>
+					<p class="mt-6 max-w-xl text-sm text-paper/50">
+						Then open Claude Code, say <span class="font-semibold text-paper/80">“let's write”</span>, and paste the
+						brief — it drafts against your voice rules in <code>.claude/rules/</code> and builds the post page.
+					</p>
 				</div>
-				<p class="mt-6 max-w-xl text-sm text-paper/50">
-					Then open Claude Code and say <span class="font-semibold text-paper/80">“let's write”</span> and paste the
-					brief — it drafts against your voice rules in <code>.claude/rules/</code> and builds the post page
-					automatically. (Cloud publishing straight from this page arrives with the backend.)
-				</p>
 			</div>
 		</div>
 	</div>
 
 	<script>
-		// --- Courtesy gate (client-side only; not security) ---
-		const gate = document.querySelector<HTMLElement>('[data-mav-gate]');
-		const studio = document.querySelector<HTMLElement>('[data-mav-studio]');
-		const form = document.querySelector<HTMLFormElement>('[data-mav-form]');
-		const wrong = document.querySelector<HTMLElement>('[data-mav-wrong]');
-		const PASS = 'buildlearnteach';
+		import { createClient } from '@supabase/supabase-js';
+		import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from '../lib/backend';
 
-		const unlock = () => {
-			if (gate) gate.hidden = true;
-			if (studio) studio.hidden = false;
-		};
-		if (sessionStorage.getItem('maverick') === 'open') unlock();
-		form?.addEventListener('submit', (e) => {
-			e.preventDefault();
-			const input = form.querySelector<HTMLInputElement>('input');
-			if (input?.value.trim().toLowerCase().replace(/\s+/g, '') === PASS) {
-				sessionStorage.setItem('maverick', 'open');
-				unlock();
-			} else if (wrong) {
-				wrong.hidden = false;
+		const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
+		const gate = document.querySelector<HTMLElement>('[data-mav-gate]')!;
+		const studio = document.querySelector<HTMLElement>('[data-mav-studio]')!;
+		const loginForm = document.querySelector<HTMLFormElement>('[data-mav-login]')!;
+		const loginError = document.querySelector<HTMLElement>('[data-mav-error]')!;
+
+		const esc = (s: unknown) =>
+			String(s ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+
+		const loadInquiries = async () => {
+			const list = document.querySelector<HTMLElement>('[data-mav-inquiries]')!;
+			const count = document.querySelector<HTMLElement>('[data-mav-inquiry-count]')!;
+			const { data, error } = await supabase
+				.from('inquiries')
+				.select('*')
+				.order('created_at', { ascending: false })
+				.limit(100);
+
+			if (error) {
+				count.textContent = `Could not load inquiries: ${error.message}`;
+				return;
 			}
+			const fresh = data.filter((i) => i.status === 'new').length;
+			count.textContent = data.length
+				? `${data.length} total · ${fresh} new`
+				: 'No inquiries yet — they land here the moment someone hits send.';
+
+			list.innerHTML = data
+				.map(
+					(i) => `
+				<details class="rounded-2xl bg-graphite p-6 ${i.status === 'new' ? 'border border-emerald/50' : ''}">
+					<summary class="flex cursor-pointer list-none flex-wrap items-baseline gap-x-4 gap-y-1 [&::-webkit-details-marker]:hidden">
+						<span class="text-xs font-bold tracking-wide text-emerald-glow uppercase">${esc(i.intent)}</span>
+						<span class="font-semibold">${esc(i.name ?? i.email)}</span>
+						<span class="text-sm text-paper/50">${esc(i.organization ?? '')}</span>
+						<span class="ml-auto text-xs text-paper/50">${new Date(i.created_at).toLocaleString()}</span>
+						${i.status === 'new' ? '<span class="rounded-full bg-emerald px-2 py-0.5 text-[10px] font-bold text-ink uppercase">new</span>' : ''}
+					</summary>
+					<dl class="mt-4 space-y-2 text-sm">
+						<div><dt class="inline font-semibold">Email:</dt> <dd class="inline text-paper/80"><a class="text-emerald-glow hover:underline" href="mailto:${esc(i.email)}">${esc(i.email)}</a></dd></div>
+						${Object.entries((i.answers as Record<string, unknown>) ?? {})
+							.map(([k, v]) => `<div><dt class="inline font-semibold">${esc(k)}:</dt> <dd class="inline text-paper/80">${esc(v)}</dd></div>`)
+							.join('')}
+					</dl>
+					${
+						i.status === 'new'
+							? `<button data-mark-read="${esc(i.id)}" class="mt-4 cursor-pointer rounded-full border border-paper/30 px-4 py-1.5 text-xs font-bold hover:border-emerald-glow hover:text-emerald-glow">Mark as read</button>`
+							: ''
+					}
+				</details>`,
+				)
+				.join('');
+
+			list.querySelectorAll<HTMLButtonElement>('[data-mark-read]').forEach((btn) => {
+				btn.addEventListener('click', async () => {
+					await supabase.from('inquiries').update({ status: 'read' }).eq('id', btn.dataset.markRead);
+					loadInquiries();
+				});
+			});
+		};
+
+		const render = (signedIn: boolean) => {
+			gate.hidden = signedIn;
+			studio.hidden = !signedIn;
+			if (signedIn) loadInquiries();
+		};
+
+		supabase.auth.getSession().then(({ data }) => render(!!data.session));
+
+		loginForm.addEventListener('submit', async (e) => {
+			e.preventDefault();
+			loginError.hidden = true;
+			const email = (document.getElementById('mav-email') as HTMLInputElement).value;
+			const password = (document.getElementById('mav-pass') as HTMLInputElement).value;
+			const { error } = await supabase.auth.signInWithPassword({ email, password });
+			if (error) {
+				loginError.hidden = false;
+				return;
+			}
+			render(true);
+		});
+
+		document.querySelector('[data-mav-signout]')?.addEventListener('click', async () => {
+			await supabase.auth.signOut();
+			render(false);
 		});
 
 		// --- Voice dictation via the Web Speech API ---
@@ -148,7 +244,10 @@ import { SITE_CONFIG } from '../config';
 			onerror: (() => void) | null;
 		};
 
-		const w = window as unknown as { SpeechRecognition?: new () => SpeechRecognitionLike; webkitSpeechRecognition?: new () => SpeechRecognitionLike };
+		const w = window as unknown as {
+			SpeechRecognition?: new () => SpeechRecognitionLike;
+			webkitSpeechRecognition?: new () => SpeechRecognitionLike;
+		};
 		const Recognition = w.SpeechRecognition ?? w.webkitSpeechRecognition;
 		let rec: SpeechRecognitionLike | null = null;
 		let listening = false;

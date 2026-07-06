@@ -184,6 +184,8 @@ const steps = [
 </div>
 
 <script>
+	import { submitInquiry } from '../lib/backend';
+
 	interface WorkshopSummary {
 		id: string;
 		title: string;
@@ -267,7 +269,7 @@ const steps = [
 			}
 		};
 
-		const submit = () => {
+		const submit = async () => {
 			const required = wizard.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>(
 				'[data-wizard-step="4"] [required]',
 			);
@@ -276,24 +278,46 @@ const steps = [
 			}
 			const get = (name: string) =>
 				wizard.querySelector<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(`[name="${name}"]`)?.value || '—';
-			const lines = [
-				`Name: ${get('name')}`,
-				`Email: ${get('email')}`,
-				`Organization: ${get('organization')}`,
-				`Industry: ${get('industry')}`,
-				`Team size: ${get('teamSize')}`,
-				`Timeline: ${get('timeline')}`,
-				`Location: ${get('location')}`,
-				`Preferred format: ${get('format')}`,
-				`Budget: ${get('budget')}`,
-				'',
-				`Profile — role: ${answers('role')[0] ?? '—'}, goal: ${answers('goal')[0] ?? '—'}, comfort: ${answers('comfort')[0] ?? '—'}, interests: ${answers('interests').join(', ') || '—'}`,
-				`Recommended workshop: ${recommend()?.title ?? '—'}`,
-				'',
-				`Goals: ${get('goals')}`,
-			];
-			const subject = encodeURIComponent('[marlonavery.com] Workshop enrollment request');
-			window.location.href = `mailto:${wizard.dataset.email}?subject=${subject}&body=${encodeURIComponent(lines.join('\n'))}`;
+
+			const payloadAnswers: Record<string, string> = {
+				Industry: get('industry'),
+				'Team size': get('teamSize'),
+				Timeline: get('timeline'),
+				Location: get('location'),
+				'Preferred format': get('format'),
+				Budget: get('budget'),
+				Profile: `role: ${answers('role')[0] ?? '—'}, goal: ${answers('goal')[0] ?? '—'}, comfort: ${answers('comfort')[0] ?? '—'}, interests: ${answers('interests').join(', ') || '—'}`,
+				'Recommended workshop': recommend()?.title ?? '—',
+				Goals: get('goals'),
+			};
+
+			if (nextBtn) {
+				nextBtn.disabled = true;
+				nextBtn.textContent = 'Sending…';
+			}
+
+			try {
+				await submitInquiry({
+					intent: 'workshop-enrollment',
+					name: get('name'),
+					email: wizard.querySelector<HTMLInputElement>('[name="email"]')?.value ?? '',
+					organization: get('organization'),
+					answers: payloadAnswers,
+				});
+				wizard.innerHTML = `
+					<p class="text-eyebrow text-emerald-glow">Sent ✓</p>
+					<h3 class="mt-4 font-display text-3xl font-semibold">You're on the list.</h3>
+					<p class="mt-3 text-paper/70">Marlon will reply personally within 2–3 business days with next steps${recommend() ? ` for ${recommend()!.title}` : ''}.</p>`;
+			} catch {
+				const lines = Object.entries(payloadAnswers).map(([k, v]) => `${k}: ${v}`);
+				lines.unshift(`Name: ${get('name')}`, `Email: ${get('email')}`, `Organization: ${get('organization')}`, '');
+				const subject = encodeURIComponent('[marlonavery.com] Workshop enrollment request');
+				window.location.href = `mailto:${wizard.dataset.email}?subject=${subject}&body=${encodeURIComponent(lines.join('\n'))}`;
+				if (nextBtn) {
+					nextBtn.disabled = false;
+					nextBtn.textContent = 'Send my request →';
+				}
+			}
 		};
 
 		nextBtn?.addEventListener('click', () => {

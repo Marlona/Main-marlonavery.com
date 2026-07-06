@@ -6,7 +6,7 @@ import Section from '../components/Section.astro';
 import { SITE_CONFIG } from '../config';
 import { PODCAST } from '../data/podcast';
 
-import headshot from '../assets/photos/portrait-1.jpg';
+import headshot from '../assets/photos/headshot-fedora.jpg';
 import stageLecture from '../assets/photos/stage-1.jpg';
 import actionShot from '../assets/photos/workshop-floor-facilitation.jpg';
 
@@ -15,9 +15,9 @@ const bios = press?.data.bios ?? [];
 const pressTopics = press?.data.topics ?? [];
 
 const pressPhotos = [
-	{ src: headshot, label: 'Headshot', file: '/press/marlon-avery-headshot.jpg', alt: 'Marlon Avery panel-stage headshot' },
-	{ src: stageLecture, label: 'Speaking', file: '/press/marlon-avery-speaking.jpg', alt: 'Marlon Avery speaking from a lectern' },
-	{ src: actionShot, label: 'Action shot', file: '/press/marlon-avery-action.jpg', alt: 'Marlon Avery coaching a workshop participant' },
+	{ src: headshot, label: 'Headshot', file: '/press/marlon-avery-headshot.jpg', alt: 'Studio headshot of Marlon Avery in a black fedora and tortoiseshell glasses', top: true },
+	{ src: stageLecture, label: 'Speaking', file: '/press/marlon-avery-speaking.jpg', alt: 'Marlon Avery speaking from a lectern', top: false },
+	{ src: actionShot, label: 'Action shot', file: '/press/marlon-avery-action.jpg', alt: 'Marlon Avery coaching a workshop participant', top: false },
 ];
 ---
 
@@ -71,7 +71,7 @@ const pressPhotos = [
 							alt={photo.alt}
 							widths={[480, 800]}
 							sizes="(max-width: 768px) 100vw, 33vw"
-							class="aspect-[4/3] w-full object-cover"
+							class:list={['aspect-[4/3] w-full object-cover', photo.top && 'object-top']}
 						/>
 						<figcaption class="flex items-center justify-between gap-4 p-5">
 							<span class="font-semibold">{photo.label}</span>

@@ -29,6 +29,12 @@ npm run build      # production build → dist/
 - PRs and pushes to `staging` run CI (type check + build) via `.github/workflows/deploy-staging.yml` — no Pages deploy from this repo except `main`.
 - The staging site (staging.marlonavery.com) is served by the separate `Main-marlonavery-staging` repository. Promote staging content to it with: `git push staging-origin staging:main`.
 - Feature branches open PRs into `staging`, then promote `staging` into `main`.
+- **Always cut feature branches from `staging`, never from `main`.**
+- **Promotion PRs (`staging` → `main`) must use "Create a merge commit", never squash.** Squashing
+  gives `main` history `staging` doesn't share, so every later PR sees shared files as "added on
+  both sides" and conflicts. (Feature PRs into `staging` may still be squashed.) If a promotion
+  already conflicts, fix with `git merge -s ours origin/main` on `staging` — it absorbs `main`'s
+  history while keeping `staging`'s tree byte-identical.
 
 ## Domain cutover (Webflow -> GitHub Pages)
 
@@ -54,7 +60,10 @@ Add or edit files under `src/content/` — no component changes needed:
 | `projects`   | MDX    | /projects case studies, home features     |
 | `experience` | JSON   | About-page timeline                       |
 | `press`      | JSON   | Planner resources on /speaking            |
-| `blog`       | MDX    | Reserved for future writing section       |
+| `blog`       | MDX    | /writing posts (drafted via "let's write") |
+
+`/maverick` is Marlon's private command center (login required): daily briefing, projects & tasks,
+speaking pipeline & revenue, affirmations, weekly reviews, and site inquiries — see `CLAUDE.md`.
 
 ## Cinematic sequences
 

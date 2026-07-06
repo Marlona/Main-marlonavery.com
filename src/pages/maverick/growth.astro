@@ -1,0 +1,149 @@
+---
+import MaverickLayout from '../../layouts/MaverickLayout.astro';
+---
+
+<MaverickLayout title="Maverick — Growth" active="growth">
+	<h1 class="text-display-sm mt-8">Growth.</h1>
+
+	<!-- Active affirmation -->
+	<section class="mt-6 rounded-3xl bg-emerald-deep/25 p-8" aria-labelledby="aff-h">
+		<div class="flex flex-wrap items-center justify-between gap-4">
+			<h2 id="aff-h" class="text-eyebrow text-emerald-glow">Active affirmation</h2>
+			<button
+				type="button"
+				data-aff-evolve
+				class="cursor-pointer rounded-full bg-emerald px-6 py-2.5 text-sm font-bold text-ink transition-transform hover:scale-105"
+			>
+				Evolve it
+			</button>
+		</div>
+		<blockquote class="mt-4 max-w-3xl font-display text-2xl leading-snug font-medium md:text-3xl" data-aff-active aria-live="polite">—</blockquote>
+		<p class="mt-3 text-sm text-paper/60" data-aff-meta></p>
+		<p class="mt-2 text-sm text-terracotta" data-aff-error role="alert" hidden></p>
+	</section>
+
+	<div class="mt-8 grid gap-6 lg:grid-cols-2">
+		<!-- Wins -->
+		<section class="rounded-2xl bg-graphite p-6" aria-labelledby="wins-h">
+			<h2 id="wins-h" class="text-eyebrow text-mist">Wins — last 14 days</h2>
+			<ul class="mt-4 space-y-2.5 text-sm" data-wins>
+				<li class="text-paper/55">Loading…</li>
+			</ul>
+		</section>
+
+		<!-- Reflections -->
+		<section class="rounded-2xl bg-graphite p-6" aria-labelledby="refl-h">
+			<h2 id="refl-h" class="text-eyebrow text-mist">Reflections</h2>
+			<ul class="mt-4 space-y-4 text-sm" data-reflections>
+				<li class="text-paper/55">Loading…</li>
+			</ul>
+		</section>
+	</div>
+
+	<!-- Affirmation history -->
+	<section class="mt-8" aria-labelledby="hist-h">
+		<h2 id="hist-h" class="text-eyebrow text-mist">Evolution history</h2>
+		<ol class="mt-4 space-y-3" data-aff-history>
+			<li class="text-paper/55">Loading…</li>
+		</ol>
+	</section>
+</MaverickLayout>
+
+<script>
+	import { initMaverick, invokeAgent, esc, fmtDate, todayISO } from '../../lib/maverick/client';
+
+	const db = await initMaverick();
+
+	const activeEl = document.querySelector<HTMLElement>('[data-aff-active]')!;
+	const metaEl = document.querySelector<HTMLElement>('[data-aff-meta]')!;
+	const errorEl = document.querySelector<HTMLElement>('[data-aff-error]')!;
+	const historyEl = document.querySelector<HTMLElement>('[data-aff-history]')!;
+	const evolveBtn = document.querySelector<HTMLButtonElement>('[data-aff-evolve]')!;
+
+	const loadAffirmations = async () => {
+		const { data } = await db.from('affirmations').select('*').order('created_at', { ascending: false }).limit(30);
+		const all = data ?? [];
+		const active = all.find((a) => a.active);
+		activeEl.textContent = active ? `“${active.text}”` : 'No active affirmation yet — evolve one.';
+		metaEl.textContent = active
+			? [active.theme, active.triggered_by ? `evolved by: ${active.triggered_by}` : null].filter(Boolean).join(' · ')
+			: '';
+		historyEl.innerHTML = all.length
+			? all
+					.map(
+						(a) => `
+			<li class="rounded-2xl bg-graphite p-5 ${a.active ? 'border border-emerald/50' : ''}">
+				<p class="leading-snug">“${esc(a.text)}”</p>
+				<p class="mt-2 text-xs text-paper/55">
+					${[a.theme, a.triggered_by, a.created_at ? fmtDate(a.created_at) : null].filter(Boolean).map(esc).join(' · ')}
+					${a.active ? ' · <span class="font-bold text-emerald-glow">ACTIVE</span>' : ''}
+				</p>
+			</li>`,
+					)
+					.join('')
+			: '<li class="text-paper/55">History starts with the first evolution.</li>';
+	};
+
+	evolveBtn.addEventListener('click', async () => {
+		errorEl.hidden = true;
+		evolveBtn.disabled = true;
+		evolveBtn.textContent = 'Evolving…';
+		try {
+			await invokeAgent(db, 'affirmation');
+			await loadAffirmations();
+		} catch (err) {
+			errorEl.textContent = err instanceof Error ? err.message : 'Evolution failed.';
+			errorEl.hidden = false;
+		} finally {
+			evolveBtn.disabled = false;
+			evolveBtn.textContent = 'Evolve it';
+		}
+	});
+
+	// Wins: tasks completed in the last 14 days
+	const since = new Date(`${todayISO()}T00:00:00`);
+	since.setDate(since.getDate() - 14);
+	db.from('tasks')
+		.select('title,completed_at,pillar')
+		.eq('status', 'done')
+		.gte('completed_at', since.toISOString())
+		.order('completed_at', { ascending: false })
+		.limit(20)
+		.then(({ data }) => {
+			const winsEl = document.querySelector<HTMLElement>('[data-wins]')!;
+			winsEl.innerHTML = data?.length
+				? data
+						.map(
+							(t) => `
+				<li class="flex items-baseline gap-2.5">
+					<span aria-hidden="true" class="text-emerald-glow">✓</span>
+					<span>${esc(t.title)} <span class="text-xs text-paper/45">${t.completed_at ? fmtDate(t.completed_at) : ''}</span></span>
+				</li>`,
+						)
+						.join('')
+				: '<li class="text-paper/55">Close a task and it lands here.</li>';
+		});
+
+	// Reflections from daily check-ins
+	db.from('daily_checkins')
+		.select('date,reflection,gratitude')
+		.not('reflection', 'is', null)
+		.order('date', { ascending: false })
+		.limit(10)
+		.then(({ data }) => {
+			const reflEl = document.querySelector<HTMLElement>('[data-reflections]')!;
+			reflEl.innerHTML = data?.length
+				? data
+						.map(
+							(c) => `
+				<li class="border-l-2 border-emerald/40 pl-4">
+					<p class="leading-relaxed text-paper/85">${esc(c.reflection)}</p>
+					<p class="mt-1 text-xs text-paper/45">${fmtDate(c.date)}</p>
+				</li>`,
+						)
+						.join('')
+				: '<li class="text-paper/55">Evening reflections from your daily check-ins show up here.</li>';
+		});
+
+	loadAffirmations();
+</script>

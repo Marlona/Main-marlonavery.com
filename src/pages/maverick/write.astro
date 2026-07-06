@@ -1,0 +1,168 @@
+---
+import MaverickLayout from '../../layouts/MaverickLayout.astro';
+import { SITE_CONFIG } from '../../config';
+---
+
+<MaverickLayout title="Maverick — Write" active="write">
+	<h1 class="text-display-sm mt-8">What are we writing, MA?</h1>
+	<p class="mt-3 max-w-xl text-paper/70">
+		Hit the mic and talk it out. Maverick turns it into a structured brief for the
+		<em>“let's write”</em> pathway.
+	</p>
+
+	<div class="mt-8 flex flex-wrap items-center gap-4">
+		<button
+			type="button"
+			data-mav-mic
+			class="flex cursor-pointer items-center gap-3 rounded-full bg-emerald px-8 py-4 font-bold text-ink transition-transform hover:scale-105"
+		>
+			<span data-mav-mic-dot class="inline-block h-3 w-3 rounded-full bg-ink" aria-hidden="true"></span>
+			<span data-mav-mic-label>Start talking</span>
+		</button>
+		<p data-mav-mic-status class="text-sm text-paper/60">Mic is off.</p>
+	</div>
+
+	<label for="mav-transcript" class="mt-8 block text-sm font-semibold">The idea (spoken words land here — edit freely)</label>
+	<textarea
+		id="mav-transcript"
+		data-mav-transcript
+		rows="7"
+		class="mt-2 w-full rounded-2xl border border-paper/20 bg-graphite px-5 py-4 text-paper focus:border-emerald"
+		placeholder="e.g. I want to write about why every small business should have a voice agent answering their phone by 2027…"></textarea>
+
+	<div class="mt-5 grid gap-5 md:grid-cols-2">
+		<div>
+			<label for="mav-kind" class="block text-sm font-semibold">What is it?</label>
+			<select id="mav-kind" data-mav-kind class="mt-2 w-full rounded-lg border border-paper/20 bg-graphite px-4 py-3 text-sm text-paper focus:border-emerald">
+				<option>Blog post</option>
+				<option>Case study</option>
+				<option>Project description</option>
+				<option>Newsletter</option>
+			</select>
+		</div>
+		<div>
+			<label for="mav-audience" class="block text-sm font-semibold">Who's it for?</label>
+			<input id="mav-audience" data-mav-audience type="text" placeholder="e.g. small business owners" class="mt-2 w-full rounded-lg border border-paper/20 bg-graphite px-4 py-3 text-sm text-paper focus:border-emerald" />
+		</div>
+	</div>
+
+	<div class="mt-8 flex flex-wrap gap-4">
+		<button type="button" data-mav-copy class="cursor-pointer rounded-full bg-paper px-7 py-3.5 font-bold text-ink transition-colors hover:bg-emerald">
+			Copy writing brief
+		</button>
+		<a data-mav-mail href={`mailto:${SITE_CONFIG.email}`} class="rounded-full border border-paper/30 px-7 py-3.5 font-semibold transition-colors hover:border-emerald-glow hover:text-emerald-glow">
+			Email me the brief
+		</a>
+	</div>
+	<p class="mt-6 max-w-xl text-sm text-paper/50">
+		Then open Claude Code, say <span class="font-semibold text-paper/80">“let's write”</span>, and paste the
+		brief — it drafts against your voice rules in <code>.claude/rules/</code> and builds the post page.
+	</p>
+</MaverickLayout>
+
+<script>
+	import { initMaverick } from '../../lib/maverick/client';
+
+	await initMaverick();
+
+	// --- Voice dictation via the Web Speech API ---
+	const micBtn = document.querySelector<HTMLButtonElement>('[data-mav-mic]');
+	const micLabel = document.querySelector<HTMLElement>('[data-mav-mic-label]');
+	const micDot = document.querySelector<HTMLElement>('[data-mav-mic-dot]');
+	const micStatus = document.querySelector<HTMLElement>('[data-mav-mic-status]');
+	const transcript = document.querySelector<HTMLTextAreaElement>('[data-mav-transcript]');
+
+	type SpeechRecognitionLike = {
+		continuous: boolean;
+		interimResults: boolean;
+		lang: string;
+		start(): void;
+		stop(): void;
+		onresult: ((e: { resultIndex: number; results: ArrayLike<{ isFinal: boolean; 0: { transcript: string } }> }) => void) | null;
+		onend: (() => void) | null;
+		onerror: (() => void) | null;
+	};
+
+	const w = window as unknown as {
+		SpeechRecognition?: new () => SpeechRecognitionLike;
+		webkitSpeechRecognition?: new () => SpeechRecognitionLike;
+	};
+	const Recognition = w.SpeechRecognition ?? w.webkitSpeechRecognition;
+	let rec: SpeechRecognitionLike | null = null;
+	let listening = false;
+
+	const setMicUi = () => {
+		if (micLabel) micLabel.textContent = listening ? 'Stop' : 'Start talking';
+		if (micStatus) micStatus.textContent = listening ? 'Listening… speak naturally.' : 'Mic is off.';
+		micDot?.classList.toggle('animate-pulse', listening);
+		micDot?.classList.toggle('bg-terracotta', listening);
+	};
+
+	if (!Recognition) {
+		if (micStatus) micStatus.textContent = 'Voice input needs Chrome/Edge/Safari — typing works everywhere.';
+		if (micBtn) micBtn.disabled = true;
+	}
+
+	micBtn?.addEventListener('click', () => {
+		if (!Recognition) return;
+		if (listening) {
+			rec?.stop();
+			return;
+		}
+		rec = new Recognition();
+		rec.continuous = true;
+		rec.interimResults = false;
+		rec.lang = 'en-US';
+		rec.onresult = (e) => {
+			let text = '';
+			for (let i = e.resultIndex; i < e.results.length; i++) {
+				if (e.results[i].isFinal) text += e.results[i][0].transcript + ' ';
+			}
+			if (transcript && text) transcript.value = (transcript.value + ' ' + text).replace(/\s+/g, ' ').trim();
+		};
+		rec.onend = () => {
+			listening = false;
+			setMicUi();
+		};
+		rec.onerror = rec.onend;
+		rec.start();
+		listening = true;
+		setMicUi();
+	});
+
+	// --- Brief builder ---
+	const buildBrief = () => {
+		const kind = document.querySelector<HTMLSelectElement>('[data-mav-kind]')?.value ?? 'Blog post';
+		const audience = document.querySelector<HTMLInputElement>('[data-mav-audience]')?.value || 'general professional audience';
+		const idea = transcript?.value.trim() || '(no idea captured)';
+		return [
+			"let's write",
+			'',
+			`Format: ${kind}`,
+			`Audience: ${audience}`,
+			`Date: ${new Date().toISOString().slice(0, 10)}`,
+			'',
+			'The idea, in my words:',
+			idea,
+			'',
+			'Instructions: draft this against .claude/rules/voice-reference.md and the matching style guide, save it to src/content/blog/ as a draft, and make sure the /writing page renders it.',
+		].join('\n');
+	};
+
+	document.querySelector('[data-mav-copy]')?.addEventListener('click', async (e) => {
+		const btn = e.currentTarget as HTMLButtonElement;
+		try {
+			await navigator.clipboard.writeText(buildBrief());
+			btn.textContent = 'Copied ✓';
+			setTimeout(() => (btn.textContent = 'Copy writing brief'), 1600);
+		} catch {
+			btn.textContent = 'Copy failed — select & copy manually';
+		}
+	});
+
+	document.querySelector<HTMLAnchorElement>('[data-mav-mail]')?.addEventListener('click', (e) => {
+		const a = e.currentTarget as HTMLAnchorElement;
+		const base = a.href.split('?')[0];
+		a.href = `${base}?subject=${encodeURIComponent('[maverick] Writing brief')}&body=${encodeURIComponent(buildBrief())}`;
+	});
+</script>

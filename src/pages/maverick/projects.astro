@@ -1,0 +1,366 @@
+---
+import MaverickLayout from '../../layouts/MaverickLayout.astro';
+
+const PILLAR_TABS = [
+	{ id: 'all', label: 'All' },
+	{ id: 'jpmorgan', label: 'JPMorgan' },
+	{ id: 'voicepath', label: 'VoicePath' },
+	{ id: 'ai_impact', label: 'AImpact' },
+	{ id: 'personal', label: 'Personal' },
+];
+---
+
+<MaverickLayout title="Maverick — Projects" active="projects">
+	<div class="mt-8 flex flex-wrap items-center justify-between gap-4">
+		<h1 class="text-display-sm">Projects.</h1>
+		<button
+			type="button"
+			data-proj-new
+			class="cursor-pointer rounded-full bg-emerald px-6 py-2.5 text-sm font-bold text-ink transition-transform hover:scale-105"
+		>
+			+ New project
+		</button>
+	</div>
+
+	<!-- Filters -->
+	<div class="mt-6 flex flex-wrap items-center gap-3">
+		<div role="group" aria-label="Filter by pillar" class="flex flex-wrap gap-2">
+			{
+				PILLAR_TABS.map((tab) => (
+					<button
+						type="button"
+						data-pillar-tab={tab.id}
+						aria-pressed={tab.id === 'all' ? 'true' : 'false'}
+						class="cursor-pointer rounded-full border border-paper/20 px-4 py-1.5 text-sm font-semibold text-paper/75 transition-colors hover:border-emerald-glow aria-pressed:border-emerald aria-pressed:bg-emerald-deep/40 aria-pressed:text-paper"
+					>
+						{tab.label}
+					</button>
+				))
+			}
+		</div>
+		<label class="ml-auto flex items-center gap-2 text-sm text-paper/70">
+			Status
+			<select data-filter-status class="rounded-lg border border-paper/20 bg-graphite px-3 py-1.5 text-sm text-paper focus:border-emerald">
+				<option value="all">All open</option>
+				<option value="active">Active</option>
+				<option value="waiting">Waiting</option>
+				<option value="stalled">Stalled</option>
+				<option value="completed">Completed</option>
+				<option value="archived">Archived</option>
+			</select>
+		</label>
+	</div>
+
+	<p class="mt-6 text-paper/60" data-proj-count>Loading…</p>
+	<div class="mt-4 space-y-4" data-proj-list></div>
+
+	<!-- Create / edit dialog -->
+	<dialog
+		data-proj-dialog
+		class="m-auto w-[min(94vw,640px)] rounded-2xl border border-paper/20 bg-graphite p-0 text-paper backdrop:bg-ink/70"
+	>
+		<form method="dialog" data-proj-form class="p-7">
+			<h2 class="font-display text-2xl font-semibold" data-proj-dialog-title>New project</h2>
+			<div class="mt-6 grid gap-4 md:grid-cols-2">
+				<div class="md:col-span-2">
+					<label for="pj-name" class="block text-sm font-semibold">Name *</label>
+					<input id="pj-name" name="name" type="text" required class="mt-1.5 w-full rounded-lg border border-paper/20 bg-ink px-3 py-2 text-sm text-paper focus:border-emerald" />
+				</div>
+				<div>
+					<label for="pj-pillar" class="block text-sm font-semibold">Pillar</label>
+					<select id="pj-pillar" name="pillar" class="mt-1.5 w-full rounded-lg border border-paper/20 bg-ink px-3 py-2 text-sm text-paper focus:border-emerald">
+						<option value="jpmorgan">JPMorgan</option>
+						<option value="voicepath">VoicePath</option>
+						<option value="ai_impact">AImpact</option>
+						<option value="personal" selected>Personal</option>
+					</select>
+				</div>
+				<div>
+					<label for="pj-status" class="block text-sm font-semibold">Status</label>
+					<select id="pj-status" name="status" class="mt-1.5 w-full rounded-lg border border-paper/20 bg-ink px-3 py-2 text-sm text-paper focus:border-emerald">
+						<option value="active">Active</option>
+						<option value="waiting">Waiting</option>
+						<option value="stalled">Stalled</option>
+						<option value="completed">Completed</option>
+						<option value="archived">Archived</option>
+					</select>
+				</div>
+				<div>
+					<label for="pj-priority" class="block text-sm font-semibold">Priority</label>
+					<select id="pj-priority" name="priority" class="mt-1.5 w-full rounded-lg border border-paper/20 bg-ink px-3 py-2 text-sm text-paper focus:border-emerald">
+						<option value="low">Low</option>
+						<option value="medium" selected>Medium</option>
+						<option value="high">High</option>
+						<option value="critical">Critical</option>
+					</select>
+				</div>
+				<div>
+					<label for="pj-impact" class="block text-sm font-semibold">Impact</label>
+					<select id="pj-impact" name="impact" class="mt-1.5 w-full rounded-lg border border-paper/20 bg-ink px-3 py-2 text-sm text-paper focus:border-emerald">
+						<option value="low">Low</option>
+						<option value="medium" selected>Medium</option>
+						<option value="high">High</option>
+						<option value="critical">Critical</option>
+					</select>
+				</div>
+				<div>
+					<label for="pj-deadline" class="block text-sm font-semibold">Deadline</label>
+					<input id="pj-deadline" name="deadline" type="date" class="mt-1.5 w-full rounded-lg border border-paper/20 bg-ink px-3 py-2 text-sm text-paper focus:border-emerald" />
+				</div>
+				<div>
+					<label for="pj-revenue" class="block text-sm font-semibold">Revenue value ($)</label>
+					<input id="pj-revenue" name="revenue_value" type="number" min="0" step="100" class="mt-1.5 w-full rounded-lg border border-paper/20 bg-ink px-3 py-2 text-sm text-paper focus:border-emerald" />
+				</div>
+				<div class="md:col-span-2">
+					<label for="pj-next" class="block text-sm font-semibold">Next action</label>
+					<input id="pj-next" name="next_action" type="text" class="mt-1.5 w-full rounded-lg border border-paper/20 bg-ink px-3 py-2 text-sm text-paper focus:border-emerald" />
+				</div>
+				<div class="md:col-span-2">
+					<label for="pj-notes" class="block text-sm font-semibold">Notes</label>
+					<textarea id="pj-notes" name="notes" rows="3" class="mt-1.5 w-full rounded-lg border border-paper/20 bg-ink px-3 py-2 text-sm text-paper focus:border-emerald"></textarea>
+				</div>
+			</div>
+			<div class="mt-7 flex flex-wrap items-center gap-3">
+				<button type="submit" value="save" class="cursor-pointer rounded-full bg-emerald px-7 py-2.5 text-sm font-bold text-ink transition-transform hover:scale-105">Save</button>
+				<button type="submit" value="cancel" formnovalidate class="cursor-pointer rounded-full border border-paper/30 px-6 py-2.5 text-sm font-semibold hover:border-emerald-glow">Cancel</button>
+				<button type="button" data-proj-delete hidden class="ml-auto cursor-pointer rounded-full border border-terracotta/60 px-5 py-2.5 text-sm font-semibold text-terracotta hover:bg-terracotta hover:text-ink">Delete</button>
+			</div>
+		</form>
+	</dialog>
+</MaverickLayout>
+
+<script>
+	import { initMaverick, esc, fmtDate, todayISO, label, PILLAR_LABELS, TASK_STATUSES } from '../../lib/maverick/client';
+	import type { Tables } from '../../lib/maverick/db-types';
+
+	type Project = Tables<'projects'>;
+	type Task = Tables<'tasks'>;
+
+	const db = await initMaverick();
+	const today = todayISO();
+
+	const listEl = document.querySelector<HTMLElement>('[data-proj-list]')!;
+	const countEl = document.querySelector<HTMLElement>('[data-proj-count]')!;
+	const dialog = document.querySelector<HTMLDialogElement>('[data-proj-dialog]')!;
+	const form = document.querySelector<HTMLFormElement>('[data-proj-form]')!;
+	const deleteBtn = document.querySelector<HTMLButtonElement>('[data-proj-delete]')!;
+	const dialogTitle = document.querySelector<HTMLElement>('[data-proj-dialog-title]')!;
+
+	let pillarFilter = 'all';
+	let statusFilter = 'all';
+	let editingId: string | null = null;
+	let projects: Project[] = [];
+	let tasksByProject = new Map<string, Task[]>();
+	const openDrills = new Set<string>();
+
+	const PRIORITY_CHIP: Record<string, string> = {
+		low: 'border-paper/25 text-paper/60',
+		medium: 'border-mist/50 text-mist',
+		high: 'border-gold/60 text-gold',
+		critical: 'border-terracotta/70 text-terracotta',
+	};
+
+	const load = async () => {
+		const [projRes, taskRes] = await Promise.all([
+			db.from('projects').select('*').order('updated_at', { ascending: false }),
+			db.from('tasks').select('*').order('created_at', { ascending: true }),
+		]);
+		projects = projRes.data ?? [];
+		tasksByProject = new Map();
+		for (const t of taskRes.data ?? []) {
+			if (!t.project_id) continue;
+			const list = tasksByProject.get(t.project_id) ?? [];
+			list.push(t);
+			tasksByProject.set(t.project_id, list);
+		}
+		render();
+	};
+
+	const taskRow = (t: Task) => {
+		const overdue = t.status !== 'done' && t.due_date && t.due_date < today;
+		return `
+		<li class="flex items-center gap-3 py-1.5">
+			<input type="checkbox" ${t.status === 'done' ? 'checked' : ''} data-task-done="${esc(t.id)}" aria-label="Mark done: ${esc(t.title)}" class="h-4 w-4 accent-emerald" />
+			<span class="flex-1 text-sm ${t.status === 'done' ? 'text-paper/40 line-through' : ''}">${esc(t.title)}</span>
+			${t.due_date ? `<span class="text-xs ${overdue ? 'font-bold text-terracotta' : 'text-paper/50'}">${fmtDate(t.due_date)}</span>` : ''}
+			<button type="button" data-task-cycle="${esc(t.id)}" class="cursor-pointer rounded-full border border-paper/20 px-2.5 py-0.5 text-[11px] font-semibold text-paper/70 hover:border-emerald-glow hover:text-emerald-glow">${esc(label(t.status))}</button>
+			<button type="button" data-task-delete="${esc(t.id)}" aria-label="Delete task: ${esc(t.title)}" class="cursor-pointer px-1 text-paper/40 hover:text-terracotta">×</button>
+		</li>`;
+	};
+
+	const render = () => {
+		const visible = projects.filter(
+			(p) =>
+				(pillarFilter === 'all' || p.pillar === pillarFilter) &&
+				(statusFilter === 'all' ? !['completed', 'archived'].includes(p.status) : p.status === statusFilter),
+		);
+		countEl.textContent = visible.length
+			? `${visible.length} project${visible.length === 1 ? '' : 's'}`
+			: 'Nothing here — new pillar, new project.';
+
+		listEl.innerHTML = visible
+			.map((p) => {
+				const tasks = tasksByProject.get(p.id) ?? [];
+				const open = tasks.filter((t) => t.status !== 'done');
+				const done = tasks.filter((t) => t.status === 'done');
+				return `
+			<article class="rounded-2xl bg-graphite p-6 ${p.status === 'stalled' ? 'border border-terracotta/40' : ''}">
+				<div class="flex flex-wrap items-start justify-between gap-3">
+					<div>
+						<h2 class="font-display text-xl font-semibold">${esc(p.name)}</h2>
+						<p class="mt-1 flex flex-wrap items-center gap-2 text-xs">
+							<span class="rounded-full bg-emerald-deep/40 px-2.5 py-0.5 font-bold text-emerald-glow">${esc(PILLAR_LABELS[p.pillar])}</span>
+							<span class="rounded-full border px-2.5 py-0.5 font-semibold ${PRIORITY_CHIP[p.priority]}">${esc(label(p.priority))}</span>
+							${p.deadline ? `<span class="text-paper/55">due ${fmtDate(p.deadline)}</span>` : ''}
+						</p>
+					</div>
+					<div class="flex items-center gap-2">
+						<select data-proj-status="${esc(p.id)}" aria-label="Status of ${esc(p.name)}" class="rounded-lg border border-paper/20 bg-ink px-2.5 py-1.5 text-xs font-semibold text-paper focus:border-emerald">
+							${['active', 'waiting', 'stalled', 'completed', 'archived'].map((s) => `<option value="${s}" ${p.status === s ? 'selected' : ''}>${label(s)}</option>`).join('')}
+						</select>
+						<button type="button" data-proj-edit="${esc(p.id)}" class="cursor-pointer rounded-full border border-paper/25 px-4 py-1.5 text-xs font-bold hover:border-emerald-glow hover:text-emerald-glow">Edit</button>
+					</div>
+				</div>
+				${p.next_action ? `<p class="mt-3 text-sm"><span class="font-semibold text-emerald-glow">Next:</span> ${esc(p.next_action)}</p>` : ''}
+				<details data-drill="${esc(p.id)}" ${openDrills.has(p.id) ? 'open' : ''} class="mt-4 border-t border-paper/10 pt-3">
+					<summary class="cursor-pointer text-sm font-semibold text-paper/70 hover:text-emerald-glow">
+						Tasks — ${open.length} open${done.length ? `, ${done.length} done` : ''}
+					</summary>
+					<ul class="mt-2 divide-y divide-paper/8">${[...open, ...done.slice(-5)].map(taskRow).join('') || '<li class="py-1.5 text-sm text-paper/50">No tasks yet.</li>'}</ul>
+					<form data-task-add="${esc(p.id)}" class="mt-3 flex gap-2">
+						<label class="sr-only" for="add-${esc(p.id)}">Add task to ${esc(p.name)}</label>
+						<input id="add-${esc(p.id)}" type="text" required placeholder="Quick add a task…" class="flex-1 rounded-lg border border-paper/20 bg-ink px-3 py-2 text-sm text-paper focus:border-emerald" />
+						<button type="submit" class="cursor-pointer rounded-full bg-paper px-4 py-1.5 text-xs font-bold text-ink hover:bg-emerald">Add</button>
+					</form>
+				</details>
+			</article>`;
+			})
+			.join('');
+		wire();
+	};
+
+	const wire = () => {
+		listEl.querySelectorAll<HTMLElement>('[data-drill]').forEach((d) => {
+			d.addEventListener('toggle', () => {
+				const id = d.dataset.drill!;
+				if ((d as HTMLDetailsElement).open) openDrills.add(id);
+				else openDrills.delete(id);
+			});
+		});
+		listEl.querySelectorAll<HTMLSelectElement>('[data-proj-status]').forEach((sel) => {
+			sel.addEventListener('change', async () => {
+				await db.from('projects').update({ status: sel.value as Project['status'] }).eq('id', sel.dataset.projStatus!);
+				load();
+			});
+		});
+		listEl.querySelectorAll<HTMLButtonElement>('[data-proj-edit]').forEach((btn) => {
+			btn.addEventListener('click', () => openDialog(projects.find((p) => p.id === btn.dataset.projEdit) ?? null));
+		});
+		listEl.querySelectorAll<HTMLInputElement>('[data-task-done]').forEach((box) => {
+			box.addEventListener('change', async () => {
+				await db
+					.from('tasks')
+					.update(box.checked ? { status: 'done', completed_at: new Date().toISOString() } : { status: 'not_started', completed_at: null })
+					.eq('id', box.dataset.taskDone!);
+				load();
+			});
+		});
+		listEl.querySelectorAll<HTMLButtonElement>('[data-task-cycle]').forEach((btn) => {
+			btn.addEventListener('click', async () => {
+				const id = btn.dataset.taskCycle!;
+				const task = [...tasksByProject.values()].flat().find((t) => t.id === id);
+				if (!task) return;
+				const next = TASK_STATUSES[(TASK_STATUSES.indexOf(task.status) + 1) % TASK_STATUSES.length];
+				await db
+					.from('tasks')
+					.update({ status: next, completed_at: next === 'done' ? new Date().toISOString() : null })
+					.eq('id', id);
+				load();
+			});
+		});
+		listEl.querySelectorAll<HTMLButtonElement>('[data-task-delete]').forEach((btn) => {
+			btn.addEventListener('click', async () => {
+				await db.from('tasks').delete().eq('id', btn.dataset.taskDelete!);
+				load();
+			});
+		});
+		listEl.querySelectorAll<HTMLFormElement>('[data-task-add]').forEach((f) => {
+			f.addEventListener('submit', async (e) => {
+				e.preventDefault();
+				const input = f.querySelector<HTMLInputElement>('input[type="text"]')!;
+				const projectId = f.dataset.taskAdd!;
+				const project = projects.find((p) => p.id === projectId);
+				if (!input.value.trim() || !project) return;
+				await db.from('tasks').insert({ title: input.value.trim(), project_id: projectId, pillar: project.pillar });
+				input.value = '';
+				load();
+			});
+		});
+	};
+
+	// --- Filters ---
+	document.querySelectorAll<HTMLButtonElement>('[data-pillar-tab]').forEach((tab) => {
+		tab.addEventListener('click', () => {
+			pillarFilter = tab.dataset.pillarTab!;
+			document
+				.querySelectorAll<HTMLButtonElement>('[data-pillar-tab]')
+				.forEach((t) => t.setAttribute('aria-pressed', String(t === tab)));
+			render();
+		});
+	});
+	document.querySelector<HTMLSelectElement>('[data-filter-status]')!.addEventListener('change', (e) => {
+		statusFilter = (e.target as HTMLSelectElement).value;
+		render();
+	});
+
+	// --- Create / edit dialog ---
+	const field = (name: string) => form.elements.namedItem(name) as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
+
+	const openDialog = (project: Project | null) => {
+		editingId = project?.id ?? null;
+		dialogTitle.textContent = project ? 'Edit project' : 'New project';
+		deleteBtn.hidden = !project;
+		form.reset();
+		if (project) {
+			field('name').value = project.name;
+			field('pillar').value = project.pillar;
+			field('status').value = project.status;
+			field('priority').value = project.priority;
+			field('impact').value = project.impact;
+			field('deadline').value = project.deadline ?? '';
+			field('revenue_value').value = project.revenue_value != null ? String(project.revenue_value) : '';
+			field('next_action').value = project.next_action ?? '';
+			field('notes').value = project.notes ?? '';
+		}
+		dialog.showModal();
+	};
+
+	document.querySelector('[data-proj-new]')?.addEventListener('click', () => openDialog(null));
+
+	form.addEventListener('submit', async (e) => {
+		if ((e.submitter as HTMLButtonElement | null)?.value !== 'save') return; // cancel closes via method="dialog"
+		const payload = {
+			name: (field('name').value ?? '').trim(),
+			pillar: field('pillar').value as Project['pillar'],
+			status: field('status').value as Project['status'],
+			priority: field('priority').value as Project['priority'],
+			impact: field('impact').value as Project['impact'],
+			deadline: field('deadline').value || null,
+			revenue_value: field('revenue_value').value ? Number(field('revenue_value').value) : 0,
+			next_action: field('next_action').value.trim() || null,
+			notes: field('notes').value.trim() || null,
+		};
+		if (editingId) await db.from('projects').update(payload).eq('id', editingId);
+		else await db.from('projects').insert(payload);
+		load();
+	});
+
+	deleteBtn.addEventListener('click', async () => {
+		if (!editingId || !confirm('Delete this project? Its tasks are kept but unlinked.')) return;
+		await db.from('projects').delete().eq('id', editingId);
+		dialog.close();
+		load();
+	});
+
+	load();
+</script>

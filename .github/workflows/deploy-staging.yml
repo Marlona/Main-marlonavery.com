@@ -1,23 +1,33 @@
-name: Deploy Staging Preview
+name: CI (staging integration)
+
+# Pure CI for the integration flow: feature branches open PRs into `staging`,
+# `staging` promotes into `main`. This workflow verifies every PR and every
+# push to `staging` with a full type-check + build.
+#
+# It deliberately does NOT deploy GitHub Pages: one repository serves one
+# Pages site, and this repository's Pages is production (marlonavery.com,
+# deployed from `main` by deploy.yml). The staging environment at
+# staging.marlonavery.com is served by the separate Main-marlonavery-staging
+# repository — promote to it by pushing `staging` there:
+#
+#   git push staging-origin staging:main
 
 on:
   push:
     branches: [staging]
   pull_request:
-    branches: [staging]
+    branches: [staging, main]
   workflow_dispatch:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
-  group: pages-staging
+  group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build:
+  verify:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -37,24 +47,3 @@ jobs:
 
       - name: Build
         run: npm run build
-
-      - name: Set staging domain
-        run: echo "staging.marlonavery.com" > dist/CNAME
-
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: dist
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: staging-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy staging preview
-        id: deployment
-        uses: actions/deploy-pages@v4
-        with:
-          preview: true

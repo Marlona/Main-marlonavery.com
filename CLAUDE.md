@@ -101,8 +101,14 @@ the authenticated `hi@marlonavery.com` session. Structure:
 calendars, moves money, or contacts anyone externally on its own. Any future external action must
 be enqueued to `approval_queue` and dispatched ONLY from a row with status `approved`, writing to
 `audit_log` — enforce in the execution layer, not just UI. Phase 1 performs internal actions only
-(briefings, affirmations, review drafts). Gmail/Calendar/Stripe integrations, the approval-queue
-UI, and scheduled jobs (pg_cron) are Phase 2/3 — not built yet.
+(briefings, affirmations, review drafts).
+
+**Phase 2 is specced but NOT built — read `docs/maverick-phase2.md` before starting it.**
+Headline: /maverick home becomes a Claude/ChatGPT-style chat ("Maverick") with voice input and
+OpenRouter streaming, plus agentic tool execution — internal CRUD tools run directly; external
+actions (email sends, Stripe invoices, calendar writes) are approval-queue-gated; coding tasks
+hand off to Marlon's Claude Code via a bridge (design TBD). Also carries the original Phase 2
+items: Gmail/Calendar read mirrors, Email Center, Approval Queue UI, pg_cron scheduled briefings.
 
 ## Content source
 

@@ -55,7 +55,10 @@ Add or edit files under `src/content/` — no component changes needed:
 | `projects`   | MDX    | /projects case studies, home features     |
 | `experience` | JSON   | About-page timeline                       |
 | `press`      | JSON   | Planner resources on /speaking            |
-| `blog`       | MDX    | Reserved for future writing section       |
+| `blog`       | MDX    | /writing posts (drafted via "let's write") |
+
+`/maverick` is Marlon's private command center (login required): daily briefing, projects & tasks,
+speaking pipeline & revenue, affirmations, weekly reviews, and site inquiries — see `CLAUDE.md`.
 
 ## Cinematic sequences
 

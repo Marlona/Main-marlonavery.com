@@ -74,8 +74,35 @@ sections, footer, page heroes). Any new always-dark block needs `theme-fixed`.
 
 All booking/contact CTAs route to `/book` (deep-linkable via `?intent=keynote|workshop|podcast|
 curriculum|learn|advisory|other`). Flows are data-driven in `src/data/bookingFlows.ts` — add a new
-intent there and it appears automatically. Submissions compose structured email until the
-Cloudflare Worker + D1 backend lands.
+intent there and it appears automatically. Submissions POST to the Supabase `submit-inquiry` edge
+function (stored in `inquiries` + emailed via Resend), falling back to mailto if it's unreachable.
+Wiring lives in `src/lib/backend.ts`.
+
+## Maverick Command Center (/maverick)
+
+Marlon's private daily-operations dashboard, built INTO the static site (his call — no separate
+Next.js app). Client-side pages talk straight to Supabase (project `nxqoskuddntalcgcuvvi`): the
+publishable key ships to the browser and Row Level Security pins every command-center table to
+the authenticated `hi@marlonavery.com` session. Structure:
+
+- `src/layouts/MaverickLayout.astro` — noindex shell, login gate, section nav.
+- `src/lib/maverick/client.ts` — typed Supabase singleton, `initMaverick()` auth promise,
+  formatters. `src/lib/maverick/db-types.ts` is GENERATED (Supabase MCP
+  `generate_typescript_types`) — regenerate after any migration, never hand-edit.
+- Pages: `/maverick` (home: briefing, top 3, check-in), `/maverick/projects` (pillar-filtered
+  CRUD + tasks), `/maverick/speaking` (engagement pipeline + revenue), `/maverick/growth`
+  (affirmations), `/maverick/review` (weekly reviews), `/maverick/inquiries`, `/maverick/write`.
+- AI actions run in the `maverick-agent` edge function (source mirrored in
+  `supabase/functions/maverick-agent/`, excluded from tsconfig — it's Deno). verify_jwt +
+  email-pinned. Model profiles are env-driven: `MODEL_FAST` / `MODEL_REASONING` /
+  `MODEL_WRITING` (OpenRouter slugs); requires the `OPENROUTER_API_KEY` function secret.
+
+**Approval guardrail (standing rule for Phases 2–3):** the agent NEVER sends email, touches
+calendars, moves money, or contacts anyone externally on its own. Any future external action must
+be enqueued to `approval_queue` and dispatched ONLY from a row with status `approved`, writing to
+`audit_log` — enforce in the execution layer, not just UI. Phase 1 performs internal actions only
+(briefings, affirmations, review drafts). Gmail/Calendar/Stripe integrations, the approval-queue
+UI, and scheduled jobs (pg_cron) are Phase 2/3 — not built yet.
 
 ## Content source
 

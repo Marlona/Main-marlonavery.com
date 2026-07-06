@@ -49,6 +49,7 @@ const projects = defineCollection({
 		heroImage: z.string().optional(),
 		gallery: z.array(z.string()).default([]),
 		videoUrl: z.string().optional(),
+		videoPoster: z.string().optional(),
 		lessonsLearned: z.array(z.string()).default([]),
 		resources: z.array(resourceSchema).default([]),
 		// tolerated legacy fields from the 2026 repo

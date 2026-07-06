@@ -109,6 +109,10 @@ OpenRouter streaming, plus agentic tool execution — internal CRUD tools run di
 actions (email sends, Stripe invoices, calendar writes) are approval-queue-gated; coding tasks
 hand off to Marlon's Claude Code via a bridge (design TBD). Also carries the original Phase 2
 items: Gmail/Calendar read mirrors, Email Center, Approval Queue UI, pg_cron scheduled briefings.
+Already live ahead of Phase 2: **Maverick's vector-store memory** — `maverick_memories` table
+(pgvector, 384-dim gte-small embeddings from the edge runtime, no external API) +
+`match_maverick_memories` RPC + `maverick-memory` edge function (remember/recall/list/forget,
+owner-gated). The chat loop consumes it in Phase 2.
 
 ## Content source
 

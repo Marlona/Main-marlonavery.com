@@ -61,7 +61,30 @@ code itself. Mechanism decided at kickoff; candidate designs, in rough order of 
    `code_tasks` table and executes with the Agent SDK.
 3. Direct local bridge into his running Claude Code — most magical, most plumbing.
 
-## 3. Carried over from the original Phase 2 (unchanged)
+## 3. Maverick memory — vector store (INFRASTRUCTURE ALREADY LIVE, built 2026-07-06)
+
+The store and its API exist today; Phase 2's chat loop is what starts using them automatically.
+
+- **Table**: `public.maverick_memories` — content, `vector(384)` embedding (HNSW cosine index),
+  kind (`fact | preference | decision | person | project_context | conversation_summary`),
+  source, metadata jsonb. RLS email-pinned like everything else.
+- **Embeddings**: Supabase edge runtime's built-in `gte-small` (384 dims, mean-pooled,
+  normalized) — zero external APIs, zero keys. If we ever switch models (e.g. OpenAI
+  text-embedding-3-small, 1536 dims), that's a column migration + re-embed of all rows.
+- **Search**: `match_maverick_memories(query_embedding, match_count, min_similarity)` RPC.
+- **API**: `maverick-memory` edge function (verify_jwt + owner check) — actions `remember`,
+  `recall`, `list`, `forget`. Verified E2E: seeded 3 memories, semantic recall ranks correctly
+  on paraphrased queries.
+- **Phase 2 wiring**: the chat loop (a) recalls top-k memories for each user message and injects
+  them into the system prompt, (b) exposes `remember`/`forget` as internal tools so Maverick
+  saves durable facts/preferences/decisions as they come up, and (c) writes a
+  `conversation_summary` memory when a conversation ends. Memory writes are internal actions —
+  no approval needed; log to `audit_log`.
+- **Tune at Phase 2**: the `min_similarity` default (0.45) is permissive — gte-small similarities
+  cluster high (~0.75+ for related content). Re-tune once real memory volume exists; `match_count`
+  does most of the filtering today.
+
+## 4. Carried over from the original Phase 2 (unchanged)
 
 - Google Calendar read → `calendar_events` mirror; Gmail read + classify + draft (no send) →
   `email_summaries`; Email Center page.

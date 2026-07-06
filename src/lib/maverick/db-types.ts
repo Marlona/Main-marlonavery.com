@@ -343,6 +343,36 @@ export type Database = {
 				};
 				Relationships: [];
 			};
+			maverick_memories: {
+				Row: {
+					content: string;
+					created_at: string | null;
+					embedding: string | null;
+					id: string;
+					kind: string;
+					metadata: Json | null;
+					source: string;
+				};
+				Insert: {
+					content: string;
+					created_at?: string | null;
+					embedding?: string | null;
+					id?: string;
+					kind?: string;
+					metadata?: Json | null;
+					source?: string;
+				};
+				Update: {
+					content?: string;
+					created_at?: string | null;
+					embedding?: string | null;
+					id?: string;
+					kind?: string;
+					metadata?: Json | null;
+					source?: string;
+				};
+				Relationships: [];
+			};
 			inquiries: {
 				Row: {
 					answers: Json;
@@ -598,7 +628,17 @@ export type Database = {
 			[_ in never]: never;
 		};
 		Functions: {
-			[_ in never]: never;
+			match_maverick_memories: {
+				Args: { query_embedding: string; match_count?: number; min_similarity?: number };
+				Returns: {
+					id: string;
+					content: string;
+					kind: string;
+					metadata: Json;
+					created_at: string;
+					similarity: number;
+				}[];
+			};
 		};
 		Enums: {
 			pillar: 'jpmorgan' | 'voicepath' | 'ai_impact' | 'personal';

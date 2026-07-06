@@ -32,6 +32,16 @@ const { src, poster, scrollScreens = 3, label, overlay = 'standard', id } = Astr
 	aria-label={label}
 >
 	<div class="sticky top-0 h-svh overflow-hidden">
+		<!-- Poster is the base layer: it shows through when the video is hidden
+		     (reduced motion) or when playback fails (data-video-fallback). The video
+		     is stacked above it and covers it once it has frames. -->
+		<img
+			src={poster}
+			alt=""
+			class="absolute inset-0 h-full w-full object-cover"
+			loading="lazy"
+			decoding="async"
+		/>
 		<video
 			class="absolute inset-0 h-full w-full object-cover motion-reduce:hidden"
 			src={src}
@@ -44,13 +54,6 @@ const { src, poster, scrollScreens = 3, label, overlay = 'standard', id } = Astr
 			aria-hidden="true"
 			data-sequence-video
 		></video>
-		<img
-			src={poster}
-			alt=""
-			class="absolute inset-0 h-full w-full object-cover"
-			loading="lazy"
-			decoding="async"
-		/>
 		<!-- Film-grade vignette so overlaid type stays readable without flattening the image -->
 		{overlay === 'dark' && <div class="pointer-events-none absolute inset-0 bg-ink/45"></div>}
 		<div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink/70 via-transparent to-ink/40"></div>

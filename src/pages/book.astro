@@ -1,0 +1,252 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { BOOKING_FLOWS } from '../data/bookingFlows';
+import { SITE_CONFIG } from '../config';
+---
+
+<BaseLayout
+	title="Book Marlon"
+	description="Book Marlon Avery — keynotes, corporate AI workshops, podcasts, custom curricula, and advisory. Pick a path and tell him about the moment you're planning."
+>
+	<div class="bg-paper px-6 pt-36 pb-12 md:pt-44">
+		<div class="mx-auto max-w-7xl">
+			<p class="text-eyebrow reveal text-emerald-deep">Book Marlon</p>
+			<h1 class="text-display-lg reveal mt-6 max-w-4xl">What are we building together?</h1>
+			<p class="reveal mt-8 max-w-2xl text-lg leading-relaxed text-slate">
+				Pick a path — each one asks exactly what Marlon needs to say yes fast. Every inquiry gets a
+				personal reply, usually within 2–3 business days.
+			</p>
+		</div>
+	</div>
+
+	<div class="bg-paper px-6 pb-24 md:pb-32">
+		<div
+			class="theme-fixed mx-auto max-w-4xl rounded-3xl bg-graphite p-8 text-paper md:p-12"
+			data-book
+			data-email={SITE_CONFIG.email}
+		>
+			<p class="text-eyebrow text-emerald-glow" aria-live="polite" data-book-progress>Step 1 of 3 — choose a path</p>
+
+			<!-- Step 1: intent -->
+			<div data-book-step="intent" class="mt-6">
+				<div class="grid gap-3 sm:grid-cols-2">
+					{
+						BOOKING_FLOWS.map((flow) => (
+							<button
+								type="button"
+								data-intent={flow.id}
+								class="cursor-pointer rounded-xl border border-paper/15 p-5 text-left transition-colors hover:border-emerald-glow aria-pressed:border-emerald aria-pressed:bg-emerald-deep/40"
+								aria-pressed="false"
+							>
+								<span class="block font-display text-xl font-semibold">{flow.title}</span>
+								<span class="mt-1 block text-sm text-paper/60">{flow.tagline}</span>
+							</button>
+						))
+					}
+				</div>
+			</div>
+
+			<!-- Step 2: per-intent questions -->
+			{
+				BOOKING_FLOWS.map((flow) => (
+					<fieldset data-book-step={`questions-${flow.id}`} hidden class="mt-6 border-0 p-0">
+						<legend class="font-display text-3xl font-semibold">{flow.title}</legend>
+						<div class="mt-8 grid gap-5 md:grid-cols-2">
+							{flow.questions.map((q) => (
+								<div class:list={[q.type === 'textarea' && 'md:col-span-2']}>
+									<label for={`bk-${flow.id}-${q.id}`} class="block text-sm font-semibold">
+										{q.label}
+										{q.required && ' *'}
+									</label>
+									{q.type === 'select' ? (
+										<select
+											id={`bk-${flow.id}-${q.id}`}
+											name={`${flow.id}:${q.id}`}
+											data-question={q.label}
+											required={q.required}
+											class="mt-2 w-full rounded-lg border border-paper/20 bg-ink px-4 py-3 text-sm text-paper focus:border-emerald"
+										>
+											<option value="">Select…</option>
+											{(q.options ?? []).map((opt) => (
+												<option value={opt}>{opt}</option>
+											))}
+										</select>
+									) : q.type === 'textarea' ? (
+										<textarea
+											id={`bk-${flow.id}-${q.id}`}
+											name={`${flow.id}:${q.id}`}
+											data-question={q.label}
+											rows={4}
+											required={q.required}
+											placeholder={q.placeholder}
+											class="mt-2 w-full rounded-lg border border-paper/20 bg-ink px-4 py-3 text-sm text-paper focus:border-emerald"
+										/>
+									) : (
+										<input
+											id={`bk-${flow.id}-${q.id}`}
+											name={`${flow.id}:${q.id}`}
+											data-question={q.label}
+											type="text"
+											required={q.required}
+											placeholder={q.placeholder}
+											class="mt-2 w-full rounded-lg border border-paper/20 bg-ink px-4 py-3 text-sm text-paper focus:border-emerald"
+										/>
+									)}
+								</div>
+							))}
+						</div>
+					</fieldset>
+				))
+			}
+
+			<!-- Step 3: contact -->
+			<fieldset data-book-step="contact" hidden class="mt-6 border-0 p-0">
+				<legend class="font-display text-3xl font-semibold">How do we reach you?</legend>
+				<div class="mt-8 grid gap-5 md:grid-cols-2">
+					<div>
+						<label for="bk-name" class="block text-sm font-semibold">Name *</label>
+						<input id="bk-name" name="contact:name" data-question="Name" type="text" required autocomplete="name" class="mt-2 w-full rounded-lg border border-paper/20 bg-ink px-4 py-3 text-sm text-paper focus:border-emerald" />
+					</div>
+					<div>
+						<label for="bk-email" class="block text-sm font-semibold">Email *</label>
+						<input id="bk-email" name="contact:email" data-question="Email" type="email" required autocomplete="email" class="mt-2 w-full rounded-lg border border-paper/20 bg-ink px-4 py-3 text-sm text-paper focus:border-emerald" />
+					</div>
+					<div class="md:col-span-2">
+						<label for="bk-org2" class="block text-sm font-semibold">Organization</label>
+						<input id="bk-org2" name="contact:organization" data-question="Organization" type="text" autocomplete="organization" class="mt-2 w-full rounded-lg border border-paper/20 bg-ink px-4 py-3 text-sm text-paper focus:border-emerald" />
+					</div>
+				</div>
+			</fieldset>
+
+			<div class="mt-10 flex items-center justify-between gap-4">
+				<button
+					type="button"
+					data-book-back
+					hidden
+					class="cursor-pointer rounded-full border border-paper/30 px-6 py-3 text-sm font-semibold transition-colors hover:border-emerald-glow"
+				>
+					← Back
+				</button>
+				<p class="text-sm text-terracotta" role="alert" data-book-error hidden>Pick a path to continue.</p>
+				<button
+					type="button"
+					data-book-next
+					hidden
+					class="ml-auto cursor-pointer rounded-full bg-emerald px-8 py-3 text-sm font-bold text-ink transition-transform hover:scale-105"
+				>
+					Continue →
+				</button>
+			</div>
+			<p class="mt-4 text-center text-xs text-paper/50">
+				Submitting opens your email client with a structured message to {SITE_CONFIG.email}.
+			</p>
+		</div>
+	</div>
+
+	<script>
+		const root = document.querySelector<HTMLElement>('[data-book]');
+		if (root) {
+			const intentButtons = [...root.querySelectorAll<HTMLButtonElement>('[data-intent]')];
+			const steps = [...root.querySelectorAll<HTMLElement>('[data-book-step]')];
+			const progress = root.querySelector<HTMLElement>('[data-book-progress]');
+			const backBtn = root.querySelector<HTMLButtonElement>('[data-book-back]');
+			const nextBtn = root.querySelector<HTMLButtonElement>('[data-book-next]');
+			const errorEl = root.querySelector<HTMLElement>('[data-book-error]');
+
+			let intent = '';
+			let stage: 'intent' | 'questions' | 'contact' = 'intent';
+
+			const show = (name: string) => {
+				steps.forEach((s) => {
+					s.hidden = s.dataset.bookStep !== name;
+				});
+			};
+
+			const render = () => {
+				if (stage === 'intent') {
+					show('intent');
+					if (progress) progress.textContent = 'Step 1 of 3 — choose a path';
+					if (backBtn) backBtn.hidden = true;
+					if (nextBtn) nextBtn.hidden = true;
+				} else if (stage === 'questions') {
+					show(`questions-${intent}`);
+					if (progress) progress.textContent = 'Step 2 of 3 — the details';
+					if (backBtn) backBtn.hidden = false;
+					if (nextBtn) {
+						nextBtn.hidden = false;
+						nextBtn.textContent = 'Continue →';
+					}
+				} else {
+					show('contact');
+					if (progress) progress.textContent = 'Step 3 of 3 — contact info';
+					if (backBtn) backBtn.hidden = false;
+					if (nextBtn) {
+						nextBtn.hidden = false;
+						nextBtn.textContent = 'Send inquiry →';
+					}
+				}
+				if (errorEl) errorEl.hidden = true;
+			};
+
+			const selectIntent = (id: string) => {
+				intent = id;
+				intentButtons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.intent === id)));
+				stage = 'questions';
+				render();
+			};
+
+			intentButtons.forEach((btn) => {
+				btn.addEventListener('click', () => selectIntent(btn.dataset.intent ?? ''));
+			});
+
+			backBtn?.addEventListener('click', () => {
+				stage = stage === 'contact' ? 'questions' : 'intent';
+				render();
+			});
+
+			const validate = (scope: HTMLElement) => {
+				for (const field of scope.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>('[required]')) {
+					if (!field.reportValidity()) return false;
+				}
+				return true;
+			};
+
+			const submit = () => {
+				const contactStep = root.querySelector<HTMLElement>('[data-book-step="contact"]')!;
+				if (!validate(contactStep)) return;
+				const flowStep = root.querySelector<HTMLElement>(`[data-book-step="questions-${intent}"]`)!;
+				const flowTitle = intentButtons.find((b) => b.dataset.intent === intent)?.querySelector('span')?.textContent ?? intent;
+
+				const lines: string[] = [`Inquiry type: ${flowTitle}`, ''];
+				for (const field of [...contactStep.querySelectorAll<HTMLInputElement>('[data-question]')]) {
+					lines.push(`${field.dataset.question}: ${field.value || '—'}`);
+				}
+				lines.push('');
+				for (const field of [...flowStep.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>('[data-question]')]) {
+					lines.push(`${field.dataset.question}: ${field.value || '—'}`);
+				}
+				const subject = encodeURIComponent(`[marlonavery.com] ${flowTitle} inquiry`);
+				window.location.href = `mailto:${root.dataset.email}?subject=${subject}&body=${encodeURIComponent(lines.join('\n'))}`;
+			};
+
+			nextBtn?.addEventListener('click', () => {
+				if (stage === 'questions') {
+					const flowStep = root.querySelector<HTMLElement>(`[data-book-step="questions-${intent}"]`)!;
+					if (!validate(flowStep)) return;
+					stage = 'contact';
+					render();
+				} else if (stage === 'contact') {
+					submit();
+				}
+			});
+
+			// Deep-link preselect: /book?intent=keynote
+			const preset = new URLSearchParams(location.search).get('intent');
+			if (preset && intentButtons.some((b) => b.dataset.intent === preset)) {
+				selectIntent(preset);
+			} else {
+				render();
+			}
+		}
+	</script>
+</BaseLayout>

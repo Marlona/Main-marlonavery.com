@@ -15,7 +15,8 @@ const { eyebrow, title, intro, tone = 'light', pad = 'normal', id, class: classN
 const tones = {
 	light: 'bg-paper text-ink',
 	cream: 'bg-cream text-ink',
-	dark: 'bg-ink text-paper',
+	// Dark sections keep their cinematic styling in both themes
+	dark: 'theme-fixed bg-ink text-paper',
 };
 
 const padding = pad === 'compact' ? 'px-6 py-14 md:py-20' : 'px-6 py-24 md:py-32';

@@ -73,6 +73,13 @@ const personSchema = {
 		)}
 
 		<script is:inline type="application/ld+json" set:html={JSON.stringify(personSchema)} />
+
+		<!-- Apply the stored theme before first paint to avoid a flash -->
+		<script is:inline>
+			document.documentElement.dataset.theme = localStorage.getItem('theme') === 'dark' ? 'dark' : 'light';
+		</script>
+
+		<slot name="head" />
 	</head>
 	<body>
 		<a

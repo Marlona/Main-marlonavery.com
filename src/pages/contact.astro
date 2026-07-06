@@ -5,11 +5,11 @@ import BookingForm from '../components/BookingForm.astro';
 import { SITE_CONFIG, SOCIAL_LINKS } from '../config';
 
 const paths = [
-	{ title: 'Book Speaking', text: 'Keynotes, conference sessions, and executive briefings.', href: '/speaking' },
-	{ title: 'Book a Workshop', text: 'Hands-on AI training for your team or organization.', href: '/workshops' },
-	{ title: 'Enterprise Consulting', text: 'Voice AI engagements and applied AI advisory.', href: '#booking-form' },
-	{ title: 'Podcast & Media', text: 'Interviews, panels, and press inquiries.', href: '#booking-form' },
-	{ title: 'Community & Mentorship', text: 'NextSteps DevCon, scholarships, and emerging builders.', href: '#booking-form' },
+	{ title: 'Book Speaking', text: 'Keynotes, conference sessions, and executive briefings.', href: '/book?intent=keynote' },
+	{ title: 'Book a Workshop', text: 'Hands-on AI training for your team or organization.', href: '/book?intent=workshop' },
+	{ title: 'Enterprise Consulting', text: 'Voice AI engagements and applied AI advisory.', href: '/book?intent=advisory' },
+	{ title: 'Podcast & Media', text: 'Interviews, panels, and press inquiries.', href: '/book?intent=podcast' },
+	{ title: 'Community & Mentorship', text: 'NextSteps DevCon, scholarships, and emerging builders.', href: '/book?intent=other' },
 	{ title: 'General Inquiry', text: 'Everything else — Marlon reads every message.', href: '#booking-form' },
 ];
 

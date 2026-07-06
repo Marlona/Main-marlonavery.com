@@ -138,12 +138,14 @@ import { SITE_CONFIG } from '../config';
 				</button>
 			</div>
 			<p class="mt-4 text-center text-xs text-paper/50">
-				Submitting opens your email client with a structured message to {SITE_CONFIG.email}.
+				Your inquiry goes straight to Marlon — securely stored and forwarded to {SITE_CONFIG.email}.
 			</p>
 		</div>
 	</div>
 
 	<script>
+		import { submitInquiry } from '../lib/backend';
+
 		const root = document.querySelector<HTMLElement>('[data-book]');
 		if (root) {
 			const intentButtons = [...root.querySelectorAll<HTMLButtonElement>('[data-intent]')];
@@ -211,22 +213,54 @@ import { SITE_CONFIG } from '../config';
 				return true;
 			};
 
-			const submit = () => {
+			const submit = async () => {
 				const contactStep = root.querySelector<HTMLElement>('[data-book-step="contact"]')!;
 				if (!validate(contactStep)) return;
 				const flowStep = root.querySelector<HTMLElement>(`[data-book-step="questions-${intent}"]`)!;
 				const flowTitle = intentButtons.find((b) => b.dataset.intent === intent)?.querySelector('span')?.textContent ?? intent;
 
-				const lines: string[] = [`Inquiry type: ${flowTitle}`, ''];
-				for (const field of [...contactStep.querySelectorAll<HTMLInputElement>('[data-question]')]) {
-					lines.push(`${field.dataset.question}: ${field.value || '—'}`);
-				}
-				lines.push('');
+				const get = (name: string) =>
+					contactStep.querySelector<HTMLInputElement>(`[name="contact:${name}"]`)?.value.trim() || undefined;
+				const answers: Record<string, string> = {};
 				for (const field of [...flowStep.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>('[data-question]')]) {
-					lines.push(`${field.dataset.question}: ${field.value || '—'}`);
+					if (field.value) answers[field.dataset.question ?? field.name] = field.value;
 				}
-				const subject = encodeURIComponent(`[marlonavery.com] ${flowTitle} inquiry`);
-				window.location.href = `mailto:${root.dataset.email}?subject=${subject}&body=${encodeURIComponent(lines.join('\n'))}`;
+
+				if (nextBtn) {
+					nextBtn.disabled = true;
+					nextBtn.textContent = 'Sending…';
+				}
+
+				try {
+					await submitInquiry({
+						intent,
+						name: get('name'),
+						email: get('email') ?? '',
+						organization: get('organization'),
+						answers,
+					});
+					root.innerHTML = `
+						<p class="text-eyebrow text-emerald-glow">Sent ✓</p>
+						<h2 class="mt-4 font-display text-3xl font-semibold">Got it — Marlon will be in touch.</h2>
+						<p class="mt-3 text-paper/70">Your ${flowTitle} inquiry is in. Expect a personal reply within 2–3 business days.</p>
+						<a href="/" class="mt-8 inline-block rounded-full bg-emerald px-8 py-3 text-sm font-bold text-ink">Back home →</a>`;
+				} catch {
+					// Backend unreachable — fall back to a structured email so nothing is lost
+					const lines = [
+						`Inquiry type: ${flowTitle}`,
+						`Name: ${get('name') ?? '—'}`,
+						`Email: ${get('email') ?? '—'}`,
+						`Organization: ${get('organization') ?? '—'}`,
+						'',
+						...Object.entries(answers).map(([k, v]) => `${k}: ${v}`),
+					];
+					const subject = encodeURIComponent(`[marlonavery.com] ${flowTitle} inquiry`);
+					window.location.href = `mailto:${root.dataset.email}?subject=${subject}&body=${encodeURIComponent(lines.join('\n'))}`;
+					if (nextBtn) {
+						nextBtn.disabled = false;
+						nextBtn.textContent = 'Send inquiry →';
+					}
+				}
 			};
 
 			nextBtn?.addEventListener('click', () => {

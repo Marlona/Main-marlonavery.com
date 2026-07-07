@@ -11,8 +11,10 @@ import workshopFloor from '../../assets/photos/workshop-floor-facilitation.jpg';
 import whiteboard from '../../assets/photos/live-whiteboard-session.jpg';
 import breakout from '../../assets/photos/audience-breakout-collaboration.jpg';
 
-const workshops = (await getCollection('workshops')).sort((a, b) =>
-	a.data.title.localeCompare(b.data.title),
+// Catalog reads as a progression of levels, left to right
+const LEVEL_ORDER = { beginner: 0, intermediate: 1, advanced: 2, executive: 3 };
+const workshops = (await getCollection('workshops')).sort(
+	(a, b) => LEVEL_ORDER[a.data.level] - LEVEL_ORDER[b.data.level],
 );
 
 const wizardWorkshops = workshops.map((w) => ({
@@ -80,6 +82,18 @@ const stats = [
 				))
 			}
 		</div>
+		<a
+			href="#enroll"
+			class="reveal mt-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl border-2 border-dashed border-emerald-deep/40 bg-cream px-8 py-6 transition-colors hover:border-emerald-deep"
+		>
+			<span>
+				<span class="block font-display text-xl font-semibold">Customize your own</span>
+				<span class="mt-1 block text-sm text-slate">
+					None of these exactly it? Answer four questions and get a program built around your team.
+				</span>
+			</span>
+			<span class="font-semibold text-emerald-deep">Start below ↓</span>
+		</a>
 	</Section>
 
 	<Section
@@ -102,7 +116,7 @@ const stats = [
 		id="enroll"
 		eyebrow="Start here"
 		title="Find the right workshop in 60 seconds."
-		intro="Four quick questions. A recommendation built for you. No email required until you're ready."
+		intro="Four quick questions. A recommendation built for you."
 	>
 		<EnrollmentWizard workshops={wizardWorkshops} />
 	</Section>

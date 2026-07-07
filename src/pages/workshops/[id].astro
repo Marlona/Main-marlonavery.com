@@ -117,11 +117,12 @@ const { data } = workshop;
 				{
 					data.industries.length > 0 && (
 						<div class="reveal">
-							<h2 class="text-eyebrow text-emerald-deep">Tuned for</h2>
+							<h2 class="text-eyebrow text-emerald-deep">Designed for all industries, including</h2>
 							<ul class="mt-3 flex flex-wrap gap-2">
 								{data.industries.map((industry) => (
 									<li class="rounded-full bg-cream px-3 py-1.5 text-xs font-medium text-slate">{industry}</li>
 								))}
+								<li class="rounded-full border border-dashed border-slate/40 px-3 py-1.5 text-xs font-medium text-slate">+ yours</li>
 							</ul>
 						</div>
 					)

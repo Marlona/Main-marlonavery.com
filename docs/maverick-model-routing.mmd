@@ -1,0 +1,36 @@
+%% Maverick model routing — explicit table, no meta-model. See docs/maverick-phase2.md.
+flowchart TB
+    subgraph browser["Browser — marlonavery.com/maverick"]
+        MIC["🎙 Voice dictation<br/>Web Speech API · on-device · $0"]
+        UI["Maverick chat + dashboard"]
+        MIC --> UI
+    end
+
+    subgraph edge["Supabase Edge Functions — the only place with keys"]
+        CHAT["maverick-chat<br/>agentic tool loop"]
+        AGENT["maverick-agent<br/>briefing · affirmation · review"]
+        MEMFN["maverick-memory"]
+        TABLE{{"ROUTING TABLE — explicit, per call-site<br/>chat &amp; weekly review → reasoning · Sonnet 5<br/>affirmation → writing · Sonnet 5<br/>daily briefing → fast · Haiku 4.5<br/>(Phase 2B classify → cheap · Haiku 4.5)"}}
+        EMB["gte-small embeddings<br/>384-dim · local · $0<br/>NEVER routed — memory physics"]
+    end
+
+    subgraph or["OpenRouter — one key, one bill"]
+        PRIMARY["Primary model"]
+        FB["Fallback chain (same family)<br/>Sonnet 5 → 4.6 → 4.5<br/>Haiku 4.5 → Sonnet 4.5"]
+        PREFS["Provider prefs<br/>Anthropic first · data_collection: deny"]
+        PRIMARY -.->|outage / rate limit| FB
+        PREFS -.- PRIMARY
+    end
+
+    DB[("Postgres + pgvector<br/>memories · chats · pipeline · audit log")]
+    CRON["pg_cron · 7:00 AM ET"] --> AGENT
+
+    UI -->|SSE stream| CHAT
+    CHAT --> TABLE
+    AGENT --> TABLE
+    TABLE --> PRIMARY
+    CHAT --> EMB
+    MEMFN --> EMB
+    EMB --> DB
+    CHAT --> DB
+    AGENT --> DB

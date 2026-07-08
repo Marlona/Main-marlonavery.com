@@ -8,6 +8,7 @@ import { PODCAST } from '../data/podcast';
 
 import headshot from '../assets/photos/headshot-fedora.jpg';
 import stageLecture from '../assets/photos/stage-1.jpg';
+import stageWide from '../assets/photos/stage-2.jpg';
 import actionShot from '../assets/photos/workshop-floor-facilitation.jpg';
 
 const press = (await getCollection('press'))[0];
@@ -19,77 +20,84 @@ const pressPhotos = [
 	{ src: stageLecture, label: 'Speaking', file: '/press/marlon-avery-speaking.jpg', alt: 'Marlon Avery speaking from a lectern', top: false },
 	{ src: actionShot, label: 'Action shot', file: '/press/marlon-avery-action.jpg', alt: 'Marlon Avery coaching a workshop participant', top: false },
 ];
+
+/** Stages & partners scouts recognize — wordmark treatment matches the home marquee */
+const pastTalks = [
+	{ name: 'Microsoft', color: '#737373' },
+	{ name: 'Google', color: '#4285F4', letters: ['#4285F4', '#EA4335', '#FBBC05', '#4285F4', '#34A853', '#EA4335'] },
+	{ name: 'Earn Your Leisure', color: '#0b0b0c' },
+	{ name: 'Invest Fest', color: '#d7263d' },
+	{ name: 'Dream Machine', color: '#b8860b' },
+];
 ---
 
 <BaseLayout
 	title="Speaking & Press Kit"
-	description="Everything event planners and media need to book Marlon Avery — bios, photos, talk topics, the AI With Friends podcast, and booking contacts."
+	description="Everything event planners and media need to book Marlon Avery — talk topics, past stages, bios, photos, the AI With Friends podcast, and booking contacts."
 >
 	<div class="bg-paper px-6 pt-36 pb-16 md:pt-44">
 		<div class="mx-auto max-w-7xl">
 			<p class="text-eyebrow reveal text-emerald-deep">Speaking & press kit</p>
 			<h1 class="text-display-lg reveal mt-6 max-w-4xl">Everything you need to say yes.</h1>
-			<p class="reveal mt-8 max-w-2xl text-lg leading-relaxed text-slate">
-				Copy-ready bios, downloadable photography, talk topics, and booking contacts — built for event
-				planners, emcees, and media.
-			</p>
 		</div>
 	</div>
 
 	<Section pad="compact">
-		<!-- Bios with copy buttons -->
-		<div class="grid gap-6 lg:grid-cols-3">
-			{
-				bios.map((bio) => (
-					<div class="reveal flex flex-col rounded-2xl bg-cream p-8">
-						<div class="flex items-center justify-between gap-4">
-							<h2 class="text-eyebrow text-emerald-deep">{bio.label}</h2>
-							<button
-								type="button"
-								class="cursor-pointer rounded-full border border-ink/20 px-4 py-1.5 text-xs font-bold transition-colors hover:border-emerald-deep hover:text-emerald-deep"
-								data-copy-bio
-								data-copy-text={bio.content}
-							>
-								Copy
-							</button>
-						</div>
-						<div class="mt-4 h-56 overflow-y-auto pr-2 text-sm leading-relaxed text-ink/85">{bio.content}</div>
-						<p class="pt-4 text-xs text-slate">{bio.wordCount} words</p>
-					</div>
-				))
-			}
+		<!-- Value proposition + photo -->
+		<div class="grid items-center gap-10 lg:grid-cols-12">
+			<div class="lg:col-span-7">
+				<h2 class="text-display-sm reveal max-w-xl">
+					Most AI speakers describe the future. <span class="text-emerald-deep">Marlon builds it</span> — then
+					hands your audience the blueprint.
+				</h2>
+				<p class="reveal mt-6 max-w-xl text-lg leading-relaxed text-slate">
+					10,000+ professionals trained across 100+ rooms, zero hype: every talk is built by someone who
+					ships production AI all week — and ends with something your attendees can do Monday morning.
+				</p>
+				<div class="reveal mt-8 flex flex-wrap gap-4">
+					<a href="/book?intent=keynote" class="rounded-full bg-ink px-8 py-4 font-semibold text-paper transition-colors hover:bg-emerald-deep">
+						Speaker inquiry →
+					</a>
+					<a href="#topics" class="rounded-full border border-ink/30 px-8 py-4 font-semibold transition-colors hover:border-emerald-deep hover:text-emerald-deep">
+						See talk topics
+					</a>
+				</div>
+			</div>
+			<figure class="reveal relative lg:col-span-5">
+				<div class="absolute -inset-3 -z-10 rounded-3xl bg-emerald/10" aria-hidden="true"></div>
+				<Image
+					src={stageWide}
+					alt="Marlon Avery commanding the stage mid-keynote"
+					widths={[480, 800, 1000]}
+					sizes="(max-width: 1024px) 100vw, 40vw"
+					class="aspect-[4/3] w-full rounded-3xl object-cover"
+				/>
+			</figure>
 		</div>
 
-		<!-- Photos with download buttons -->
-		<h2 class="reveal mt-16 mb-6 font-display text-2xl font-semibold">Photos</h2>
-		<div class="grid gap-6 md:grid-cols-3">
-			{
-				pressPhotos.map((photo) => (
-					<figure class="reveal overflow-hidden rounded-2xl bg-cream">
-						<Image
-							src={photo.src}
-							alt={photo.alt}
-							widths={[480, 800]}
-							sizes="(max-width: 768px) 100vw, 33vw"
-							class:list={['aspect-[4/3] w-full object-cover', photo.top && 'object-top']}
-						/>
-						<figcaption class="flex items-center justify-between gap-4 p-5">
-							<span class="font-semibold">{photo.label}</span>
-							<a
-								href={photo.file}
-								download
-								class="rounded-full bg-ink px-5 py-2 text-sm font-bold text-paper transition-colors hover:bg-emerald-deep"
-							>
-								Download ↓
-							</a>
-						</figcaption>
-					</figure>
-				))
-			}
+		<!-- Past talks — stages & partners -->
+		<div class="reveal mt-14 border-y border-ink/8 py-8">
+			<p class="text-eyebrow text-center text-slate">Recent stages & partners</p>
+			<ul class="mt-6 flex flex-wrap items-center justify-center gap-x-12 gap-y-4">
+				{
+					pastTalks.map((brand) => (
+						<li
+							class="font-display text-xl font-semibold whitespace-nowrap tracking-tight opacity-85 md:text-2xl"
+							style={brand.letters ? undefined : `color: ${brand.color}`}
+						>
+							{brand.letters
+								? brand.name
+										.split('')
+										.map((ch, i) => <span style={`color: ${brand.letters![i % brand.letters!.length]}`}>{ch}</span>)
+								: brand.name}
+						</li>
+					))
+				}
+			</ul>
 		</div>
 
-		<!-- Talk topics -->
-		<h2 class="reveal mt-16 mb-6 font-display text-2xl font-semibold">Talk topics</h2>
+		<!-- Talk topics — front and center for scouts -->
+		<h2 id="topics" class="reveal mt-16 mb-6 scroll-mt-28 font-display text-2xl font-semibold">Talk topics</h2>
 		<ul class="grid gap-x-12 md:grid-cols-2">
 			{
 				pressTopics.map((topic) => (
@@ -136,6 +144,57 @@ const pressPhotos = [
 					))
 				}
 			</ul>
+		</div>
+
+		<!-- Planner assets: bios + photos (they'll scroll when they're ready to book) -->
+		<h2 class="reveal mt-16 mb-6 font-display text-2xl font-semibold">Copy-ready bios</h2>
+		<div class="grid gap-6 lg:grid-cols-3">
+			{
+				bios.map((bio) => (
+					<div class="reveal flex flex-col rounded-2xl bg-cream p-8">
+						<div class="flex items-center justify-between gap-4">
+							<h3 class="text-eyebrow text-emerald-deep">{bio.label}</h3>
+							<button
+								type="button"
+								class="cursor-pointer rounded-full border border-ink/20 px-4 py-1.5 text-xs font-bold transition-colors hover:border-emerald-deep hover:text-emerald-deep"
+								data-copy-bio
+								data-copy-text={bio.content}
+							>
+								Copy
+							</button>
+						</div>
+						<div class="mt-4 h-56 overflow-y-auto pr-2 text-sm leading-relaxed text-ink/85">{bio.content}</div>
+						<p class="pt-4 text-xs text-slate">{bio.wordCount} words</p>
+					</div>
+				))
+			}
+		</div>
+
+		<h2 class="reveal mt-16 mb-6 font-display text-2xl font-semibold">Photos</h2>
+		<div class="grid gap-6 md:grid-cols-3">
+			{
+				pressPhotos.map((photo) => (
+					<figure class="reveal overflow-hidden rounded-2xl bg-cream">
+						<Image
+							src={photo.src}
+							alt={photo.alt}
+							widths={[480, 800]}
+							sizes="(max-width: 768px) 100vw, 33vw"
+							class:list={['aspect-[4/3] w-full object-cover', photo.top && 'object-top']}
+						/>
+						<figcaption class="flex items-center justify-between gap-4 p-5">
+							<span class="font-semibold">{photo.label}</span>
+							<a
+								href={photo.file}
+								download
+								class="rounded-full bg-ink px-5 py-2 text-sm font-bold text-paper transition-colors hover:bg-emerald-deep"
+							>
+								Download ↓
+							</a>
+						</figcaption>
+					</figure>
+				))
+			}
 		</div>
 
 		<!-- Booking CTA -->

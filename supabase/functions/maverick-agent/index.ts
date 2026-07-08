@@ -111,6 +111,18 @@ const parseJson = (raw: string) => {
 
 const db = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
+// Built-in embeddings for the nightly distillation — same gte-small model as
+// maverick-memory, so vectors are comparable across the two functions.
+declare const Supabase: { ai: { Session: new (model: string) => { run(input: string, opts: Record<string, unknown>): Promise<number[]> } } };
+const embedder = new Supabase.ai.Session('gte-small');
+const embed = (text: string) => embedder.run(text, { mean_pool: true, normalize: true });
+
+/** True if a near-identical memory already exists (dedup guard shared with maverick-memory). */
+async function isDuplicateMemory(embedding: number[]): Promise<boolean> {
+	const { data } = await db.rpc('match_maverick_memories', { query_embedding: embedding, match_count: 1, min_similarity: 0.9 });
+	return (data ?? []).length > 0;
+}
+
 const audit = (entry: { observed: string; recommended: string; action_taken: string; action_type: string; related_id?: string }) =>
 	db.from('audit_log').insert({ ...entry, approved: true });
 
@@ -277,6 +289,95 @@ async function weeklyReview() {
 	return data;
 }
 
+/**
+ * Nightly distillation — turn the day's real conversations into durable memory
+ * so long chats don't evaporate. Runs via the maverick-nightly-distill cron;
+ * also callable on demand. Idempotent: a conversation is only re-distilled if
+ * it had new activity since summarized_at, and every candidate memory is
+ * dedup-checked before insert.
+ */
+async function distillMemories() {
+	const { data: convos } = await db
+		.from('chat_conversations')
+		.select('id,title,updated_at,summarized_at')
+		.gte('updated_at', `${daysAgo(2)}T00:00:00Z`)
+		.order('updated_at', { ascending: false })
+		.limit(30);
+
+	const pending = (convos ?? []).filter(
+		(c) => !c.summarized_at || (c.updated_at && new Date(c.updated_at) > new Date(c.summarized_at)),
+	);
+
+	let processed = 0;
+	let created = 0;
+
+	for (const convo of pending) {
+		const stamp = new Date().toISOString();
+		const { data: msgs } = await db
+			.from('chat_messages')
+			.select('role,content')
+			.eq('conversation_id', convo.id)
+			.in('role', ['user', 'assistant'])
+			.order('created_at', { ascending: true })
+			.limit(100);
+		const real = (msgs ?? []).filter((m) => m.content);
+
+		// Skip briefing-only day threads and one-liners — need genuine back-and-forth.
+		if (real.filter((m) => m.role === 'user').length < 2) {
+			await db.from('chat_conversations').update({ summarized_at: stamp }).eq('id', convo.id);
+			continue;
+		}
+
+		const transcript = real.map((m) => `${m.role.toUpperCase()}: ${m.content}`).join('\n').slice(0, 12000);
+		let parsed: { summary?: string; memories?: { content?: string; kind?: string }[] };
+		try {
+			const raw = await callModel(
+				'reasoning',
+				VOICE,
+				`Distill this conversation between Marlon (USER) and you (ASSISTANT) into durable memory. ` +
+					`Keep only what's worth remembering weeks from now — decisions made, preferences revealed, facts ` +
+					`about people or projects, commitments. Skip transient task chatter and anything already obvious.\n\n` +
+					`${transcript}\n\n` +
+					`Respond with ONLY a JSON object: {"summary": "one or two sentence recap", "memories": ` +
+					`[{"content": "a single durable fact in third person", "kind": "fact|preference|decision|person|project_context"}]}. ` +
+					`An empty memories array is fine when nothing is durable.`,
+			);
+			parsed = parseJson(raw);
+		} catch {
+			continue; // leave summarized_at unset so it retries tomorrow
+		}
+
+		const candidates = [
+			...(parsed.summary ? [{ content: `Conversation "${convo.title}": ${parsed.summary}`, kind: 'conversation_summary' }] : []),
+			...(Array.isArray(parsed.memories) ? parsed.memories : []),
+		];
+		for (const item of candidates) {
+			const content = typeof item.content === 'string' ? item.content.trim() : '';
+			if (!content || content.length > 4000) continue;
+			const embedding = await embed(content);
+			if (await isDuplicateMemory(embedding)) continue;
+			await db.from('maverick_memories').insert({
+				content,
+				embedding,
+				kind: item.kind ?? 'conversation_summary',
+				source: 'chat',
+				metadata: { conversation_id: convo.id },
+			});
+			created++;
+		}
+		await db.from('chat_conversations').update({ summarized_at: stamp }).eq('id', convo.id);
+		processed++;
+	}
+
+	await audit({
+		observed: `${pending.length} conversation(s) with activity since last distillation`,
+		recommended: 'distill conversations into long-term memory',
+		action_taken: `distilled ${processed} conversation(s) into ${created} new memories`,
+		action_type: 'distill_memories',
+	});
+	return { processed, created };
+}
+
 Deno.serve(async (req: Request) => {
 	const headers = corsHeaders(req.headers.get('origin'));
 	if (req.method === 'OPTIONS') return new Response('ok', { headers });
@@ -311,6 +412,7 @@ Deno.serve(async (req: Request) => {
 			action === 'daily_briefing' ? await dailyBriefing()
 			: action === 'affirmation' ? await affirmation()
 			: action === 'weekly_review' ? await weeklyReview()
+			: action === 'distill_memories' ? await distillMemories()
 			: null;
 		if (result === null) {
 			return new Response(JSON.stringify({ error: `Unknown action "${action}"` }), { status: 400, headers });

@@ -31,6 +31,23 @@ const MODEL_PROFILES = {
 	writing: Deno.env.get('MODEL_WRITING') ?? 'anthropic/claude-sonnet-5',
 } as const;
 
+/**
+ * Explicit routing, decided at the call-site — no meta-model picks models.
+ * Fallback chains stay inside the Claude family (voice + output-format
+ * consistency); provider prefs prefer Anthropic direct and exclude any host
+ * that trains on prompts. See docs/maverick-phase2.md → Model routing.
+ */
+const FALLBACKS: Record<keyof typeof MODEL_PROFILES, string[]> = {
+	fast: ['anthropic/claude-sonnet-4.5'],
+	reasoning: ['anthropic/claude-sonnet-4.6', 'anthropic/claude-sonnet-4.5'],
+	writing: ['anthropic/claude-sonnet-4.6', 'anthropic/claude-sonnet-4.5'],
+};
+
+const routeFor = (profile: keyof typeof MODEL_PROFILES) => ({
+	models: [MODEL_PROFILES[profile], ...FALLBACKS[profile].filter((m) => m !== MODEL_PROFILES[profile])],
+	provider: { order: ['Anthropic'], data_collection: 'deny' },
+});
+
 const ALLOWED_ORIGINS = new Set([
 	'https://marlonavery.com',
 	'https://www.marlonavery.com',
@@ -72,7 +89,7 @@ async function callModel(profile: keyof typeof MODEL_PROFILES, system: string, u
 			'X-Title': 'Maverick Command Center',
 		},
 		body: JSON.stringify({
-			model: MODEL_PROFILES[profile],
+			...routeFor(profile),
 			messages: [
 				{ role: 'system', content: system },
 				{ role: 'user', content: user },

@@ -1,0 +1,78 @@
+---
+title: "Why I Won't Let My AI Pick Its Own Brain"
+publishDate: 2026-07-07
+description: "I'm building a personal AI chief of staff, and the smartest routing decision I made was refusing to let it make one. Here's the architecture — and the one rule I won't break."
+tags:
+  - "ai-architecture"
+  - "agents"
+  - "model-routing"
+  - "maverick"
+draft: true
+---
+
+Ever been handed the menu at The Cheesecake Factory? Twenty-one pages. Glamburgers. Thai lettuce wraps. Something called "Chicken Madeira" that has been haunting page 14 since the Clinton administration. And after ten minutes of flipping, what do most of us order? The same thing we got last time.
+
+Now look at In-N-Out. Four things on the board. You're eating in ninety seconds, and it's exactly what you expected it to be. Nobody has ever stood at an In-N-Out counter paralyzed by choice.
+
+Hold that thought, because the AI world just became The Cheesecake Factory.
+
+## Four Hundred Models and a Decision Problem
+
+I'm building **Maverick** — a personal AI chief of staff that lives on my own site. It writes my morning briefing before I wake up, runs my speaking pipeline, tracks revenue, remembers what I tell it, and executes real tasks from a chat window. Under the hood, every AI call goes through OpenRouter, a marketplace that puts hundreds of models behind one API key.
+
+Hundreds of models. Twenty-one pages of menu.
+
+So here's the tempting idea, and if you're building anything agentic right now, you've had it too: *what if the AI picks the best model for each task?* Embedding job? It chooses an embedding model. Quick classification? Something cheap. Deep reasoning? Bring out the big one. The system self-optimizes. It sounds like the obvious next step.
+
+I architected it out, weighed it honestly, and said no. Maverick does not get to pick its own brain. Here's why — and what I shipped instead.
+
+## The Router Is Just Another Model That Can Be Wrong
+
+If a language model decides which language model handles each request, you've added an extra inference to *every single operation*. That's latency on every message, cost on every call, and — this is the part nobody puts in the demo — a new way to be wrong. When the router misroutes, quality drops and you can't reproduce why. Tuesday's briefing came out flat? Good luck debugging a decision that a model made, invisibly, at 7:00 AM.
+
+But the deeper realization was this: **my code already knows what task it's doing.** The briefing pipeline knows it's writing a briefing. The chat loop knows it's doing agentic work. The classification step knows it's classifying. Asking a model to "identify the task" is paying inference for information the call-site gives you for free.
+
+So Maverick routes with a table. The most boring artifact in the whole codebase:
+
+```ts
+const MODEL_PROFILES = {
+  fast:      'claude-haiku-4.5',   // daily briefings, quick summaries
+  reasoning: 'claude-sonnet-5',    // chat + the agentic tool loop
+  writing:   'claude-sonnet-5',    // affirmations, weekly reviews
+  // cheap:  reserved for high-volume email classification, coming next phase
+};
+```
+
+Every call-site names its profile. No meta-model, no mystery. When a better model ships, the upgrade is a one-line config change — I moved Maverick's reasoning from Sonnet 4.5 to Sonnet 5 in about the time it takes to read this sentence.
+
+## What the Boring Table Buys You
+
+**A consistent voice.** Different models sound different. If a router quietly swaps the model behind my morning briefing, Maverick stops sounding like Maverick. Personality is a feature; routing roulette breaks it.
+
+**Reliable tool-calling.** Maverick's chat doesn't just talk — it creates tasks, moves deals through my speaking pipeline, records revenue. That agentic loop depends on the model formatting tool calls exactly right, and models vary wildly at this. The place dynamic routing would break first is the place I can least afford it.
+
+**Resilience without the gamble.** Instead of a smart router, each profile carries a dumb, ordered fallback chain — Sonnet 5, then 4.6, then 4.5, all in the same model family. If a provider has an outage or rate-limits me, OpenRouter walks the chain automatically. Same voice, same tool format, zero drama. That's the 20% of dynamic routing that's actually worth having, with none of the meta-model risk.
+
+**Privacy you can reason about.** My provider preferences pin requests Anthropic-first and exclude any host that trains on prompts. An unconstrained router would spray my calendar, my pipeline, and my private notes across whichever provider won the pick that millisecond. No thank you.
+
+## The One Rule I Won't Break
+
+There's one place where "pick the best model per request" isn't just risky — it's mathematically broken: **memory.**
+
+Maverick has long-term memory built on embeddings. Every memory gets converted into a vector — think of it as a fingerprint of meaning — and when I ask a question, the question gets fingerprinted the same way so the system can find matches. Here's the catch: fingerprints only match if they come from the *same* model. A router choosing "the best embedding model today" would be measuring memories with one ruler and questions with another. Recall wouldn't degrade. It would silently break.
+
+So embeddings never route. They run on a small model that lives inside my database's edge runtime — local, instant, and free. Voice input is the same story: dictation runs on-device in the browser, costs nothing, and never needed a marketplace. Not every job wants the menu.
+
+## Order Like In-N-Out
+
+The pattern underneath all of this is one I keep relearning across every AI system I ship: **make decisions where the information lives.** The call-site knows the task — so route in code. The human knows when a conversation deserves the expensive model — so that override belongs in the UI, not in a meta-model. The only decisions left for AI should be the ones only AI can make.
+
+The Cheesecake Factory menu isn't impressive because it's long. In-N-Out isn't limited because it's short. One of them knows exactly what it's doing.
+
+Here's your move this week: open up whatever AI system your team is building and list every model call in it. For each one, ask a single question — *does the code already know what this task is?* If yes, put it in a table. You'll probably find, like I did, that the "AI chooses the AI" layer you were about to build is a decision your architecture already made for free.
+
+What's the most over-engineered menu in your stack right now? I'd genuinely love to hear it.
+
+Build simple. Route boring. Ship.
+
+**MA**

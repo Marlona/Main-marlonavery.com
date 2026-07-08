@@ -19,6 +19,15 @@
 > email-send dispatcher. **⏳ 2C:** Stripe invoice dispatcher + payment webhooks, GitHub
 > code-task dispatcher.
 >
+> **Model routing (hardened 2026-07-07, decision recorded in the blog post
+> `why-i-wont-let-my-ai-pick-its-own-brain`):** explicit per-call-site profiles — NO meta-model
+> ever picks models. Each profile carries an ordered same-family fallback chain (Sonnet 5 → 4.6
+> → 4.5; Haiku 4.5 → Sonnet 4.5) via OpenRouter's `models` array, plus provider prefs
+> `{ order: ['Anthropic'], data_collection: 'deny' }`. Embeddings NEVER route (gte-small local —
+> changing embedding models breaks recall); dictation stays on-device. Diagram:
+> `docs/maverick-model-routing.mmd`. Future per-conversation model override belongs in the chat
+> UI (human choice), not a router.
+>
 > **Approval-queue contracts for the 2B/2C dispatchers** — rows are enqueued with `action_type`
 > + `preview` and executed ONLY from status `approved`:
 > - `send_email` — preview: `{ to: string[], subject, body, reply_to? }`

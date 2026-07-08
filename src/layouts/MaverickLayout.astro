@@ -9,7 +9,7 @@ import BaseLayout from './BaseLayout.astro';
  */
 interface Props {
 	title: string;
-	active: 'home' | 'projects' | 'speaking' | 'growth' | 'review' | 'inquiries' | 'write';
+	active: 'home' | 'projects' | 'speaking' | 'growth' | 'review' | 'approvals' | 'inquiries' | 'write';
 }
 
 const { title, active } = Astro.props;
@@ -20,6 +20,7 @@ const NAV = [
 	{ id: 'speaking', label: 'Speaking & Revenue', href: '/maverick/speaking' },
 	{ id: 'growth', label: 'Growth', href: '/maverick/growth' },
 	{ id: 'review', label: 'Review', href: '/maverick/review' },
+	{ id: 'approvals', label: 'Approvals', href: '/maverick/approvals' },
 	{ id: 'inquiries', label: 'Inquiries', href: '/maverick/inquiries' },
 	{ id: 'write', label: 'Write', href: '/maverick/write' },
 ] as const;

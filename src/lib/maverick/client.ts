@@ -138,24 +138,45 @@ export const fmtDate = (d: string | null | undefined) => (d ? dateFmt.format(new
 /** Today as YYYY-MM-DD in the browser's (Marlon's) timezone. */
 export const todayISO = () => new Intl.DateTimeFormat('en-CA').format(new Date());
 
-/** Tiny markdown renderer for briefing content (bold, lists, paragraphs). */
+/** Tiny markdown renderer for briefings and chat replies (bold, inline/fenced code, lists, headings). */
 export function renderMarkdown(md: string): string {
-	const inline = (s: string) => esc(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-	const blocks = md.trim().split(/\n{2,}/);
-	return blocks
-		.map((block) => {
-			const lines = block.split('\n').map((l) => l.trim()).filter(Boolean);
-			if (lines.length === 1 && /^#{1,4}\s/.test(lines[0])) {
-				return `<p class="font-display text-lg font-semibold">${inline(lines[0].replace(/^#{1,4}\s+/, ''))}</p>`;
-			}
-			if (lines.every((l) => /^(\d+[.)]|[-*•])\s/.test(l))) {
-				const ordered = /^\d/.test(lines[0]);
-				const items = lines.map((l) => `<li>${inline(l.replace(/^(\d+[.)]|[-*•])\s+/, ''))}</li>`).join('');
-				return ordered
-					? `<ol class="list-decimal space-y-1 pl-5">${items}</ol>`
-					: `<ul class="list-disc space-y-1 pl-5">${items}</ul>`;
-			}
-			return `<p>${lines.map(inline).join('<br />')}</p>`;
-		})
-		.join('');
+	const inline = (s: string) =>
+		esc(s)
+			.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+			.replace(/`([^`]+)`/g, '<code class="rounded bg-ink/60 px-1.5 py-0.5 font-mono text-[0.85em]">$1</code>');
+
+	const renderText = (text: string) =>
+		text
+			.trim()
+			.split(/\n{2,}/)
+			.filter(Boolean)
+			.map((block) => {
+				const lines = block.split('\n').map((l) => l.trim()).filter(Boolean);
+				if (lines.length === 1 && /^#{1,4}\s/.test(lines[0])) {
+					return `<p class="font-display text-lg font-semibold">${inline(lines[0].replace(/^#{1,4}\s+/, ''))}</p>`;
+				}
+				if (lines.every((l) => /^(\d+[.)]|[-*•])\s/.test(l))) {
+					const ordered = /^\d/.test(lines[0]);
+					const items = lines.map((l) => `<li>${inline(l.replace(/^(\d+[.)]|[-*•])\s+/, ''))}</li>`).join('');
+					return ordered
+						? `<ol class="list-decimal space-y-1 pl-5">${items}</ol>`
+						: `<ul class="list-disc space-y-1 pl-5">${items}</ul>`;
+				}
+				return `<p>${lines.map(inline).join('<br />')}</p>`;
+			})
+			.join('');
+
+	// Pull fenced code blocks out first so their contents stay verbatim
+	const out: string[] = [];
+	const fence = /```\w*\n?([\s\S]*?)```/g;
+	let cursor = 0;
+	for (let m = fence.exec(md); m; m = fence.exec(md)) {
+		if (m.index > cursor) out.push(renderText(md.slice(cursor, m.index)));
+		out.push(
+			`<pre class="overflow-x-auto rounded-xl bg-ink/80 p-4 font-mono text-xs leading-relaxed"><code>${esc(m[1].replace(/\n$/, ''))}</code></pre>`,
+		);
+		cursor = m.index + m[0].length;
+	}
+	if (cursor < md.length) out.push(renderText(md.slice(cursor)));
+	return out.join('');
 }

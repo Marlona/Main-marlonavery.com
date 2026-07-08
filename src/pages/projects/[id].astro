@@ -44,6 +44,35 @@ const shortTitle = data.title.split('—')[0].trim();
 		</div>
 	</div>
 
+	{
+		data.videoUrl && (
+			<div class="theme-fixed bg-ink px-6 pb-20 text-paper">
+				<div class="mx-auto max-w-5xl">
+					<h2 id="film" class="text-eyebrow reveal mb-5 text-emerald-glow">
+						The film
+					</h2>
+					{/* Click-to-play with native controls — no motion until asked for */}
+					<video
+						src={data.videoUrl}
+						poster={data.videoPoster}
+						controls
+						preload="metadata"
+						playsinline
+						class="reveal aspect-video w-full rounded-2xl bg-graphite"
+					>
+						<p>
+							Your browser can't play this video —
+							<a href={data.videoUrl} class="text-emerald-glow underline">
+								download it instead
+							</a>
+							.
+						</p>
+					</video>
+				</div>
+			</div>
+		)
+	}
+
 	<Section>
 		<div class="grid gap-16 lg:grid-cols-3">
 			<div class="prose prose-lg max-w-none lg:col-span-2 prose-headings:font-display prose-a:text-emerald-deep">

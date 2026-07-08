@@ -127,6 +127,30 @@ direct, warm, confident, zero corporate fluff, no exclamation-point cheerleading
 across four pillars: jpmorgan, voicepath, ai_impact, personal. The core principle: reduce
 overwhelm, don't add work.`;
 
+/** Find or create today's conversation ("Monday, July 7") and keep the briefing as its opening message. */
+async function seedBriefingConversation(content: string) {
+	const title = new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric', timeZone: TIME_ZONE }).format(new Date());
+	let { data: convo } = await db.from('chat_conversations').select('id').eq('title', title).maybeSingle();
+	if (!convo) {
+		const { data, error } = await db.from('chat_conversations').insert({ title }).select('id').single();
+		if (error) throw new Error(error.message);
+		convo = data;
+	}
+	const { data: first } = await db
+		.from('chat_messages')
+		.select('id,role,model')
+		.eq('conversation_id', convo.id)
+		.order('created_at', { ascending: true })
+		.limit(1)
+		.maybeSingle();
+	if (first?.role === 'assistant' && first.model === MODEL_PROFILES.fast) {
+		await db.from('chat_messages').update({ content }).eq('id', first.id);
+	} else {
+		await db.from('chat_messages').insert({ conversation_id: convo.id, role: 'assistant', content, model: MODEL_PROFILES.fast });
+	}
+	return convo.id;
+}
+
 async function dailyBriefing() {
 	const ctx = await gatherContext();
 	const content = await callModel(
@@ -143,13 +167,14 @@ async function dailyBriefing() {
 		{ onConflict: 'date' },
 	);
 	if (error) throw new Error(error.message);
+	const conversationId = await seedBriefingConversation(content);
 	await audit({
 		observed: `${ctx.open_tasks.length} open tasks, ${ctx.projects.length} live projects, ${ctx.new_inquiries} new inquiries`,
 		recommended: 'daily briefing',
 		action_taken: `generated daily briefing for ${ctx.date}`,
 		action_type: 'daily_briefing',
 	});
-	return { content };
+	return { content, conversation_id: conversationId };
 }
 
 async function affirmation() {
@@ -240,10 +265,19 @@ Deno.serve(async (req: Request) => {
 	if (req.method === 'OPTIONS') return new Response('ok', { headers });
 	if (req.method !== 'POST') return new Response(JSON.stringify({ error: 'POST only' }), { status: 405, headers });
 
-	// verify_jwt already validated the token signature; pin it to Marlon's account.
+	// verify_jwt already validated the token signature. Two ways in from here:
+	// Marlon's own session, or the pg_cron scheduler carrying the vault secret.
 	const jwt = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') ?? '';
 	const { data: userData } = await createClient(SUPABASE_URL, SERVICE_ROLE_KEY).auth.getUser(jwt);
-	if (userData?.user?.email !== OWNER_EMAIL) {
+	let authorized = userData?.user?.email === OWNER_EMAIL;
+	if (!authorized) {
+		const cronHeader = req.headers.get('x-maverick-cron');
+		if (cronHeader) {
+			const { data: secret } = await db.rpc('get_cron_secret');
+			authorized = typeof secret === 'string' && secret.length > 0 && cronHeader === secret;
+		}
+	}
+	if (!authorized) {
 		return new Response(JSON.stringify({ error: 'This studio is for MA.' }), { status: 403, headers });
 	}
 

@@ -1,0 +1,140 @@
+---
+import MaverickLayout from '../../layouts/MaverickLayout.astro';
+
+/**
+ * Approval Queue — the guardrail's control surface. External actions
+ * (send_email, create_invoice via Stripe, calendar_write, code_task via
+ * GitHub) queue here and only ever execute from an `approved` row. Phase 2A:
+ * the queue and decisions are live; dispatchers arrive with the Gmail /
+ * Stripe / GitHub integrations in 2B/2C.
+ */
+---
+
+<MaverickLayout title="Maverick — Approvals" active="approvals">
+	<h1 class="text-display-sm mt-8">Approvals.</h1>
+	<p class="mt-3 max-w-2xl rounded-xl border border-gold/40 bg-gold/10 px-4 py-3 text-sm text-paper/80">
+		Nothing external moves without your sign-off — that's the standing rule. Dispatchers for email,
+		Stripe invoices, and code handoff land with the next integrations; until then, approving records
+		the decision.
+	</p>
+
+	<h2 class="text-eyebrow mt-8 text-mist">Pending</h2>
+	<div class="mt-4 space-y-4" data-appr-pending>
+		<p class="text-paper/55">Loading…</p>
+	</div>
+
+	<h2 class="text-eyebrow mt-12 text-mist">History</h2>
+	<div class="mt-4 space-y-2" data-appr-history>
+		<p class="text-paper/55">Loading…</p>
+	</div>
+
+	<h2 class="text-eyebrow mt-12 text-mist">Recent agent activity</h2>
+	<ul class="mt-4 space-y-2 text-sm" data-audit>
+		<li class="text-paper/55">Loading…</li>
+	</ul>
+</MaverickLayout>
+
+<script>
+	import { initMaverick, esc } from '../../lib/maverick/client';
+
+	const db = await initMaverick();
+
+	const pendingEl = document.querySelector<HTMLElement>('[data-appr-pending]')!;
+	const historyEl = document.querySelector<HTMLElement>('[data-appr-history]')!;
+	const auditEl = document.querySelector<HTMLElement>('[data-audit]')!;
+
+	const when = (iso: string | null) => (iso ? new Date(iso).toLocaleString() : '—');
+
+	const previewHtml = (preview: unknown) => {
+		if (!preview || typeof preview !== 'object') return '';
+		const rows = Object.entries(preview as Record<string, unknown>)
+			.map(
+				([k, v]) =>
+					`<div><dt class="inline font-semibold">${esc(k)}:</dt> <dd class="inline whitespace-pre-wrap text-paper/80">${esc(
+						typeof v === 'string' ? v : JSON.stringify(v, null, 1),
+					)}</dd></div>`,
+			)
+			.join('');
+		return `<dl class="mt-3 space-y-1.5 rounded-xl bg-ink/60 p-4 text-sm">${rows}</dl>`;
+	};
+
+	const STATUS_CHIP: Record<string, string> = {
+		approved: 'border-emerald/60 text-emerald-glow',
+		rejected: 'border-terracotta/60 text-terracotta',
+		executed: 'border-mist/60 text-mist',
+	};
+
+	const load = async () => {
+		const { data } = await db.from('approval_queue').select('*').order('created_at', { ascending: false }).limit(60);
+		const rows = data ?? [];
+		const pending = rows.filter((r) => r.status === 'pending');
+		const done = rows.filter((r) => r.status !== 'pending');
+
+		pendingEl.innerHTML = pending.length
+			? pending
+					.map(
+						(r) => `
+			<article class="rounded-2xl border border-gold/40 bg-graphite p-6">
+				<div class="flex flex-wrap items-baseline gap-3">
+					<span class="rounded-full bg-gold/20 px-3 py-1 text-xs font-bold tracking-wide text-gold uppercase">${esc(r.action_type)}</span>
+					<span class="text-xs text-paper/50">${when(r.created_at)}</span>
+					${r.source ? `<span class="text-xs text-paper/50">from ${esc(r.source)}</span>` : ''}
+				</div>
+				${r.suggested_action ? `<p class="mt-3 font-semibold">${esc(r.suggested_action)}</p>` : ''}
+				${r.reasoning ? `<p class="mt-1.5 text-sm text-paper/70">${esc(r.reasoning)}</p>` : ''}
+				${previewHtml(r.preview)}
+				<div class="mt-5 flex gap-3">
+					<button type="button" data-decide="${esc(r.id)}:approved" class="cursor-pointer rounded-full bg-emerald px-6 py-2 text-sm font-bold text-ink transition-transform hover:scale-105">Approve</button>
+					<button type="button" data-decide="${esc(r.id)}:rejected" class="cursor-pointer rounded-full border border-terracotta/60 px-6 py-2 text-sm font-semibold text-terracotta hover:bg-terracotta hover:text-ink">Reject</button>
+				</div>
+			</article>`,
+					)
+					.join('')
+			: '<p class="text-paper/55">Queue is clear — nothing waiting on you.</p>';
+
+		historyEl.innerHTML = done.length
+			? done
+					.map(
+						(r) => `
+			<details class="rounded-xl bg-graphite px-5 py-3">
+				<summary class="flex cursor-pointer list-none flex-wrap items-baseline gap-3 [&::-webkit-details-marker]:hidden">
+					<span class="rounded-full border px-2.5 py-0.5 text-[11px] font-bold uppercase ${STATUS_CHIP[r.status] ?? 'border-paper/30 text-paper/60'}">${esc(r.status)}</span>
+					<span class="text-sm font-semibold">${esc(r.action_type)}</span>
+					<span class="min-w-0 flex-1 truncate text-sm text-paper/60">${esc(r.suggested_action ?? '')}</span>
+					<span class="text-xs text-paper/45">${when(r.resolved_at ?? r.created_at)}</span>
+				</summary>
+				${r.reasoning ? `<p class="mt-2 text-sm text-paper/70">${esc(r.reasoning)}</p>` : ''}
+				${previewHtml(r.preview)}
+			</details>`,
+					)
+					.join('')
+			: '<p class="text-paper/55">No decisions yet.</p>';
+
+		pendingEl.querySelectorAll<HTMLButtonElement>('[data-decide]').forEach((btn) => {
+			btn.addEventListener('click', async () => {
+				const [id, status] = btn.dataset.decide!.split(':');
+				await db.from('approval_queue').update({ status, resolved_at: new Date().toISOString() }).eq('id', id);
+				load();
+			});
+		});
+	};
+
+	const loadAudit = async () => {
+		const { data } = await db.from('audit_log').select('action_type,action_taken,created_at').order('created_at', { ascending: false }).limit(25);
+		auditEl.innerHTML = data?.length
+			? data
+					.map(
+						(a) => `
+			<li class="flex flex-wrap items-baseline gap-2 border-b border-paper/8 pb-2">
+				<span class="rounded-full bg-ink/60 px-2 py-0.5 text-[10px] font-bold text-paper/60 uppercase">${esc(a.action_type ?? '')}</span>
+				<span class="min-w-0 flex-1 text-paper/75">${esc(a.action_taken ?? '')}</span>
+				<span class="text-xs text-paper/45">${when(a.created_at)}</span>
+			</li>`,
+					)
+					.join('')
+			: '<li class="text-paper/55">The agent hasn\'t acted yet.</li>';
+	};
+
+	load();
+	loadAudit();
+</script>

@@ -2,17 +2,17 @@
 import MaverickLayout from '../../layouts/MaverickLayout.astro';
 
 /**
- * Command Center Home — answers "what needs my attention today?" from the DB:
- * AI daily briefing (maverick-agent), top 3, active affirmation, daily
- * check-in, and an at-a-glance strip. See CLAUDE.md → Maverick Command Center.
+ * Maverick home, Phase 2A: the chat IS the command center (hybrid layout).
+ * Streaming conversation with the maverick-chat edge function (internal tools
+ * only — see CLAUDE.md guardrail), stats strip up top, check-in / top-3 /
+ * affirmation in the side rail. The daily briefing arrives as the first
+ * message of each day's conversation (cron at 7:00 AM ET, or on first visit).
  */
 ---
 
 <MaverickLayout title="Maverick — Home" active="home">
-	<h1 class="text-display-sm mt-8" data-home-date>Today.</h1>
-
 	<!-- At-a-glance strip -->
-	<dl class="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4" data-home-stats>
+	<dl class="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
 		{
 			[
 				{ id: 'overdue', label: 'Overdue tasks' },
@@ -20,9 +20,9 @@ import MaverickLayout from '../../layouts/MaverickLayout.astro';
 				{ id: 'inquiries', label: 'New inquiries' },
 				{ id: 'outstanding', label: 'Outstanding revenue' },
 			].map((stat) => (
-				<div class="rounded-2xl bg-graphite p-5">
+				<div class="rounded-2xl bg-graphite px-5 py-4">
 					<dt class="text-xs font-semibold tracking-wide text-paper/55 uppercase">{stat.label}</dt>
-					<dd class="mt-1 font-display text-3xl font-semibold" data-stat={stat.id}>
+					<dd class="mt-1 font-display text-2xl font-semibold" data-stat={stat.id}>
 						—
 					</dd>
 				</div>
@@ -30,76 +30,117 @@ import MaverickLayout from '../../layouts/MaverickLayout.astro';
 		}
 	</dl>
 
-	<div class="mt-8 grid gap-6 lg:grid-cols-5">
-		<div class="space-y-6 lg:col-span-3">
-			<!-- Daily briefing -->
-			<section class="rounded-2xl border border-emerald/30 bg-graphite p-6" aria-labelledby="briefing-h">
-				<div class="flex items-center justify-between gap-4">
-					<h2 id="briefing-h" class="text-eyebrow text-emerald-glow">Daily briefing</h2>
+	<div class="mt-4 grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)_290px]">
+		<!-- Conversation rail -->
+		<aside class="min-w-0">
+			<button
+				type="button"
+				data-chat-new
+				class="w-full cursor-pointer rounded-xl bg-emerald px-4 py-2.5 text-sm font-bold text-ink transition-transform hover:scale-[1.02]"
+			>
+				+ New chat
+			</button>
+			<nav aria-label="Conversations" class="mt-3 hidden max-h-[60vh] space-y-1 overflow-y-auto pr-1 lg:block" data-convo-list></nav>
+			<label class="mt-3 block lg:hidden">
+				<span class="sr-only">Conversation</span>
+				<select data-convo-select class="w-full rounded-xl border border-paper/20 bg-graphite px-3 py-2.5 text-base text-paper focus:border-emerald sm:text-sm"></select>
+			</label>
+		</aside>
+
+		<!-- Thread -->
+		<section class="flex min-w-0 flex-col rounded-2xl bg-graphite" aria-label="Maverick chat">
+			<div data-thread aria-live="polite" class="h-[52dvh] space-y-4 overflow-y-auto p-4 md:p-5 lg:h-[62vh]">
+				<p class="text-paper/55">Waking Maverick…</p>
+			</div>
+			<form data-composer class="border-t border-paper/10 p-3">
+				<div class="flex items-end gap-2">
 					<button
 						type="button"
-						data-briefing-refresh
-						class="cursor-pointer rounded-full border border-paper/25 px-4 py-1.5 text-xs font-bold hover:border-emerald-glow hover:text-emerald-glow"
+						data-chat-mic
+						aria-label="Dictate a message"
+						class="cursor-pointer rounded-xl border border-paper/20 p-2.5 text-paper/70 hover:border-emerald-glow hover:text-emerald-glow disabled:opacity-40"
 					>
-						Regenerate
+						<span data-chat-mic-dot class="block h-4 w-4 rounded-full bg-current" aria-hidden="true"></span>
+					</button>
+					<label class="min-w-0 flex-1">
+						<span class="sr-only">Message Maverick</span>
+						{/* text-base on mobile: anything under 16px makes iOS Safari zoom the page on focus */}
+						<textarea
+							data-chat-input
+							rows="1"
+							placeholder="Ask Maverick…"
+							class="max-h-40 w-full resize-none rounded-xl border border-paper/20 bg-ink px-4 py-2.5 text-base leading-relaxed text-paper focus:border-emerald sm:text-sm"></textarea>
+					</label>
+					<button
+						type="submit"
+						data-chat-send
+						class="cursor-pointer rounded-xl bg-emerald px-5 py-2.5 text-sm font-bold text-ink transition-transform hover:scale-105 disabled:opacity-50"
+					>
+						Send
+					</button>
+					<button
+						type="button"
+						data-chat-stop
+						hidden
+						class="cursor-pointer rounded-xl border border-terracotta/60 px-4 py-2.5 text-sm font-bold text-terracotta hover:bg-terracotta hover:text-ink"
+					>
+						Stop
 					</button>
 				</div>
-				<div class="mt-4 space-y-3 text-[15px] leading-relaxed text-paper/85" data-briefing aria-live="polite">
-					<p class="text-paper/55">Loading…</p>
-				</div>
+				<p class="mt-2 hidden px-1 text-[11px] text-paper/40 sm:block" data-chat-hint>
+					Enter to send · Shift+Enter for a new line · Maverick can edit tasks, pipeline, revenue, and memory — email, invoices, and code handoff arrive in the next phase.
+				</p>
+			</form>
+		</section>
+
+		<!-- Side rail -->
+		<aside class="min-w-0 space-y-4">
+			<section class="rounded-2xl bg-emerald-deep/25 p-5" aria-labelledby="affirmation-h">
+				<h2 id="affirmation-h" class="text-eyebrow text-emerald-glow">Affirmation</h2>
+				<blockquote class="mt-2 font-display text-base leading-snug font-medium" data-affirmation>—</blockquote>
 			</section>
 
-			<!-- Top tasks -->
-			<section class="rounded-2xl bg-graphite p-6" aria-labelledby="top-h">
-				<h2 id="top-h" class="text-eyebrow text-mist">Top of the list</h2>
-				<ul class="mt-4 space-y-3" data-top-tasks>
-					<li class="text-paper/55">Loading…</li>
+			<details class="rounded-2xl bg-graphite p-5" open>
+				<summary class="text-eyebrow cursor-pointer list-none text-mist [&::-webkit-details-marker]:hidden">Top of the list</summary>
+				<ul class="mt-3 space-y-2.5" data-top-tasks>
+					<li class="text-sm text-paper/55">Loading…</li>
 				</ul>
-				<a href="/maverick/projects" class="mt-5 inline-block text-sm font-semibold text-emerald-glow hover:underline">All projects & tasks →</a>
-			</section>
-		</div>
+				<a href="/maverick/projects" class="mt-3 inline-block text-xs font-semibold text-emerald-glow hover:underline">All projects →</a>
+			</details>
 
-		<div class="space-y-6 lg:col-span-2">
-			<!-- Active affirmation -->
-			<section class="rounded-2xl bg-emerald-deep/25 p-6" aria-labelledby="affirmation-h">
-				<h2 id="affirmation-h" class="text-eyebrow text-emerald-glow">Today's affirmation</h2>
-				<blockquote class="mt-3 font-display text-xl leading-snug font-medium" data-affirmation>—</blockquote>
-			</section>
-
-			<!-- Daily check-in -->
-			<section class="rounded-2xl bg-graphite p-6" aria-labelledby="checkin-h">
-				<h2 id="checkin-h" class="text-eyebrow text-mist">Daily check-in</h2>
-				<form data-checkin class="mt-4 space-y-4">
+			<details class="rounded-2xl bg-graphite p-5">
+				<summary class="text-eyebrow cursor-pointer list-none text-mist [&::-webkit-details-marker]:hidden">Daily check-in</summary>
+				<form data-checkin class="mt-3 space-y-3">
 					{
 						[
-							{ id: 'most_important', label: 'Most important thing today' },
+							{ id: 'most_important', label: 'Most important today' },
 							{ id: 'avoiding', label: "What I'm avoiding" },
-							{ id: 'success_looks_like', label: 'Success today looks like' },
+							{ id: 'success_looks_like', label: 'Success looks like' },
 							{ id: 'gratitude', label: 'Grateful for' },
 							{ id: 'reflection', label: 'Evening reflection' },
 						].map((f) => (
 							<div>
-								<label for={`ci-${f.id}`} class="block text-sm font-semibold">
+								<label for={`ci-${f.id}`} class="block text-xs font-semibold">
 									{f.label}
 								</label>
 								<textarea
 									id={`ci-${f.id}`}
 									name={f.id}
 									rows="2"
-									class="mt-1.5 w-full rounded-lg border border-paper/20 bg-ink px-3 py-2 text-sm text-paper focus:border-emerald"
+									class="mt-1 w-full rounded-lg border border-paper/20 bg-ink px-3 py-2 text-base text-paper focus:border-emerald sm:text-xs"
 								/>
 							</div>
 						))
 					}
-					<div class="flex items-center gap-4">
-						<button type="submit" class="cursor-pointer rounded-full bg-emerald px-6 py-2.5 text-sm font-bold text-ink transition-transform hover:scale-105">
-							Save check-in
+					<div class="flex items-center gap-3">
+						<button type="submit" class="cursor-pointer rounded-full bg-emerald px-5 py-2 text-xs font-bold text-ink transition-transform hover:scale-105">
+							Save
 						</button>
-						<p class="text-sm text-emerald-glow" data-checkin-status role="status"></p>
+						<p class="text-xs text-emerald-glow" data-checkin-status role="status"></p>
 					</div>
 				</form>
-			</section>
-		</div>
+			</details>
+		</aside>
 	</div>
 </MaverickLayout>
 
@@ -115,43 +156,302 @@ import MaverickLayout from '../../layouts/MaverickLayout.astro';
 		renderMarkdown,
 		PILLAR_LABELS,
 	} from '../../lib/maverick/client';
+	import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from '../../lib/backend';
+	import type { Tables } from '../../lib/maverick/db-types';
+
+	type Conversation = Tables<'chat_conversations'>;
 
 	const db = await initMaverick();
 	const today = todayISO();
+	const todayTitle = new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric' }).format(new Date());
 
-	document.querySelector('[data-home-date]')!.textContent = new Intl.DateTimeFormat('en-US', {
-		weekday: 'long',
-		month: 'long',
-		day: 'numeric',
-	}).format(new Date());
+	// ---------------------------------------------------------------- Chat --
+	const threadEl = document.querySelector<HTMLElement>('[data-thread]')!;
+	const convoListEl = document.querySelector<HTMLElement>('[data-convo-list]')!;
+	const convoSelectEl = document.querySelector<HTMLSelectElement>('[data-convo-select]')!;
+	const composer = document.querySelector<HTMLFormElement>('[data-composer]')!;
+	const input = document.querySelector<HTMLTextAreaElement>('[data-chat-input]')!;
+	const sendBtn = document.querySelector<HTMLButtonElement>('[data-chat-send]')!;
+	const stopBtn = document.querySelector<HTMLButtonElement>('[data-chat-stop]')!;
 
-	const briefingEl = document.querySelector<HTMLElement>('[data-briefing]')!;
-	const stat = (id: string) => document.querySelector<HTMLElement>(`[data-stat="${id}"]`)!;
+	let conversations: Conversation[] = [];
+	let activeId: string | null = null;
+	let streaming = false;
+	let abortCtl: AbortController | null = null;
 
-	// --- Briefing: show today's, generate it if it doesn't exist yet ---
-	const showBriefing = (content: string) => {
-		briefingEl.innerHTML = renderMarkdown(content);
+	const bubble = (role: 'user' | 'assistant', html: string, tools?: string[]) => `
+		<div class="${role === 'user' ? 'ml-8 rounded-2xl rounded-br-sm bg-emerald-deep/30' : 'mr-4 rounded-2xl rounded-bl-sm bg-ink/60'} px-4 py-3">
+			${tools?.length ? `<p class="mb-2 flex flex-wrap gap-1.5">${tools.map((t) => `<span class="rounded-full border border-paper/20 px-2 py-0.5 text-[10px] font-bold text-paper/60">⚙ ${esc(t)}</span>`).join('')}</p>` : ''}
+			<div class="space-y-2.5 text-sm leading-relaxed">${html}</div>
+		</div>`;
+
+	const scrollThread = () => {
+		threadEl.scrollTop = threadEl.scrollHeight;
 	};
 
-	const generateBriefing = async () => {
-		briefingEl.innerHTML = '<p class="text-paper/55">Maverick is reading the board…</p>';
+	const loadConversations = async () => {
+		const { data } = await db.from('chat_conversations').select('*').order('updated_at', { ascending: false }).limit(30);
+		conversations = data ?? [];
+		convoListEl.innerHTML = conversations
+			.map(
+				(c) => `
+			<div class="group flex items-center gap-1 rounded-lg ${c.id === activeId ? 'bg-emerald-deep/30' : 'hover:bg-ink/50'}">
+				<button type="button" data-open="${esc(c.id)}" class="min-w-0 flex-1 cursor-pointer truncate px-3 py-2 text-left text-sm ${c.id === activeId ? 'font-semibold text-paper' : 'text-paper/70'}">${esc(c.title)}</button>
+				<button type="button" data-rename="${esc(c.id)}" aria-label="Rename ${esc(c.title)}" class="hidden cursor-pointer px-1 text-xs text-paper/40 group-hover:block hover:text-emerald-glow">✎</button>
+				<button type="button" data-delete="${esc(c.id)}" aria-label="Delete ${esc(c.title)}" class="hidden cursor-pointer px-1.5 text-paper/40 group-hover:block hover:text-terracotta">×</button>
+			</div>`,
+			)
+			.join('');
+		convoSelectEl.innerHTML =
+			'<option value="">Conversations…</option>' +
+			conversations.map((c) => `<option value="${esc(c.id)}" ${c.id === activeId ? 'selected' : ''}>${esc(c.title)}</option>`).join('');
+
+		convoListEl.querySelectorAll<HTMLButtonElement>('[data-open]').forEach((btn) =>
+			btn.addEventListener('click', () => openConversation(btn.dataset.open!)),
+		);
+		convoListEl.querySelectorAll<HTMLButtonElement>('[data-rename]').forEach((btn) =>
+			btn.addEventListener('click', async () => {
+				const current = conversations.find((c) => c.id === btn.dataset.rename);
+				const title = prompt('Rename conversation', current?.title ?? '');
+				if (!title?.trim()) return;
+				await db.from('chat_conversations').update({ title: title.trim() }).eq('id', btn.dataset.rename!);
+				loadConversations();
+			}),
+		);
+		convoListEl.querySelectorAll<HTMLButtonElement>('[data-delete]').forEach((btn) =>
+			btn.addEventListener('click', async () => {
+				if (!confirm('Delete this conversation and its messages?')) return;
+				await db.from('chat_conversations').delete().eq('id', btn.dataset.delete!);
+				if (activeId === btn.dataset.delete) {
+					activeId = null;
+					threadEl.innerHTML = '<p class="text-paper/55">New chat — say the word.</p>';
+				}
+				loadConversations();
+			}),
+		);
+	};
+
+	convoSelectEl.addEventListener('change', () => {
+		if (convoSelectEl.value) openConversation(convoSelectEl.value);
+	});
+
+	const openConversation = async (id: string) => {
+		activeId = id;
+		const { data } = await db
+			.from('chat_messages')
+			.select('role,content,tool_calls')
+			.eq('conversation_id', id)
+			.order('created_at', { ascending: true })
+			.limit(200);
+		threadEl.innerHTML = (data ?? [])
+			.filter((m) => m.role !== 'tool' && m.content)
+			.map((m) =>
+				bubble(
+					m.role as 'user' | 'assistant',
+					m.role === 'assistant' ? renderMarkdown(m.content) : `<p>${esc(m.content)}</p>`,
+					Array.isArray(m.tool_calls) ? (m.tool_calls as { name: string }[]).map((t) => t.name) : undefined,
+				),
+			)
+			.join('');
+		if (!threadEl.innerHTML) threadEl.innerHTML = '<p class="text-paper/55">Empty conversation — say the word.</p>';
+		loadConversations();
+		scrollThread();
+	};
+
+	document.querySelector('[data-chat-new]')?.addEventListener('click', () => {
+		activeId = null;
+		threadEl.innerHTML = '<p class="text-paper/55">New chat — say the word.</p>';
+		loadConversations();
+		input.focus();
+	});
+
+	// --- Send with SSE streaming ---
+	const send = async () => {
+		const content = input.value.trim();
+		if (!content || streaming) return;
+		input.value = '';
+		input.style.height = 'auto';
+
+		if (threadEl.querySelector('p.text-paper\\/55')) threadEl.innerHTML = '';
+		threadEl.insertAdjacentHTML('beforeend', bubble('user', `<p>${esc(content)}</p>`));
+
+		const live = document.createElement('div');
+		live.innerHTML = bubble('assistant', '<p class="text-paper/50">…</p>');
+		threadEl.appendChild(live.firstElementChild!);
+		const liveBubble = threadEl.lastElementChild!.querySelector<HTMLElement>('div.space-y-2\\.5')!;
+		scrollThread();
+
+		streaming = true;
+		sendBtn.disabled = true;
+		stopBtn.hidden = false;
+		abortCtl = new AbortController();
+
+		let text = '';
+		const tools: string[] = [];
+		const renderLive = () => {
+			liveBubble.innerHTML =
+				(tools.length
+					? `<p class="flex flex-wrap gap-1.5">${tools.map((t) => `<span class="rounded-full border border-paper/20 px-2 py-0.5 text-[10px] font-bold text-paper/60">⚙ ${esc(t)}</span>`).join('')}</p>`
+					: '') + (text ? `<p class="whitespace-pre-wrap">${esc(text)}</p>` : '<p class="text-paper/50">…</p>');
+			scrollThread();
+		};
+
 		try {
-			const { content } = await invokeAgent<{ content: string }>(db, 'daily_briefing');
-			showBriefing(content);
+			const { data: sessionData } = await db.auth.getSession();
+			const token = sessionData.session?.access_token;
+			if (!token) throw new Error('Session expired — sign in again.');
+
+			const res = await fetch(`${SUPABASE_URL}/functions/v1/maverick-chat`, {
+				method: 'POST',
+				signal: abortCtl.signal,
+				headers: {
+					Authorization: `Bearer ${token}`,
+					apikey: SUPABASE_PUBLISHABLE_KEY,
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({ conversation_id: activeId, content }),
+			});
+			if (!res.ok || !res.body) {
+				const body = await res.json().catch(() => ({}));
+				throw new Error(body.message ?? body.error ?? `Chat failed (${res.status})`);
+			}
+
+			const reader = res.body.getReader();
+			const decoder = new TextDecoder();
+			let buffer = '';
+			for (;;) {
+				const { done, value } = await reader.read();
+				if (done) break;
+				buffer += decoder.decode(value, { stream: true });
+				const lines = buffer.split('\n');
+				buffer = lines.pop() ?? '';
+				for (const line of lines) {
+					if (!line.startsWith('data: ')) continue;
+					let event: { type: string; text?: string; name?: string; status?: string; conversation_id?: string; message?: string };
+					try {
+						event = JSON.parse(line.slice(6));
+					} catch {
+						continue;
+					}
+					if (event.type === 'meta' && event.conversation_id) activeId = event.conversation_id;
+					else if (event.type === 'token' && event.text) {
+						text += event.text;
+						renderLive();
+					} else if (event.type === 'tool' && event.name && event.status === 'running') {
+						tools.push(event.name);
+						renderLive();
+					} else if (event.type === 'error') {
+						throw new Error(event.message ?? 'Maverick hit an error.');
+					}
+				}
+			}
+			liveBubble.innerHTML =
+				(tools.length
+					? `<p class="flex flex-wrap gap-1.5">${tools.map((t) => `<span class="rounded-full border border-paper/20 px-2 py-0.5 text-[10px] font-bold text-paper/60">⚙ ${esc(t)}</span>`).join('')}</p>`
+					: '') + renderMarkdown(text || '(no reply)');
+			loadConversations();
+			loadStats();
+			loadTop();
 		} catch (err) {
-			briefingEl.innerHTML = `<p class="text-terracotta">${esc(err instanceof Error ? err.message : 'Briefing failed.')}</p>`;
+			if (abortCtl?.signal.aborted) {
+				liveBubble.insertAdjacentHTML('beforeend', '<p class="text-xs text-paper/45">Stopped.</p>');
+			} else {
+				liveBubble.innerHTML = `<p class="text-terracotta">${esc(err instanceof Error ? err.message : 'Chat failed.')}</p>`;
+			}
+		} finally {
+			streaming = false;
+			sendBtn.disabled = false;
+			stopBtn.hidden = true;
+			abortCtl = null;
+			scrollThread();
+			input.focus();
 		}
 	};
 
-	db.from('daily_briefings')
-		.select('content')
-		.eq('date', today)
-		.maybeSingle()
-		.then(({ data }) => (data ? showBriefing(data.content) : generateBriefing()));
+	composer.addEventListener('submit', (e) => {
+		e.preventDefault();
+		send();
+	});
+	input.addEventListener('keydown', (e) => {
+		if (e.key === 'Enter' && !e.shiftKey) {
+			e.preventDefault();
+			send();
+		}
+	});
+	input.addEventListener('input', () => {
+		input.style.height = 'auto';
+		input.style.height = `${Math.min(input.scrollHeight, 160)}px`;
+	});
+	stopBtn.addEventListener('click', () => abortCtl?.abort());
 
-	document.querySelector('[data-briefing-refresh]')?.addEventListener('click', generateBriefing);
+	// --- Mic dictation (same Web Speech pattern as /maverick/write) ---
+	type SpeechRecognitionLike = {
+		continuous: boolean;
+		interimResults: boolean;
+		lang: string;
+		start(): void;
+		stop(): void;
+		onresult: ((e: { resultIndex: number; results: ArrayLike<{ isFinal: boolean; 0: { transcript: string } }> }) => void) | null;
+		onend: (() => void) | null;
+		onerror: (() => void) | null;
+	};
+	const w = window as unknown as { SpeechRecognition?: new () => SpeechRecognitionLike; webkitSpeechRecognition?: new () => SpeechRecognitionLike };
+	const Recognition = w.SpeechRecognition ?? w.webkitSpeechRecognition;
+	const micBtn = document.querySelector<HTMLButtonElement>('[data-chat-mic]')!;
+	const micDot = document.querySelector<HTMLElement>('[data-chat-mic-dot]')!;
+	let rec: SpeechRecognitionLike | null = null;
+	let listening = false;
+	if (!Recognition) micBtn.disabled = true;
+	micBtn.addEventListener('click', () => {
+		if (!Recognition) return;
+		if (listening) {
+			rec?.stop();
+			return;
+		}
+		rec = new Recognition();
+		rec.continuous = true;
+		rec.interimResults = false;
+		rec.lang = 'en-US';
+		rec.onresult = (e) => {
+			let heard = '';
+			for (let i = e.resultIndex; i < e.results.length; i++) {
+				if (e.results[i].isFinal) heard += e.results[i][0].transcript + ' ';
+			}
+			if (heard) {
+				input.value = `${input.value} ${heard}`.replace(/\s+/g, ' ').trimStart();
+				input.dispatchEvent(new Event('input'));
+			}
+		};
+		rec.onend = () => {
+			listening = false;
+			micDot.classList.remove('animate-pulse', 'text-terracotta');
+		};
+		rec.onerror = rec.onend;
+		rec.start();
+		listening = true;
+		micDot.classList.add('animate-pulse', 'text-terracotta');
+	});
 
-	// --- At-a-glance stats ---
+	// --- Day boot: make sure today's briefing conversation exists, open it ---
+	const boot = async () => {
+		const { data: briefing } = await db.from('daily_briefings').select('date').eq('date', today).maybeSingle();
+		if (!briefing) {
+			threadEl.innerHTML = '<p class="text-paper/55">Maverick is reading the board…</p>';
+			try {
+				await invokeAgent(db, 'daily_briefing');
+			} catch {
+				// missing key or transient failure — chat still works without the briefing
+			}
+		}
+		await loadConversations();
+		const todayConvo = conversations.find((c) => c.title === todayTitle);
+		if (todayConvo) await openConversation(todayConvo.id);
+		else if (conversations[0]) await openConversation(conversations[0].id);
+		else threadEl.innerHTML = '<p class="text-paper/55">New chat — say the word.</p>';
+	};
+
+	// ------------------------------------------------------------ Side rail --
+	const stat = (id: string) => document.querySelector<HTMLElement>(`[data-stat="${id}"]`)!;
 	const loadStats = async () => {
 		const [overdue, stalled, inquiries, revenue] = await Promise.all([
 			db.from('tasks').select('id', { count: 'exact', head: true }).neq('status', 'done').lt('due_date', today),
@@ -165,9 +465,7 @@ import MaverickLayout from '../../layouts/MaverickLayout.astro';
 		stat('inquiries').textContent = String(inquiries.count ?? 0);
 		stat('outstanding').textContent = fmtMoney((revenue.data ?? []).reduce((sum, r) => sum + Number(r.amount), 0));
 	};
-	loadStats();
 
-	// --- Top tasks (priority-scored) ---
 	const topList = document.querySelector<HTMLElement>('[data-top-tasks]')!;
 	const loadTop = async () => {
 		const { data } = await db
@@ -180,17 +478,16 @@ import MaverickLayout from '../../layouts/MaverickLayout.astro';
 			? top
 					.map(
 						(t) => `
-				<li class="flex items-start gap-3">
-					<input type="checkbox" id="top-${esc(t.id)}" data-done="${esc(t.id)}" class="mt-1 h-4 w-4 accent-emerald" />
-					<label for="top-${esc(t.id)}" class="cursor-pointer text-sm leading-snug">
+				<li class="flex items-start gap-2.5">
+					<input type="checkbox" id="top-${esc(t.id)}" data-done="${esc(t.id)}" class="mt-0.5 h-4 w-4 accent-emerald" />
+					<label for="top-${esc(t.id)}" class="cursor-pointer text-xs leading-snug">
 						${esc(t.title)}
-						<span class="mt-0.5 block text-xs text-paper/50">${esc(PILLAR_LABELS[t.pillar])}${t.due_date ? ` · due ${fmtDate(t.due_date)}` : ''}</span>
+						<span class="mt-0.5 block text-[10px] text-paper/50">${esc(PILLAR_LABELS[t.pillar])}${t.due_date ? ` · due ${fmtDate(t.due_date)}` : ''}</span>
 					</label>
 				</li>`,
 					)
 					.join('')
-			: '<li class="text-paper/55">Nothing open. Add tasks under Projects.</li>';
-
+			: '<li class="text-xs text-paper/55">Nothing open.</li>';
 		topList.querySelectorAll<HTMLInputElement>('[data-done]').forEach((box) => {
 			box.addEventListener('change', async () => {
 				if (!box.checked) return;
@@ -200,23 +497,19 @@ import MaverickLayout from '../../layouts/MaverickLayout.astro';
 			});
 		});
 	};
-	loadTop();
 
-	// --- Active affirmation ---
 	db.from('affirmations')
 		.select('text')
 		.eq('active', true)
 		.limit(1)
 		.maybeSingle()
 		.then(({ data }) => {
-			document.querySelector('[data-affirmation]')!.textContent = data?.text ?? 'No active affirmation — evolve one on the Growth page.';
+			document.querySelector('[data-affirmation]')!.textContent = data?.text ?? 'Evolve one on the Growth page.';
 		});
 
-	// --- Daily check-in ---
-	const form = document.querySelector<HTMLFormElement>('[data-checkin]')!;
-	const statusEl = document.querySelector<HTMLElement>('[data-checkin-status]')!;
+	const checkinForm = document.querySelector<HTMLFormElement>('[data-checkin]')!;
+	const checkinStatus = document.querySelector<HTMLElement>('[data-checkin-status]')!;
 	const FIELDS = ['most_important', 'avoiding', 'success_looks_like', 'gratitude', 'reflection'] as const;
-
 	db.from('daily_checkins')
 		.select('*')
 		.eq('date', today)
@@ -224,19 +517,22 @@ import MaverickLayout from '../../layouts/MaverickLayout.astro';
 		.then(({ data }) => {
 			if (!data) return;
 			for (const f of FIELDS) {
-				const el = form.elements.namedItem(f) as HTMLTextAreaElement | null;
+				const el = checkinForm.elements.namedItem(f) as HTMLTextAreaElement | null;
 				if (el) el.value = data[f] ?? '';
 			}
 		});
-
-	form.addEventListener('submit', async (e) => {
+	checkinForm.addEventListener('submit', async (e) => {
 		e.preventDefault();
 		const values = Object.fromEntries(
-			FIELDS.map((f) => [f, (form.elements.namedItem(f) as HTMLTextAreaElement).value.trim() || null]),
+			FIELDS.map((f) => [f, (checkinForm.elements.namedItem(f) as HTMLTextAreaElement).value.trim() || null]),
 		);
 		const { error } = await db.from('daily_checkins').upsert({ date: today, ...values }, { onConflict: 'date' });
-		statusEl.textContent = error ? `Save failed: ${error.message}` : 'Saved ✓';
-		statusEl.classList.toggle('text-terracotta', !!error);
-		setTimeout(() => (statusEl.textContent = ''), 2500);
+		checkinStatus.textContent = error ? `Save failed: ${error.message}` : 'Saved ✓';
+		checkinStatus.classList.toggle('text-terracotta', !!error);
+		setTimeout(() => (checkinStatus.textContent = ''), 2500);
 	});
+
+	loadStats();
+	loadTop();
+	boot();
 </script>

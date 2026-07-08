@@ -101,8 +101,19 @@ the authenticated `hi@marlonavery.com` session. Structure:
 calendars, moves money, or contacts anyone externally on its own. Any future external action must
 be enqueued to `approval_queue` and dispatched ONLY from a row with status `approved`, writing to
 `audit_log` — enforce in the execution layer, not just UI. Phase 1 performs internal actions only
-(briefings, affirmations, review drafts). Gmail/Calendar/Stripe integrations, the approval-queue
-UI, and scheduled jobs (pg_cron) are Phase 2/3 — not built yet.
+(briefings, affirmations, review drafts).
+
+**Phase 2A is LIVE (2026-07-07); 2B/2C remain — read `docs/maverick-phase2.md` before touching.**
+The /maverick home is Maverick chat (hybrid layout): SSE streaming from the `maverick-chat` edge
+function (Sonnet 5 via OpenRouter) with an INTERNAL-only tool loop — task/project/engagement/
+revenue CRUD, vector-store memory (remember/recall), check-ins, snapshot — every execution
+audit-logged. Memory: `maverick_memories` pgvector table (384-dim gte-small from the edge
+runtime, no external API) + `match_maverick_memories` RPC + `maverick-memory` function.
+Morning briefing runs on pg_cron at 11:00 UTC (7 AM EDT; shift to 12:00 when DST ends),
+authenticated by a vault secret via `get_cron_secret()`, and lands as the first message of the
+day's conversation. `/maverick/approvals` records approve/reject decisions; **no dispatcher
+exists yet** — 2B adds Gmail/Calendar reads + email send (needs Marlon's Google OAuth), 2C adds
+Stripe invoicing + GitHub code_task handoff. External action contracts live in the spec doc.
 
 ## Content source
 

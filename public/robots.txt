@@ -2,3 +2,7 @@ User-agent: *
 Allow: /
 
 Sitemap: https://www.marlonavery.com/sitemap-index.xml
+
+# Agent-readable profiles (llms.txt convention)
+# Summary:       https://www.marlonavery.com/llms.txt
+# Comprehensive: https://www.marlonavery.com/llms-full.txt

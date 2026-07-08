@@ -47,6 +47,65 @@ import MaverickLayout from '../../layouts/MaverickLayout.astro';
 			<li class="text-paper/55">Loading…</li>
 		</ol>
 	</section>
+
+	<!-- Maverick's memory -->
+	<section class="mt-12 border-t border-paper/15 pt-10" aria-labelledby="mem-h">
+		<div class="flex flex-wrap items-baseline justify-between gap-3">
+			<h2 id="mem-h" class="text-display-sm">What Maverick remembers.</h2>
+			<p class="text-sm text-paper/55" data-mem-count>—</p>
+		</div>
+		<p class="mt-2 max-w-2xl text-sm text-paper/60">
+			Everything Maverick has learned about you — from chats and nightly distillation. Search it, fix it, or forget it.
+		</p>
+
+		<div class="mt-6 flex flex-wrap gap-3">
+			<label class="min-w-0 flex-1">
+				<span class="sr-only">Search memories</span>
+				<input
+					type="search"
+					data-mem-search
+					placeholder="Search by meaning — e.g. “podcast co-hosts” or “what matters to me”…"
+					class="w-full rounded-xl border border-paper/20 bg-graphite px-4 py-2.5 text-base text-paper focus:border-emerald sm:text-sm"
+				/>
+			</label>
+			<button type="button" data-mem-add class="cursor-pointer rounded-xl bg-emerald px-5 py-2.5 text-sm font-bold text-ink transition-transform hover:scale-105">
+				+ Add memory
+			</button>
+		</div>
+
+		<p class="mt-4 text-sm text-terracotta" data-mem-error role="alert" hidden></p>
+		<ul class="mt-5 space-y-3" data-mem-list>
+			<li class="text-paper/55">Loading…</li>
+		</ul>
+	</section>
+
+	<!-- Add / edit dialog -->
+	<dialog data-mem-dialog class="theme-fixed m-auto w-[min(94vw,560px)] rounded-2xl border border-paper/20 bg-graphite p-0 text-paper backdrop:bg-ink/70">
+		<form method="dialog" data-mem-form class="p-7">
+			<h3 class="font-display text-2xl font-semibold" data-mem-dialog-title>Add memory</h3>
+			<div class="mt-5 space-y-4">
+				<div>
+					<label for="mem-content" class="block text-sm font-semibold">Memory</label>
+					<textarea id="mem-content" name="content" rows="4" required class="mt-1.5 w-full rounded-lg border border-paper/20 bg-ink px-3 py-2 text-base text-paper focus:border-emerald sm:text-sm"></textarea>
+				</div>
+				<div>
+					<label for="mem-kind" class="block text-sm font-semibold">Kind</label>
+					<select id="mem-kind" name="kind" class="mt-1.5 w-full rounded-lg border border-paper/20 bg-ink px-3 py-2 text-base text-paper focus:border-emerald sm:text-sm">
+						<option value="fact">Fact</option>
+						<option value="preference">Preference</option>
+						<option value="decision">Decision</option>
+						<option value="person">Person</option>
+						<option value="project_context">Project context</option>
+						<option value="conversation_summary">Conversation summary</option>
+					</select>
+				</div>
+			</div>
+			<div class="mt-6 flex gap-3">
+				<button type="submit" value="save" class="cursor-pointer rounded-full bg-emerald px-7 py-2.5 text-sm font-bold text-ink transition-transform hover:scale-105">Save</button>
+				<button type="submit" value="cancel" formnovalidate class="cursor-pointer rounded-full border border-paper/30 px-6 py-2.5 text-sm font-semibold hover:border-emerald-glow">Cancel</button>
+			</div>
+		</form>
+	</dialog>
 </MaverickLayout>
 
 <script>
@@ -146,4 +205,155 @@ import MaverickLayout from '../../layouts/MaverickLayout.astro';
 		});
 
 	loadAffirmations();
+
+	// ---------------------------------------------------------- Memory --
+	type Memory = { id: string; content: string; kind: string; source: string; created_at: string };
+
+	const memListEl = document.querySelector<HTMLElement>('[data-mem-list]')!;
+	const memCountEl = document.querySelector<HTMLElement>('[data-mem-count]')!;
+	const memErrorEl = document.querySelector<HTMLElement>('[data-mem-error]')!;
+	const memSearchEl = document.querySelector<HTMLInputElement>('[data-mem-search]')!;
+	const memDialog = document.querySelector<HTMLDialogElement>('[data-mem-dialog]')!;
+	const memForm = document.querySelector<HTMLFormElement>('[data-mem-form]')!;
+	const memDialogTitle = document.querySelector<HTMLElement>('[data-mem-dialog-title]')!;
+
+	let editingMemId: string | null = null;
+
+	const KIND_LABELS: Record<string, string> = {
+		fact: 'Fact',
+		preference: 'Preference',
+		decision: 'Decision',
+		person: 'Person',
+		project_context: 'Project',
+		conversation_summary: 'From chat',
+	};
+
+	const memError = (msg: string | null) => {
+		memErrorEl.textContent = msg ?? '';
+		memErrorEl.hidden = !msg;
+	};
+
+	/** Call a maverick-memory action; surfaces the function's error text. */
+	const memApi = async (action: string, payload: Record<string, unknown> = {}) => {
+		const { data, error } = await db.functions.invoke('maverick-memory', { body: { action, ...payload } });
+		if (error) {
+			let message = error.message;
+			try {
+				const body = await (error as { context?: Response }).context?.json();
+				message = body?.message ?? body?.error ?? message;
+			} catch {
+				/* keep generic */
+			}
+			throw new Error(message);
+		}
+		return (data as { result: unknown }).result;
+	};
+
+	const renderMemories = (memories: Memory[], searching = false) => {
+		if (!searching) memCountEl.textContent = `${memories.length} ${memories.length === 1 ? 'memory' : 'memories'}`;
+		memListEl.innerHTML = memories.length
+			? memories
+					.map(
+						(m) => `
+			<li class="rounded-2xl bg-graphite p-5">
+				<div class="flex flex-wrap items-start justify-between gap-3">
+					<p class="min-w-0 flex-1 text-sm leading-relaxed text-paper/90">${esc(m.content)}</p>
+					<div class="flex shrink-0 gap-1.5">
+						<button type="button" data-mem-edit="${esc(m.id)}" aria-label="Edit memory" class="cursor-pointer rounded-full border border-paper/25 px-3 py-1 text-xs font-bold hover:border-emerald-glow hover:text-emerald-glow">Edit</button>
+						<button type="button" data-mem-forget="${esc(m.id)}" aria-label="Forget memory" class="cursor-pointer rounded-full border border-terracotta/50 px-3 py-1 text-xs font-bold text-terracotta hover:bg-terracotta hover:text-ink">Forget</button>
+					</div>
+				</div>
+				<p class="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-paper/45">
+					<span class="rounded-full bg-emerald-deep/40 px-2 py-0.5 font-bold text-emerald-glow uppercase">${esc(KIND_LABELS[m.kind] ?? m.kind)}</span>
+					<span>${esc(m.source)}</span>
+					<span>·</span>
+					<span>${fmtDate(m.created_at)}</span>
+				</p>
+			</li>`,
+					)
+					.join('')
+			: `<li class="text-paper/55">${searching ? 'Nothing matched — try different words.' : 'Nothing yet. Maverick learns as you chat, or add a memory by hand.'}</li>`;
+
+		memListEl.querySelectorAll<HTMLButtonElement>('[data-mem-edit]').forEach((btn) =>
+			btn.addEventListener('click', () => openMemDialog(memories.find((m) => m.id === btn.dataset.memEdit) ?? null)),
+		);
+		memListEl.querySelectorAll<HTMLButtonElement>('[data-mem-forget]').forEach((btn) =>
+			btn.addEventListener('click', async () => {
+				if (!confirm('Forget this memory? Maverick will no longer recall it.')) return;
+				try {
+					await memApi('forget', { id: btn.dataset.memForget });
+					loadMemories();
+				} catch (err) {
+					memError(err instanceof Error ? err.message : 'Could not forget.');
+				}
+			}),
+		);
+	};
+
+	// Listing reads the table directly (RLS-guarded) — no embedding needed.
+	const loadMemories = async () => {
+		memError(null);
+		memSearchEl.value = '';
+		const { data, error } = await db
+			.from('maverick_memories')
+			.select('id,content,kind,source,created_at')
+			.order('created_at', { ascending: false })
+			.limit(200);
+		if (error) {
+			memError(`Could not load memories: ${error.message}`);
+			return;
+		}
+		renderMemories((data ?? []) as Memory[]);
+	};
+
+	let searchTimer: ReturnType<typeof setTimeout>;
+	memSearchEl.addEventListener('input', () => {
+		clearTimeout(searchTimer);
+		const q = memSearchEl.value.trim();
+		if (!q) {
+			loadMemories();
+			return;
+		}
+		searchTimer = setTimeout(async () => {
+			try {
+				const hits = (await memApi('recall', { query: q, count: 15 })) as (Memory & { similarity: number })[];
+				renderMemories(hits, true);
+				memCountEl.textContent = `${hits.length} match${hits.length === 1 ? '' : 'es'}`;
+			} catch (err) {
+				memError(err instanceof Error ? err.message : 'Search failed.');
+			}
+		}, 350);
+	});
+
+	const openMemDialog = (memory: Memory | null) => {
+		editingMemId = memory?.id ?? null;
+		memDialogTitle.textContent = memory ? 'Edit memory' : 'Add memory';
+		memForm.reset();
+		(memForm.elements.namedItem('content') as HTMLTextAreaElement).value = memory?.content ?? '';
+		(memForm.elements.namedItem('kind') as HTMLSelectElement).value = memory?.kind ?? 'fact';
+		memDialog.showModal();
+	};
+
+	document.querySelector('[data-mem-add]')?.addEventListener('click', () => openMemDialog(null));
+
+	memForm.addEventListener('submit', async (e) => {
+		if ((e.submitter as HTMLButtonElement | null)?.value !== 'save') return;
+		e.preventDefault();
+		const content = (memForm.elements.namedItem('content') as HTMLTextAreaElement).value.trim();
+		const kind = (memForm.elements.namedItem('kind') as HTMLSelectElement).value;
+		if (!content) return;
+		try {
+			if (editingMemId) await memApi('update', { id: editingMemId, content, kind });
+			else {
+				const result = (await memApi('remember', { content, kind, source: 'manual' })) as { duplicate?: boolean };
+				if (result?.duplicate) memError('Maverick already knew something almost identical — kept the existing one.');
+			}
+			memDialog.close();
+			loadMemories();
+		} catch (err) {
+			memError(err instanceof Error ? err.message : 'Could not save.');
+		}
+	});
+
+	loadMemories();
 </script>

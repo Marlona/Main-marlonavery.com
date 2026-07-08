@@ -26,6 +26,17 @@ const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const OPENROUTER_API_KEY = Deno.env.get('OPENROUTER_API_KEY');
 const CHAT_MODEL = Deno.env.get('MODEL_REASONING') ?? 'anthropic/claude-sonnet-5';
 
+/**
+ * Explicit routing (see docs/maverick-phase2.md → Model routing): ordered
+ * fallback chain inside the Claude family — tool-calling reliability and
+ * voice stay consistent even when a provider hiccups — plus provider prefs
+ * that prefer Anthropic direct and exclude hosts that train on prompts.
+ */
+const CHAT_ROUTE = {
+	models: [CHAT_MODEL, 'anthropic/claude-sonnet-4.6', 'anthropic/claude-sonnet-4.5'].filter((m, i, a) => a.indexOf(m) === i),
+	provider: { order: ['Anthropic'], data_collection: 'deny' },
+};
+
 const ALLOWED_ORIGINS = new Set([
 	'https://marlonavery.com',
 	'https://www.marlonavery.com',
@@ -278,6 +289,9 @@ async function execTool(name: string, args: ToolArgs): Promise<unknown> {
 			const content = s(args.content);
 			if (!content) throw new Error('remember needs content');
 			const embedding = await embedder.run(content, { mean_pool: true, normalize: true });
+			// Dedup: skip near-identical memories so facts don't pile up.
+			const { data: dup } = await db.rpc('match_maverick_memories', { query_embedding: embedding, match_count: 1, min_similarity: 0.9 });
+			if ((dup ?? []).length) return { ...dup[0], duplicate: true };
 			const kind = s(args.kind) ?? 'fact';
 			const { data, error } = await db.from('maverick_memories')
 				.insert({ content, embedding, kind, source: 'chat' }).select('id,kind').single();
@@ -334,7 +348,7 @@ async function streamCompletion(
 			'X-Title': 'Maverick Chat',
 		},
 		body: JSON.stringify({
-			model: CHAT_MODEL,
+			...CHAT_ROUTE,
 			messages,
 			stream: true,
 			tools: TOOLS.map((tool) => ({ type: 'function', function: tool })),

@@ -7,17 +7,23 @@
  * internal: reads and writes public.maverick_memories only.
  *
  * Actions:
- *   remember — { content, kind?, source?, metadata? } → embed + insert
+ *   remember — { content, kind?, source?, metadata? } → embed + insert (dedup-guarded)
  *   recall   — { query, count?, min_similarity? }     → similarity search
  *   list     — { limit? }                             → newest memories
+ *   update   — { id, content, kind? }                 → re-embed + update
  *   forget   — { id }                                 → delete one memory
  *
- * Phase 2's maverick-chat calls remember/recall inside its loop; until then
- * the dashboard (or this function directly) is the interface.
+ * Phase 2's maverick-chat calls remember/recall inside its loop; the Growth
+ * page's Memory section drives list/add/edit/delete.
  */
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
 const OWNER_EMAIL = 'hi@marlonavery.com';
+
+/** Near-identical memories collapse instead of piling up. gte-small clusters
+ * related content high (~0.77), so keep this conservative to avoid merging
+ * distinct facts. */
+const DEDUP_THRESHOLD = 0.9;
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -37,8 +43,6 @@ const corsHeaders = (origin: string | null) => ({
 	'Content-Type': 'application/json',
 });
 
-// Built-in embedding model; mean_pool + normalize → unit vectors, so cosine
-// distance in match_maverick_memories behaves.
 declare const Supabase: { ai: { Session: new (model: string) => { run(input: string, opts: Record<string, unknown>): Promise<number[]> } } };
 const embedder = new Supabase.ai.Session('gte-small');
 const embed = (text: string) => embedder.run(text, { mean_pool: true, normalize: true });
@@ -47,15 +51,29 @@ const db = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
 const KINDS = ['fact', 'preference', 'decision', 'person', 'project_context', 'conversation_summary'];
 
+/** Returns an existing memory whose meaning already covers this embedding, or null. */
+async function findDuplicate(embedding: number[]): Promise<{ id: string; content: string } | null> {
+	const { data } = await db.rpc('match_maverick_memories', {
+		query_embedding: embedding,
+		match_count: 1,
+		min_similarity: DEDUP_THRESHOLD,
+	});
+	const hit = (data ?? [])[0] as { id: string; content: string } | undefined;
+	return hit ?? null;
+}
+
 async function remember(body: { content?: string; kind?: string; source?: string; metadata?: Record<string, unknown> }) {
 	const content = body.content?.trim();
 	if (!content) throw new Error('remember needs non-empty content');
 	if (content.length > 4000) throw new Error('memory too long — store the essence, not the transcript');
+	const embedding = await embed(content);
+	const dup = await findDuplicate(embedding);
+	if (dup) return { ...dup, duplicate: true };
 	const { data, error } = await db
 		.from('maverick_memories')
 		.insert({
 			content,
-			embedding: await embed(content),
+			embedding,
 			kind: KINDS.includes(body.kind ?? '') ? body.kind : 'fact',
 			source: body.source ?? 'manual',
 			metadata: body.metadata ?? {},
@@ -83,7 +101,24 @@ async function list(body: { limit?: number }) {
 		.from('maverick_memories')
 		.select('id,content,kind,source,created_at')
 		.order('created_at', { ascending: false })
-		.limit(Math.min(body.limit ?? 20, 100));
+		.limit(Math.min(body.limit ?? 20, 200));
+	if (error) throw new Error(error.message);
+	return data;
+}
+
+async function update(body: { id?: string; content?: string; kind?: string }) {
+	if (!body.id) throw new Error('update needs an id');
+	const content = body.content?.trim();
+	if (!content) throw new Error('update needs non-empty content');
+	if (content.length > 4000) throw new Error('memory too long');
+	const patch: Record<string, unknown> = { content, embedding: await embed(content) };
+	if (KINDS.includes(body.kind ?? '')) patch.kind = body.kind;
+	const { data, error } = await db
+		.from('maverick_memories')
+		.update(patch)
+		.eq('id', body.id)
+		.select('id,content,kind,source,created_at')
+		.single();
 	if (error) throw new Error(error.message);
 	return data;
 }
@@ -113,6 +148,7 @@ Deno.serve(async (req: Request) => {
 			action === 'remember' ? await remember(body)
 			: action === 'recall' ? await recall(body)
 			: action === 'list' ? await list(body)
+			: action === 'update' ? await update(body)
 			: action === 'forget' ? await forget(body)
 			: null;
 		if (result === null) {

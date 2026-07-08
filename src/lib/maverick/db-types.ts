@@ -168,18 +168,21 @@ export type Database = {
 				Row: {
 					created_at: string | null;
 					id: string;
+					summarized_at: string | null;
 					title: string;
 					updated_at: string | null;
 				};
 				Insert: {
 					created_at?: string | null;
 					id?: string;
+					summarized_at?: string | null;
 					title?: string;
 					updated_at?: string | null;
 				};
 				Update: {
 					created_at?: string | null;
 					id?: string;
+					summarized_at?: string | null;
 					title?: string;
 					updated_at?: string | null;
 				};

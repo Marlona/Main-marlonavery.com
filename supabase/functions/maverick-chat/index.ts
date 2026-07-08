@@ -289,6 +289,9 @@ async function execTool(name: string, args: ToolArgs): Promise<unknown> {
 			const content = s(args.content);
 			if (!content) throw new Error('remember needs content');
 			const embedding = await embedder.run(content, { mean_pool: true, normalize: true });
+			// Dedup: skip near-identical memories so facts don't pile up.
+			const { data: dup } = await db.rpc('match_maverick_memories', { query_embedding: embedding, match_count: 1, min_similarity: 0.9 });
+			if ((dup ?? []).length) return { ...dup[0], duplicate: true };
 			const kind = s(args.kind) ?? 'fact';
 			const { data, error } = await db.from('maverick_memories')
 				.insert({ content, embedding, kind, source: 'chat' }).select('id,kind').single();

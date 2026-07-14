@@ -122,6 +122,11 @@ const steps = [
 			<div>
 				<label for="wz-email" class="block text-sm font-semibold">Email *</label>
 				<input id="wz-email" name="email" type="email" required autocomplete="email" class="mt-2 w-full rounded-lg border border-paper/20 bg-ink px-4 py-3 text-sm text-paper focus:border-emerald" />
+				{/* Honeypot — offscreen, tab-skipped; humans never see or fill it */}
+				<div class="absolute -left-[9999px] h-px w-px overflow-hidden" aria-hidden="true">
+					<label for="wz-website">Website</label>
+					<input id="wz-website" name="website" type="text" tabindex="-1" autocomplete="off" />
+				</div>
 			</div>
 			<div>
 				<label for="wz-org" class="block text-sm font-semibold">Organization</label>
@@ -196,6 +201,8 @@ const steps = [
 	}
 
 	for (const wizard of document.querySelectorAll<HTMLElement>('[data-wizard]')) {
+		// Fill-time tracking: sub-human submit times get spam-flagged server-side
+		const startedAt = Date.now();
 		const workshops: WorkshopSummary[] = JSON.parse(wizard.dataset.workshops ?? '[]');
 		const stepEls = [...wizard.querySelectorAll<HTMLElement>('[data-wizard-step]')];
 		const progress = wizard.querySelector<HTMLElement>('[data-wizard-progress]');
@@ -303,6 +310,8 @@ const steps = [
 					email: wizard.querySelector<HTMLInputElement>('[name="email"]')?.value ?? '',
 					organization: get('organization'),
 					answers: payloadAnswers,
+					website: wizard.querySelector<HTMLInputElement>('[name="website"]')?.value || undefined,
+					elapsedMs: Date.now() - startedAt,
 				});
 				wizard.innerHTML = `
 					<p class="text-eyebrow text-emerald-glow">Sent ✓</p>

@@ -675,6 +675,8 @@ export type Database = {
 					name: string | null;
 					organization: string | null;
 					source_page: string | null;
+					spam: boolean;
+					spam_reason: string | null;
 					status: string;
 				};
 				Insert: {
@@ -687,6 +689,8 @@ export type Database = {
 					name?: string | null;
 					organization?: string | null;
 					source_page?: string | null;
+					spam?: boolean;
+					spam_reason?: string | null;
 					status?: string;
 				};
 				Update: {
@@ -699,7 +703,33 @@ export type Database = {
 					name?: string | null;
 					organization?: string | null;
 					source_page?: string | null;
+					spam?: boolean;
+					spam_reason?: string | null;
 					status?: string;
+				};
+				Relationships: [];
+			};
+			inquiry_throttle: {
+				Row: {
+					day_hits: number;
+					day_start: string;
+					hits: number;
+					ip_hash: string;
+					window_start: string;
+				};
+				Insert: {
+					day_hits?: number;
+					day_start?: string;
+					hits?: number;
+					ip_hash: string;
+					window_start?: string;
+				};
+				Update: {
+					day_hits?: number;
+					day_start?: string;
+					hits?: number;
+					ip_hash?: string;
+					window_start?: string;
 				};
 				Relationships: [];
 			};

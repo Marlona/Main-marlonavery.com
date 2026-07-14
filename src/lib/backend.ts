@@ -19,6 +19,8 @@ export interface InquiryPayload {
 	answers: Record<string, string>;
 	/** Honeypot — leave empty; bots that fill it are silently dropped */
 	website?: string;
+	/** Milliseconds between form render and submit — sub-human times are flagged as spam */
+	elapsedMs?: number;
 }
 
 /**
@@ -26,10 +28,11 @@ export interface InquiryPayload {
  * Throws on network/server failure so callers can fall back to mailto.
  */
 export async function submitInquiry(payload: InquiryPayload): Promise<{ id: string }> {
+	const { elapsedMs, ...rest } = payload;
 	const res = await fetch(INQUIRY_ENDPOINT, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify({ ...payload, source_page: location.pathname }),
+		body: JSON.stringify({ ...rest, elapsed_ms: elapsedMs, source_page: location.pathname }),
 	});
 	const body = await res.json().catch(() => ({}));
 	if (!res.ok || !body.ok) throw new Error(body.error ?? `submit failed (${res.status})`);

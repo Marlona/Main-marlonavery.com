@@ -4,12 +4,20 @@
  *
  * The video is pinned full-screen inside a tall scroll container; as the visitor
  * scrolls through the container, playback position follows scroll progress.
- * Reduced-motion users (and devices where scrubbing fails) get the static poster.
- * The overlay slot renders content (headlines, CTAs) above the film layer.
+ *
+ * Loading model: the poster paints immediately and scrolling is NEVER gated on
+ * the network. On scrub devices the clip is fetched in the background as a blob,
+ * so every seek hits local data (no per-seek range requests — Safari's killer);
+ * the film fades in over the poster once it's ready. Touch devices get the
+ * lighter mobile rendition as a plain autoplaying loop. Reduced-motion users
+ * (and devices where playback fails) keep the static poster and load zero
+ * video bytes.
  */
 interface Props {
 	/** MP4 source, encoded with dense keyframes for smooth seeking */
 	src: string;
+	/** Lighter 720p rendition served to small viewports */
+	srcMobile?: string;
 	/** Poster frame shown before load and used as the reduced-motion fallback */
 	poster: string;
 	/** Total scroll distance driving the sequence, in viewport-heights */
@@ -18,10 +26,21 @@ interface Props {
 	label: string;
 	/** 'dark' adds a full-frame ink wash for bright footage that fights overlaid type */
 	overlay?: 'standard' | 'dark';
+	/** Set on the first sequence of the page: eager high-priority poster + immediate clip fetch */
+	priority?: boolean;
 	id?: string;
 }
 
-const { src, poster, scrollScreens = 3, label, overlay = 'standard', id } = Astro.props;
+const {
+	src,
+	srcMobile,
+	poster,
+	scrollScreens = 3,
+	label,
+	overlay = 'standard',
+	priority = false,
+	id,
+} = Astro.props;
 ---
 
 <section
@@ -29,30 +48,34 @@ const { src, poster, scrollScreens = 3, label, overlay = 'standard', id } = Astr
 	class="theme-fixed relative bg-ink"
 	style={`height: ${scrollScreens * 100}svh;`}
 	data-scroll-sequence
+	data-priority={priority ? 'true' : undefined}
 	aria-label={label}
 >
 	<div class="sticky top-0 h-svh overflow-hidden">
-		<!-- Poster is the base layer: it shows through when the video is hidden
-		     (reduced motion) or when playback fails (data-video-fallback). The video
-		     is stacked above it and covers it once it has frames. -->
+		<!-- Poster is the base layer: it paints first and shows through until the
+		     film has real frames (and permanently for reduced motion / failures).
+		     The video sits above it and fades in once ready. -->
 		<img
 			src={poster}
 			alt=""
 			class="absolute inset-0 h-full w-full object-cover"
-			loading="lazy"
+			loading={priority ? 'eager' : 'lazy'}
+			fetchpriority={priority ? 'high' : 'auto'}
 			decoding="async"
 		/>
+		<!-- No src on the server: the script picks the right rendition and loading
+		     strategy, so no-JS and reduced-motion visitors download zero video. -->
 		<video
-			class="absolute inset-0 h-full w-full object-cover motion-reduce:hidden"
-			src={src}
-			poster={poster}
+			class="absolute inset-0 h-full w-full object-cover opacity-0 transition-opacity duration-700 motion-reduce:hidden"
 			muted
 			playsinline
 			webkit-playsinline="true"
-			preload="metadata"
+			preload="none"
 			tabindex="-1"
 			aria-hidden="true"
 			data-sequence-video
+			data-src={src}
+			data-src-mobile={srcMobile ?? src}
 		></video>
 		<!-- Film-grade vignette so overlaid type stays readable without flattening the image -->
 		{overlay === 'dark' && <div class="pointer-events-none absolute inset-0 bg-ink/45"></div>}
@@ -67,86 +90,159 @@ const { src, poster, scrollScreens = 3, label, overlay = 'standard', id } = Astr
 	const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 	const isTouchViewport =
 		window.matchMedia('(pointer: coarse)').matches || window.matchMedia('(hover: none)').matches;
+	// Phones and small tablets get the 720p rendition — it's a moving background,
+	// not a hero image, and it halves the bytes on the connections that hurt.
+	const wantsMobileRendition = window.innerWidth <= 900;
 
 	const forcePosterFallback = (section: HTMLElement, video: HTMLVideoElement) => {
 		section.dataset.videoFallback = 'true';
 		video.pause();
 	};
 
+	const revealWhenReady = (video: HTMLVideoElement) => {
+		const show = () => video.classList.remove('opacity-0');
+		if (video.readyState >= 2) show();
+		else video.addEventListener('loadeddata', show, { once: true });
+	};
+
+	const pickSrc = (video: HTMLVideoElement) =>
+		(wantsMobileRendition ? video.dataset.srcMobile : video.dataset.src) ?? '';
+
 	const setupTouchPlayback = (section: HTMLElement, video: HTMLVideoElement) => {
-		video.autoplay = true;
+		video.src = pickSrc(video);
+		video.preload = 'auto';
 		video.loop = true;
 		video.playsInline = true;
+		revealWhenReady(video);
 
-		const observer = new IntersectionObserver((entries) => {
-			for (const entry of entries) {
-				if (!entry.isIntersecting) {
-					video.pause();
-					continue;
+		const observer = new IntersectionObserver(
+			(entries) => {
+				for (const entry of entries) {
+					if (!entry.isIntersecting) {
+						video.pause();
+						continue;
+					}
+					video.play().catch(() => forcePosterFallback(section, video));
 				}
-				video.play().catch(() => forcePosterFallback(section, video));
-			}
-		});
+			},
+			// Start playback (and therefore buffering) half a screen early
+			{ rootMargin: '50% 0%' },
+		);
 
 		observer.observe(section);
 		video.addEventListener('error', () => forcePosterFallback(section, video));
+	};
+
+	const setupScrub = (section: HTMLElement, video: HTMLVideoElement) => {
+		let targetTime = 0;
+		let currentTime = 0;
+		let rafId = 0;
+		let active = false;
+		// Until the blob lands we stream instead, and must not seek past what the
+		// browser has actually buffered — an unbuffered seek stalls the decoder
+		// and freezes the frame, which reads as "scrolling does nothing".
+		let seekable = false;
+
+		const progress = () => {
+			const rect = section.getBoundingClientRect();
+			const scrollable = rect.height - window.innerHeight;
+			if (scrollable <= 0) return 0;
+			return Math.min(1, Math.max(0, -rect.top / scrollable));
+		};
+
+		const bufferedEnd = () => {
+			try {
+				return video.buffered.length ? video.buffered.end(video.buffered.length - 1) : 0;
+			} catch {
+				return 0;
+			}
+		};
+
+		const tick = () => {
+			if (!active) return;
+			// Lerp toward the scroll-derived time for a weighted, cinematic feel
+			currentTime += (targetTime - currentTime) * 0.12;
+			const clamped = seekable ? currentTime : Math.min(currentTime, Math.max(0, bufferedEnd() - 0.1));
+			if (video.duration && video.readyState >= 2 && Math.abs(video.currentTime - clamped) > 0.02) {
+				video.currentTime = clamped;
+			}
+			rafId = requestAnimationFrame(tick);
+		};
+
+		const onScroll = () => {
+			if (video.duration) {
+				// Hold just shy of the final frame so the sequence never flashes to black
+				targetTime = progress() * Math.max(0, video.duration - 0.05);
+			}
+		};
+
+		let loadStarted = false;
+		const startLoad = () => {
+			if (loadStarted) return;
+			loadStarted = true;
+			const url = pickSrc(video);
+			// Fetch the whole clip as a blob so every scrub seek is local and instant.
+			// Falls back to progressive streaming (with buffered-clamped seeks) if the
+			// fetch fails — and to the poster if playback itself errors.
+			fetch(url)
+				.then((res) => {
+					if (!res.ok) throw new Error(`${res.status}`);
+					return res.blob();
+				})
+				.then((blob) => {
+					video.src = URL.createObjectURL(blob);
+					seekable = true;
+				})
+				.catch(() => {
+					video.src = url;
+					video.preload = 'auto';
+				})
+				.finally(() => {
+					video.addEventListener('loadedmetadata', onScroll, { once: true });
+					revealWhenReady(video);
+				});
+		};
+
+		// Two observers: fetch starts 1.5 screens early; the raf loop runs only
+		// while the section is genuinely on screen.
+		const prefetchObserver = new IntersectionObserver(
+			(entries) => {
+				if (entries.some((entry) => entry.isIntersecting)) {
+					startLoad();
+					prefetchObserver.disconnect();
+				}
+			},
+			{ rootMargin: '150% 0%' },
+		);
+
+		const activeObserver = new IntersectionObserver((entries) => {
+			for (const entry of entries) {
+				active = entry.isIntersecting;
+				if (active) {
+					onScroll();
+					cancelAnimationFrame(rafId);
+					rafId = requestAnimationFrame(tick);
+				} else {
+					cancelAnimationFrame(rafId);
+				}
+			}
+		});
+
+		prefetchObserver.observe(section);
+		activeObserver.observe(section);
+		window.addEventListener('scroll', onScroll, { passive: true });
+		video.addEventListener('error', () => forcePosterFallback(section, video));
+
+		// The page-top hero can't wait for an observer callback
+		if (section.dataset.priority === 'true') startLoad();
 	};
 
 	if (!prefersReduced) {
 		for (const section of document.querySelectorAll<HTMLElement>('[data-scroll-sequence]')) {
 			const video = section.querySelector<HTMLVideoElement>('[data-sequence-video]');
 			if (!video) continue;
-
-			if (isTouchViewport) {
-				setupTouchPlayback(section, video);
-				continue;
-			}
-
-			let targetTime = 0;
-			let currentTime = 0;
-			let rafId = 0;
-			let active = false;
-
-			const progress = () => {
-				const rect = section.getBoundingClientRect();
-				const scrollable = rect.height - window.innerHeight;
-				if (scrollable <= 0) return 0;
-				return Math.min(1, Math.max(0, -rect.top / scrollable));
-			};
-
-			const tick = () => {
-				if (!active) return;
-				// Lerp toward the scroll-derived time for a weighted, cinematic feel
-				currentTime += (targetTime - currentTime) * 0.12;
-				if (video.duration && Math.abs(video.currentTime - currentTime) > 0.02) {
-					video.currentTime = currentTime;
-				}
-				rafId = requestAnimationFrame(tick);
-			};
-
-			const onScroll = () => {
-				if (video.duration) {
-					// Hold just shy of the final frame so the sequence never flashes to black
-					targetTime = progress() * Math.max(0, video.duration - 0.05);
-				}
-			};
-
-			const observer = new IntersectionObserver((entries) => {
-				for (const entry of entries) {
-					active = entry.isIntersecting;
-					if (active) {
-						video.preload = 'auto';
-						onScroll();
-						rafId = requestAnimationFrame(tick);
-					} else {
-						cancelAnimationFrame(rafId);
-					}
-				}
-			});
-
-			observer.observe(section);
-			window.addEventListener('scroll', onScroll, { passive: true });
-			video.addEventListener('loadedmetadata', onScroll);
+			if (isTouchViewport) setupTouchPlayback(section, video);
+			else setupScrub(section, video);
 		}
 	}
 </script>

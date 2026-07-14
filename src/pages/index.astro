@@ -115,9 +115,11 @@ const credibilityStats = [
 		HERO_CLIPS.hero && (
 			<ScrollSequence
 				src={HERO_CLIPS.hero.src}
+				srcMobile={HERO_CLIPS.hero.srcMobile}
 				poster={HERO_CLIPS.hero.poster}
 				scrollScreens={3}
 				overlay="dark"
+				priority
 				label="Cinematic film of Marlon Avery walking through a workshop classroom while participants work"
 			>
 				<div class="flex h-full flex-col justify-end px-6 pb-24 md:px-12">
@@ -236,6 +238,7 @@ const credibilityStats = [
 		HERO_CLIPS.builder && (
 			<ScrollSequence
 				src={HERO_CLIPS.builder.src}
+				srcMobile={HERO_CLIPS.builder.srcMobile}
 				poster={HERO_CLIPS.builder.poster}
 				scrollScreens={2}
 				label="Cinematic film of Marlon Avery working at a dark desk surrounded by screens showing his projects"

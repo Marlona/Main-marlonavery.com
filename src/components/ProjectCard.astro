@@ -32,7 +32,7 @@ const {
 	tone = 'dark',
 } = Astro.props;
 const dateLabel = date
-	? new Intl.DateTimeFormat('en-US', { month: 'short', year: 'numeric' }).format(date)
+	? new Intl.DateTimeFormat('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' }).format(date)
 	: undefined;
 ---
 

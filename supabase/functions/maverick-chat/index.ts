@@ -9,10 +9,12 @@
  *   data: {"type":"done"} | {"type":"error","message":…}
  *
  * The tool loop runs INTERNAL tools only — task/project/engagement/revenue
- * CRUD, vector-store memory, check-ins, dashboard snapshot. Per the standing
- * guardrail (CLAUDE.md), external actions (email, Stripe invoices, calendar
- * writes, Claude Code handoff) are NOT wired here; they arrive in 2B/2C as
- * approval-queue dispatches. Every tool execution writes to audit_log.
+ * CRUD, vector-store memory, check-ins, dashboard snapshot, and the Elevate
+ * coaching tools (goals, self-talk, affirmation generation via
+ * maverick-elevate, ritual check-ins). Per the standing guardrail (CLAUDE.md),
+ * external actions (email, Stripe invoices, calendar writes, Claude Code
+ * handoff) are NOT wired here; they arrive in 2B/2C as approval-queue
+ * dispatches. Every tool execution writes to audit_log.
  */
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
@@ -66,7 +68,7 @@ const nowET = () =>
 // ---------------------------------------------------------------------------
 
 async function gatherContext() {
-	const [tasks, projects, engagements, revenue, checkins, inquiries] = await Promise.all([
+	const [tasks, projects, engagements, revenue, checkins, inquiries, goal, affirmations, resonance, events] = await Promise.all([
 		db.from('tasks').select('title,status,priority,due_date,pillar,impact_score,urgency_score')
 			.neq('status', 'done').order('due_date', { ascending: true, nullsFirst: false }).limit(40),
 		db.from('projects').select('name,pillar,status,priority,next_action,deadline')
@@ -77,6 +79,12 @@ async function gatherContext() {
 		db.from('daily_checkins').select('date,most_important,avoiding,reflection,gratitude')
 			.order('date', { ascending: false }).limit(2),
 		db.from('inquiries').select('id', { count: 'exact', head: true }).eq('status', 'new'),
+		db.from('goals').select('destination_text,worth_statement,commitment_level,place_a_summary')
+			.eq('status', 'active').order('created_at', { ascending: false }).limit(1).maybeSingle(),
+		db.from('affirmations').select('text,target,version').eq('status', 'active'),
+		db.from('affirmation_checkins').select('type,resonance_score,behavior_connection,created_at')
+			.gte('created_at', new Date(Date.now() - 7 * 86400000).toISOString()),
+		db.from('agent_events').select('event_type,payload').eq('status', 'open').limit(10),
 	]);
 	return {
 		open_tasks: tasks.data ?? [],
@@ -85,6 +93,12 @@ async function gatherContext() {
 		unpaid_revenue: revenue.data ?? [],
 		recent_checkins: checkins.data ?? [],
 		new_inquiries: inquiries.count ?? 0,
+		elevate: {
+			destination: goal.data ?? null,
+			active_affirmations: affirmations.data ?? [],
+			last_7d_checkins: resonance.data ?? [],
+			open_observations: events.data ?? [],
+		},
 	};
 }
 
@@ -121,6 +135,24 @@ Not wired up yet (coming in the next build phases — say so plainly if asked, a
 alternative like drafting content or adding a task): sending email, creating Stripe invoices, editing
 the calendar, and handing code tasks to Claude Code. Those will require Marlon's approval per action
 when they arrive. Never claim to have done any of those things.
+
+ELEVATE — you are also Marlon's development coach (Intentional Development Model). Contract:
+- Things happen FOR him — not to him. Observe, don't judge: feedback is observation + question
+  ("I noticed X. Does that support where you said you want to go?").
+- Never name the villain. If data points at a person or habit, create perspectives until HE says
+  it first. Start with outcomes and feelings, not people — the mirror before the microscope.
+- His words over yours. Quote his own phrasing in goals, summaries, and affirmations.
+- When he wants to set or revise a destination: reflect it back, then ask ONE qualifying question —
+  "What is this worth to you?" (life-changing, or help through a sticking point?) — then declare_goal.
+- Affirmations: present tense only ("I am…"); "I am becoming…" permitted; forward-severing allowed
+  ("no longer serves who I am becoming"); no negation-of-negative. Before generating, invite him to
+  seed 1–3 in his own words, then call generate_affirmations with the seeds (seed-then-shape).
+- When he shares inner dialogue or how he talks to himself, capture it with capture_self_talk.
+- No universal prescriptions — balance is his to define. Never prescribe hours, limits, or schedules.
+- Calibrate to his snapshot commitment level: life_changing → direct challenge; sticking_point →
+  lighter touch; exploring → progressive disclosure, don't unload the whole model.
+- You are a development coach, not a therapist. On signals of crisis or clinical distress, pause
+  coaching and suggest professional support.
 
 Live snapshot of his world:
 ${JSON.stringify(snapshot)}
@@ -179,6 +211,26 @@ const TOOLS = [
 		most_important: { type: 'string' }, avoiding: { type: 'string' }, success_looks_like: { type: 'string' },
 		gratitude: { type: 'string' }, reflection: { type: 'string' },
 	} } },
+	{ name: 'declare_goal', description: "Elevate: declare or revise Marlon's destination (Place B). Ask 'what is this worth to you?' first; any prior active goal becomes revised.", parameters: { type: 'object', properties: {
+		destination_text: { type: 'string', description: "Where he wants to go, in HIS words" },
+		worth_statement: { type: 'string', description: "His answer to 'what is this worth to you?'" },
+		commitment_level: { type: 'string', enum: ['life_changing', 'sticking_point', 'exploring'] },
+		place_a_summary: { type: 'string', description: 'Where he is today, briefly, in his words' },
+	}, required: ['destination_text'] } },
+	{ name: 'capture_self_talk', description: 'Elevate: save a sample of how Marlon talks to himself internally (feeds affirmation generation).', parameters: { type: 'object', properties: {
+		raw_text: { type: 'string' }, detected_pattern: { type: 'string', description: 'the recurring pattern you observe, if any' },
+		sentiment: { type: 'string', enum: ['negative', 'neutral', 'positive'] },
+	}, required: ['raw_text'] } },
+	{ name: 'generate_affirmations', description: 'Elevate: generate a validated 3–5 affirmation set for the active destination. Pass his own seed drafts when he offers them (seed-then-shape).', parameters: { type: 'object', properties: {
+		seeds: { type: 'array', items: { type: 'string' }, description: 'His own draft affirmations, verbatim (0–3)' },
+		replace: { type: 'boolean', description: 'true to retire the current active set and start fresh' },
+	} } },
+	{ name: 'log_affirmation_checkin', description: 'Elevate: record a morning read or evening resonance check-in when he reports it in conversation.', parameters: { type: 'object', properties: {
+		type: { type: 'string', enum: ['morning', 'evening', 'weekly'] },
+		read: { type: 'boolean' }, resonance_score: { type: 'integer', minimum: 1, maximum: 5 },
+		behavior_connection: { type: 'boolean', description: 'did an affirmation connect to real behavior today?' },
+		notes_text: { type: 'string' },
+	}, required: ['type'] } },
 ];
 
 type ToolArgs = Record<string, unknown>;
@@ -319,6 +371,68 @@ async function execTool(name: string, args: ToolArgs): Promise<unknown> {
 				: await db.from('daily_checkins').insert({ date: today(), ...fields }).select('date').single();
 			if (error) throw new Error(error.message);
 			return { saved: Object.keys(fields), date: data.date };
+		}
+		case 'declare_goal': {
+			const destination = s(args.destination_text);
+			if (!destination) throw new Error('declare_goal needs destination_text');
+			await db.from('goals').update({ status: 'revised', revised_at: new Date().toISOString() }).eq('status', 'active');
+			const { data, error } = await db.from('goals').insert({
+				destination_text: destination,
+				worth_statement: s(args.worth_statement) ?? null,
+				commitment_level: ['life_changing', 'sticking_point', 'exploring'].includes(s(args.commitment_level) ?? '')
+					? s(args.commitment_level)
+					: 'exploring',
+				place_a_summary: s(args.place_a_summary) ?? null,
+				status: 'active',
+			}).select('id,destination_text,commitment_level,worth_statement').single();
+			if (error) throw new Error(error.message);
+			return data;
+		}
+		case 'capture_self_talk': {
+			const rawText = s(args.raw_text);
+			if (!rawText) throw new Error('capture_self_talk needs raw_text');
+			const { data, error } = await db.from('self_talk_samples').insert({
+				raw_text: rawText,
+				detected_pattern: s(args.detected_pattern) ?? null,
+				sentiment: ['negative', 'neutral', 'positive'].includes(s(args.sentiment) ?? '') ? s(args.sentiment) : null,
+			}).select('id').single();
+			if (error) throw new Error(error.message);
+			return data;
+		}
+		case 'generate_affirmations': {
+			// One implementation of the validator: delegate to maverick-elevate,
+			// authenticating server-to-server with the cron secret.
+			const { data: secret } = await db.rpc('get_cron_secret');
+			if (typeof secret !== 'string' || !secret) throw new Error('cron secret unavailable');
+			const res = await fetch(`${SUPABASE_URL}/functions/v1/maverick-elevate`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+					'x-maverick-cron': secret,
+				},
+				body: JSON.stringify({
+					action: 'generate',
+					seeds: Array.isArray(args.seeds) ? args.seeds.slice(0, 3) : [],
+					replace: args.replace === true,
+				}),
+			});
+			const body = await res.json().catch(() => ({}));
+			if (!res.ok || !body.ok) throw new Error(body.error ?? `generate failed (${res.status})`);
+			return body.result;
+		}
+		case 'log_affirmation_checkin': {
+			const type = s(args.type);
+			if (!type || !['morning', 'evening', 'weekly'].includes(type)) throw new Error('type must be morning|evening|weekly');
+			const { data, error } = await db.from('affirmation_checkins').insert({
+				type,
+				read: typeof args.read === 'boolean' ? args.read : type === 'morning',
+				resonance_score: typeof args.resonance_score === 'number' ? Math.min(Math.max(Math.round(args.resonance_score), 1), 5) : null,
+				behavior_connection: typeof args.behavior_connection === 'boolean' ? args.behavior_connection : null,
+				notes_text: s(args.notes_text) ?? null,
+			}).select('id,type').single();
+			if (error) throw new Error(error.message);
+			return data;
 		}
 		default:
 			throw new Error(`Unknown tool "${name}"`);

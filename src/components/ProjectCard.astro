@@ -1,16 +1,21 @@
 ---
+import { TRUSTED_BRANDS } from '../data/trustedBy';
+
 interface Props {
 	href: string;
 	title: string;
 	description: string;
 	impact?: string;
+	/** Partner org name — rendered as "In partnership with" + the brand wordmark */
+	partner?: string;
 	tech?: string[];
 	date?: Date;
 	videoUrl?: string;
 	tone?: 'light' | 'dark';
 }
 
-const { href, title, description, impact, tech = [], date, videoUrl, tone = 'dark' } = Astro.props;
+const { href, title, description, impact, partner, tech = [], date, videoUrl, tone = 'dark' } = Astro.props;
+const partnerBrand = partner ? TRUSTED_BRANDS.find((b) => b.name === partner) : undefined;
 const dateLabel = date
 	? new Intl.DateTimeFormat('en-US', { month: 'short', year: 'numeric' }).format(date)
 	: undefined;
@@ -28,6 +33,25 @@ const dateLabel = date
 	</div>
 	<p class:list={['mt-3 leading-relaxed', tone === 'dark' ? 'text-paper/70' : 'text-slate']}>{description}</p>
 	{impact && <p class="mt-4 text-sm font-semibold text-emerald-glow">{impact}</p>}
+	{
+		partner && (
+			<p class="mt-4 flex flex-wrap items-center gap-2.5">
+				<span class:list={['text-xs font-semibold tracking-wide uppercase', tone === 'dark' ? 'text-paper/60' : 'text-slate']}>
+					In partnership with
+				</span>
+				<span
+					class="rounded-lg bg-paper px-3 py-1.5 font-display text-base font-semibold tracking-tight"
+					style={partnerBrand?.letters ? undefined : `color: ${partnerBrand?.color ?? '#141414'}`}
+				>
+					{partnerBrand?.letters
+						? partner
+								.split('')
+								.map((ch, i) => <span style={`color: ${partnerBrand.letters![i % partnerBrand.letters!.length]}`}>{ch}</span>)
+						: partner}
+				</span>
+			</p>
+		)
+	}
 	{
 		tech.length > 0 && (
 			<ul class="mt-6 flex flex-wrap gap-2" aria-label="Tech stack and AI models">

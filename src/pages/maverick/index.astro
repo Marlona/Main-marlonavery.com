@@ -95,9 +95,39 @@ import MaverickLayout from '../../layouts/MaverickLayout.astro';
 
 		<!-- Side rail -->
 		<aside class="min-w-0 space-y-4">
-			<section class="rounded-2xl bg-emerald-deep/25 p-5" aria-labelledby="affirmation-h">
-				<h2 id="affirmation-h" class="text-eyebrow text-emerald-glow">Affirmation</h2>
-				<blockquote class="mt-2 font-display text-base leading-snug font-medium" data-affirmation>—</blockquote>
+			<section class="rounded-2xl bg-emerald-deep/25 p-5" aria-labelledby="ritual-h">
+				<div class="flex items-center justify-between gap-2">
+					<h2 id="ritual-h" class="text-eyebrow text-emerald-glow">Morning ritual</h2>
+					<button
+						type="button"
+						data-ritual-read
+						class="cursor-pointer rounded-full border border-emerald/50 px-3 py-1 text-[11px] font-bold text-emerald-glow hover:bg-emerald hover:text-ink disabled:cursor-default disabled:opacity-60"
+					>
+						Mark read
+					</button>
+				</div>
+				<div class="mt-2 space-y-3" data-ritual-list>
+					<p class="text-sm text-paper/60">—</p>
+				</div>
+				<a href="/maverick/growth" class="mt-3 inline-block text-xs font-semibold text-emerald-glow hover:underline">Elevate →</a>
+			</section>
+
+			<section class="rounded-2xl bg-graphite p-5" aria-labelledby="evening-h" data-evening-card hidden>
+				<h2 id="evening-h" class="text-eyebrow text-mist">Evening — did today's set feel true?</h2>
+				<div class="mt-3 flex gap-2" role="group" aria-label="One-tap resonance score">
+					{
+						[1, 2, 3, 4, 5].map((n) => (
+							<button
+								type="button"
+								data-resonance={n}
+								class="flex-1 cursor-pointer rounded-lg border border-paper/25 py-2 text-sm font-bold hover:border-emerald-glow hover:text-emerald-glow"
+							>
+								{n}
+							</button>
+						))
+					}
+				</div>
+				<p class="mt-2 text-[11px] text-paper/45">One tap saves it. Full check-in lives on <a href="/maverick/growth" class="text-emerald-glow hover:underline">Elevate</a>.</p>
 			</section>
 
 			<details class="rounded-2xl bg-graphite p-5" open>
@@ -498,14 +528,41 @@ import MaverickLayout from '../../layouts/MaverickLayout.astro';
 		});
 	};
 
-	db.from('affirmations')
-		.select('text')
-		.eq('active', true)
-		.limit(1)
-		.maybeSingle()
-		.then(({ data }) => {
-			document.querySelector('[data-affirmation]')!.textContent = data?.text ?? 'Evolve one on the Growth page.';
-		});
+	// --- Elevate morning ritual + one-tap evening resonance ---
+	const ritualList = document.querySelector<HTMLElement>('[data-ritual-list]')!;
+	const ritualBtn = document.querySelector<HTMLButtonElement>('[data-ritual-read]')!;
+	const eveningCard = document.querySelector<HTMLElement>('[data-evening-card]')!;
+
+	const loadRitual = async () => {
+		const [activesRes, morningRes, eveningRes] = await Promise.all([
+			db.from('affirmations').select('text').eq('status', 'active').order('created_at', { ascending: true }),
+			db.from('affirmation_checkins').select('id').eq('type', 'morning').gte('created_at', `${today}T00:00:00`).limit(1),
+			db.from('affirmation_checkins').select('id').eq('type', 'evening').gte('created_at', `${today}T00:00:00`).limit(1),
+		]);
+		const actives = activesRes.data ?? [];
+		const readToday = (morningRes.data ?? []).length > 0;
+		ritualList.innerHTML = actives.length
+			? actives.map((a) => `<blockquote class="font-display text-sm leading-snug font-medium">“${esc(a.text)}”</blockquote>`).join('')
+			: '<p class="text-sm text-paper/60">Declare your destination in chat — Elevate builds the set with you.</p>';
+		ritualBtn.disabled = readToday || !actives.length;
+		ritualBtn.textContent = readToday ? 'Read ✓' : 'Mark read';
+
+		const hourET = Number(new Intl.DateTimeFormat('en-US', { hour: 'numeric', hour12: false }).format(new Date()));
+		eveningCard.hidden = !(hourET >= 18 && !(eveningRes.data ?? []).length && actives.length > 0);
+	};
+
+	ritualBtn.addEventListener('click', async () => {
+		await db.from('affirmation_checkins').insert({ type: 'morning', read: true });
+		loadRitual();
+	});
+
+	eveningCard.querySelectorAll<HTMLButtonElement>('[data-resonance]').forEach((btn) =>
+		btn.addEventListener('click', async () => {
+			await db.from('affirmation_checkins').insert({ type: 'evening', read: true, resonance_score: Number(btn.dataset.resonance) });
+			loadRitual();
+		}),
+	);
+	loadRitual();
 
 	const checkinForm = document.querySelector<HTMLFormElement>('[data-checkin]')!;
 	const checkinStatus = document.querySelector<HTMLElement>('[data-checkin-status]')!;
@@ -531,6 +588,14 @@ import MaverickLayout from '../../layouts/MaverickLayout.astro';
 		checkinStatus.classList.toggle('text-terracotta', !!error);
 		setTimeout(() => (checkinStatus.textContent = ''), 2500);
 	});
+
+	// Deep-link prefill: /maverick?ask=… drops a starter prompt into the composer
+	const ask = new URLSearchParams(location.search).get('ask');
+	if (ask) {
+		input.value = ask;
+		input.dispatchEvent(new Event('input'));
+		input.focus();
+	}
 
 	loadStats();
 	loadTop();

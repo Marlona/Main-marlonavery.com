@@ -13,30 +13,134 @@ export type Database = {
 	};
 	public: {
 		Tables: {
-			affirmations: {
+			affirmation_checkins: {
 				Row: {
-					active: boolean | null;
+					affirmation_id: string | null;
+					behavior_connection: boolean | null;
 					created_at: string | null;
 					id: string;
+					notes_text: string | null;
+					read: boolean | null;
+					resonance_score: number | null;
+					type: string;
+				};
+				Insert: {
+					affirmation_id?: string | null;
+					behavior_connection?: boolean | null;
+					created_at?: string | null;
+					id?: string;
+					notes_text?: string | null;
+					read?: boolean | null;
+					resonance_score?: number | null;
+					type: string;
+				};
+				Update: {
+					affirmation_id?: string | null;
+					behavior_connection?: boolean | null;
+					created_at?: string | null;
+					id?: string;
+					notes_text?: string | null;
+					read?: boolean | null;
+					resonance_score?: number | null;
+					type?: string;
+				};
+				Relationships: [
+					{
+						foreignKeyName: 'affirmation_checkins_affirmation_id_fkey';
+						columns: ['affirmation_id'];
+						isOneToOne: false;
+						referencedRelation: 'affirmations';
+						referencedColumns: ['id'];
+					},
+				];
+			};
+			affirmations: {
+				Row: {
+					created_at: string | null;
+					goal_id: string | null;
+					id: string;
+					parent_affirmation_id: string | null;
+					status: string;
+					target: string | null;
+					target_ref: string | null;
 					text: string;
 					theme: string | null;
 					triggered_by: string | null;
+					user_seed_text: string | null;
+					version: number;
 				};
 				Insert: {
-					active?: boolean | null;
 					created_at?: string | null;
+					goal_id?: string | null;
 					id?: string;
+					parent_affirmation_id?: string | null;
+					status?: string;
+					target?: string | null;
+					target_ref?: string | null;
 					text: string;
 					theme?: string | null;
 					triggered_by?: string | null;
+					user_seed_text?: string | null;
+					version?: number;
 				};
 				Update: {
-					active?: boolean | null;
 					created_at?: string | null;
+					goal_id?: string | null;
 					id?: string;
+					parent_affirmation_id?: string | null;
+					status?: string;
+					target?: string | null;
+					target_ref?: string | null;
 					text?: string;
 					theme?: string | null;
 					triggered_by?: string | null;
+					user_seed_text?: string | null;
+					version?: number;
+				};
+				Relationships: [
+					{
+						foreignKeyName: 'affirmations_goal_id_fkey';
+						columns: ['goal_id'];
+						isOneToOne: false;
+						referencedRelation: 'goals';
+						referencedColumns: ['id'];
+					},
+					{
+						foreignKeyName: 'affirmations_parent_affirmation_id_fkey';
+						columns: ['parent_affirmation_id'];
+						isOneToOne: false;
+						referencedRelation: 'affirmations';
+						referencedColumns: ['id'];
+					},
+				];
+			};
+			agent_events: {
+				Row: {
+					action_taken: string | null;
+					created_at: string | null;
+					event_type: string;
+					id: string;
+					payload: Json;
+					resolved_at: string | null;
+					status: string;
+				};
+				Insert: {
+					action_taken?: string | null;
+					created_at?: string | null;
+					event_type: string;
+					id?: string;
+					payload?: Json;
+					resolved_at?: string | null;
+					status?: string;
+				};
+				Update: {
+					action_taken?: string | null;
+					created_at?: string | null;
+					event_type?: string;
+					id?: string;
+					payload?: Json;
+					resolved_at?: string | null;
+					status?: string;
 				};
 				Relationships: [];
 			};
@@ -432,6 +536,131 @@ export type Database = {
 					kind?: string;
 					metadata?: Json | null;
 					source?: string;
+				};
+				Relationships: [];
+			};
+			goals: {
+				Row: {
+					commitment_level: string;
+					created_at: string | null;
+					destination_text: string;
+					id: string;
+					place_a_summary: string | null;
+					revised_at: string | null;
+					status: string;
+					worth_statement: string | null;
+				};
+				Insert: {
+					commitment_level?: string;
+					created_at?: string | null;
+					destination_text: string;
+					id?: string;
+					place_a_summary?: string | null;
+					revised_at?: string | null;
+					status?: string;
+					worth_statement?: string | null;
+				};
+				Update: {
+					commitment_level?: string;
+					created_at?: string | null;
+					destination_text?: string;
+					id?: string;
+					place_a_summary?: string | null;
+					revised_at?: string | null;
+					status?: string;
+					worth_statement?: string | null;
+				};
+				Relationships: [];
+			};
+			assessments: {
+				Row: {
+					discomfort_flags: string[];
+					goal_id: string | null;
+					id: string;
+					responses: Json;
+					scored_dimensions: Json;
+					taken_at: string | null;
+				};
+				Insert: {
+					discomfort_flags?: string[];
+					goal_id?: string | null;
+					id?: string;
+					responses?: Json;
+					scored_dimensions?: Json;
+					taken_at?: string | null;
+				};
+				Update: {
+					discomfort_flags?: string[];
+					goal_id?: string | null;
+					id?: string;
+					responses?: Json;
+					scored_dimensions?: Json;
+					taken_at?: string | null;
+				};
+				Relationships: [
+					{
+						foreignKeyName: 'assessments_goal_id_fkey';
+						columns: ['goal_id'];
+						isOneToOne: false;
+						referencedRelation: 'goals';
+						referencedColumns: ['id'];
+					},
+				];
+			};
+			influences: {
+				Row: {
+					ai_observations: Json | null;
+					created_at: string | null;
+					id: string;
+					label: string;
+					quadrant: string;
+					status: string;
+					updated_at: string | null;
+					user_alignment_rating: string | null;
+				};
+				Insert: {
+					ai_observations?: Json | null;
+					created_at?: string | null;
+					id?: string;
+					label: string;
+					quadrant: string;
+					status?: string;
+					updated_at?: string | null;
+					user_alignment_rating?: string | null;
+				};
+				Update: {
+					ai_observations?: Json | null;
+					created_at?: string | null;
+					id?: string;
+					label?: string;
+					quadrant?: string;
+					status?: string;
+					updated_at?: string | null;
+					user_alignment_rating?: string | null;
+				};
+				Relationships: [];
+			};
+			self_talk_samples: {
+				Row: {
+					captured_at: string | null;
+					detected_pattern: string | null;
+					id: string;
+					raw_text: string;
+					sentiment: string | null;
+				};
+				Insert: {
+					captured_at?: string | null;
+					detected_pattern?: string | null;
+					id?: string;
+					raw_text: string;
+					sentiment?: string | null;
+				};
+				Update: {
+					captured_at?: string | null;
+					detected_pattern?: string | null;
+					id?: string;
+					raw_text?: string;
+					sentiment?: string | null;
 				};
 				Relationships: [];
 			};

@@ -10,7 +10,7 @@
  *
  * Actions:
  *   daily_briefing — fast profile; reads DB, upserts daily_briefings for today
- *   affirmation    — writing profile; evolves the active affirmation
+ *   (affirmations moved to maverick-elevate — the Elevate coaching engine)
  *   weekly_review  — reasoning profile; drafts this week's weekly_reviews row
  *
  * Secrets: OPENROUTER_API_KEY (required), MODEL_FAST / MODEL_REASONING /
@@ -206,40 +206,6 @@ async function dailyBriefing() {
 	return { content, conversation_id: conversationId };
 }
 
-async function affirmation() {
-	const [wins, current, checkins] = await Promise.all([
-		db.from('tasks').select('title,completed_at').eq('status', 'done').gte('completed_at', `${daysAgo(7)}T00:00:00Z`).limit(20),
-		db.from('affirmations').select('id,text,theme').eq('active', true).limit(1),
-		db.from('daily_checkins').select('reflection,gratitude').gte('date', daysAgo(7)).order('date', { ascending: false }).limit(7),
-	]);
-	const raw = await callModel(
-		'writing',
-		VOICE,
-		`Evolve Marlon's daily affirmation. Current active affirmation: ${JSON.stringify(current.data?.[0] ?? null)}\n` +
-			`Wins this week: ${JSON.stringify(wins.data ?? [])}\nRecent reflections: ${JSON.stringify(checkins.data ?? [])}\n\n` +
-			`Write ONE new first-person affirmation grounded in this actual progress — no generic self-help clichés, ` +
-			`28 words max. Respond with ONLY a JSON object: {"text": "...", "theme": "discipline|leadership|faith|focus|execution|resilience", ` +
-			`"triggered_by": "one short phrase naming the progress that earned this evolution"}`,
-	);
-	const next = parseJson(raw) as { text: string; theme: string; triggered_by: string };
-	if (!next.text) throw new Error('Model returned no affirmation text');
-	await db.from('affirmations').update({ active: false }).eq('active', true);
-	const { data, error } = await db
-		.from('affirmations')
-		.insert({ text: next.text, theme: next.theme, triggered_by: next.triggered_by, active: true })
-		.select('id,text,theme,triggered_by')
-		.single();
-	if (error) throw new Error(error.message);
-	await audit({
-		observed: `${wins.data?.length ?? 0} wins in the last 7 days`,
-		recommended: 'evolve affirmation',
-		action_taken: `new active affirmation (theme: ${next.theme})`,
-		action_type: 'affirmation',
-		related_id: data.id,
-	});
-	return data;
-}
-
 async function weeklyReview() {
 	const start = weekStart();
 	const [done, projects, engagements, revenue, checkins] = await Promise.all([
@@ -410,7 +376,6 @@ Deno.serve(async (req: Request) => {
 		const { action } = await req.json().catch(() => ({ action: '' }));
 		const result =
 			action === 'daily_briefing' ? await dailyBriefing()
-			: action === 'affirmation' ? await affirmation()
 			: action === 'weekly_review' ? await weeklyReview()
 			: action === 'distill_memories' ? await distillMemories()
 			: null;

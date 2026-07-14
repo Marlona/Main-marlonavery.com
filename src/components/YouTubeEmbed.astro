@@ -1,0 +1,63 @@
+---
+/**
+ * Click-to-play YouTube embed — renders only the thumbnail (one small image)
+ * until asked for, then swaps in a youtube-nocookie iframe. Keeps pages with
+ * several films light and loads zero YouTube script up front.
+ */
+interface Props {
+	youtubeId: string;
+	/** Accessible film title, e.g. "A.I. × Library Project — Detroit" */
+	title: string;
+}
+
+const { youtubeId, title } = Astro.props;
+---
+
+<div
+	class="group relative aspect-video overflow-hidden rounded-2xl bg-graphite"
+	data-yt-embed
+	data-yt-id={youtubeId}
+	data-yt-title={title}
+>
+	<img
+		src={`https://i.ytimg.com/vi/${youtubeId}/hqdefault.jpg`}
+		alt=""
+		loading="lazy"
+		decoding="async"
+		class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+	/>
+	<div class="pointer-events-none absolute inset-0 bg-ink/30 transition-colors group-hover:bg-ink/10" aria-hidden="true"></div>
+	<button
+		type="button"
+		class="absolute inset-0 flex w-full cursor-pointer items-center justify-center focus-visible:outline-3 focus-visible:outline-offset-[-3px] focus-visible:outline-emerald-glow"
+		aria-label={`Play film: ${title}`}
+	>
+		<span
+			class="flex h-16 w-16 items-center justify-center rounded-full bg-paper/90 shadow-lg transition-transform group-hover:scale-110"
+			aria-hidden="true"
+		>
+			<svg viewBox="0 0 24 24" class="ml-1 h-7 w-7 fill-ink" aria-hidden="true">
+				<path d="M8 5.5v13l11-6.5z"></path>
+			</svg>
+		</span>
+	</button>
+</div>
+
+<script>
+	for (const box of document.querySelectorAll<HTMLElement>('[data-yt-embed]')) {
+		box.querySelector('button')?.addEventListener(
+			'click',
+			() => {
+				const iframe = document.createElement('iframe');
+				iframe.src = `https://www.youtube-nocookie.com/embed/${box.dataset.ytId}?autoplay=1&rel=0`;
+				iframe.title = box.dataset.ytTitle ?? 'Video';
+				iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+				iframe.allowFullscreen = true;
+				iframe.className = 'absolute inset-0 h-full w-full border-0';
+				box.replaceChildren(iframe);
+				iframe.focus();
+			},
+			{ once: true },
+		);
+	}
+</script>

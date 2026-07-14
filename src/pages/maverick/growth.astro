@@ -1,52 +1,199 @@
 ---
 import MaverickLayout from '../../layouts/MaverickLayout.astro';
+import { ASSESSMENT_DIMENSIONS, ASSESSMENT_FREE_TEXT } from '../../data/elevateAssessment';
+
+/**
+ * Growth = Elevate — the coaching engine (Intentional Development Model).
+ * Morning-first ritual, destination, framework-validated affirmations,
+ * observation-framed proposals from the nightly adjustment loop, the intake
+ * assessment with quarterly A→B deltas, and the journey lineage. Maverick's
+ * memory management lives at the bottom. Conversational work (declaring the
+ * destination, seed-then-shape, coaching) happens in chat — this page is the
+ * instrument panel.
+ */
 ---
 
-<MaverickLayout title="Maverick — Growth" active="growth">
-	<h1 class="text-display-sm mt-8">Growth.</h1>
+<MaverickLayout title="Maverick — Elevate" active="growth">
+	<h1 class="text-display-sm mt-8">Elevate.</h1>
+	<p class="mt-2 max-w-2xl text-sm text-paper/60">
+		From where you are to where you said you want to go. Observe, don't judge.
+	</p>
 
-	<!-- Active affirmation -->
-	<section class="mt-6 rounded-3xl bg-emerald-deep/25 p-8" aria-labelledby="aff-h">
+	<!-- Morning ritual -->
+	<section class="mt-6 rounded-3xl bg-emerald-deep/25 p-7" aria-labelledby="ritual-h" data-ritual>
 		<div class="flex flex-wrap items-center justify-between gap-4">
-			<h2 id="aff-h" class="text-eyebrow text-emerald-glow">Active affirmation</h2>
+			<h2 id="ritual-h" class="text-eyebrow text-emerald-glow">Morning ritual</h2>
 			<button
 				type="button"
-				data-aff-evolve
+				data-ritual-read
 				class="cursor-pointer rounded-full bg-emerald px-6 py-2.5 text-sm font-bold text-ink transition-transform hover:scale-105"
 			>
-				Evolve it
+				Mark as read
 			</button>
 		</div>
-		<blockquote class="mt-4 max-w-3xl font-display text-2xl leading-snug font-medium md:text-3xl" data-aff-active aria-live="polite">—</blockquote>
-		<p class="mt-3 text-sm text-paper/60" data-aff-meta></p>
-		<p class="mt-2 text-sm text-terracotta" data-aff-error role="alert" hidden></p>
+		<div class="mt-4 space-y-4" data-ritual-list aria-live="polite">
+			<p class="text-paper/60">Loading…</p>
+		</div>
+		<p class="mt-5 border-t border-paper/15 pt-4 text-sm text-paper/70" data-ritual-observe></p>
 	</section>
 
-	<div class="mt-8 grid gap-6 lg:grid-cols-2">
-		<!-- Wins -->
-		<section class="rounded-2xl bg-graphite p-6" aria-labelledby="wins-h">
-			<h2 id="wins-h" class="text-eyebrow text-mist">Wins — last 14 days</h2>
-			<ul class="mt-4 space-y-2.5 text-sm" data-wins>
-				<li class="text-paper/55">Loading…</li>
-			</ul>
-		</section>
+	<!-- Destination -->
+	<section class="mt-6 rounded-2xl bg-graphite p-6" aria-labelledby="dest-h">
+		<div class="flex flex-wrap items-center justify-between gap-3">
+			<h2 id="dest-h" class="text-eyebrow text-mist">Destination — Place B</h2>
+			<a href="/maverick?ask=Let's revisit my destination — where I'm headed and what it's worth to me." class="rounded-full border border-paper/25 px-4 py-1.5 text-xs font-bold hover:border-emerald-glow hover:text-emerald-glow" data-dest-revise>
+				Revise in chat
+			</a>
+		</div>
+		<div class="mt-3" data-destination>
+			<p class="text-paper/60">Loading…</p>
+		</div>
+	</section>
 
-		<!-- Reflections -->
-		<section class="rounded-2xl bg-graphite p-6" aria-labelledby="refl-h">
-			<h2 id="refl-h" class="text-eyebrow text-mist">Reflections</h2>
-			<ul class="mt-4 space-y-4 text-sm" data-reflections>
-				<li class="text-paper/55">Loading…</li>
-			</ul>
-		</section>
-	</div>
+	<!-- Elevate noticed (open proposals) -->
+	<section class="mt-6" aria-labelledby="noticed-h" data-noticed-section hidden>
+		<h2 id="noticed-h" class="text-eyebrow text-gold">Elevate noticed</h2>
+		<div class="mt-3 space-y-3" data-noticed></div>
+	</section>
 
-	<!-- Affirmation history -->
-	<section class="mt-8" aria-labelledby="hist-h">
-		<h2 id="hist-h" class="text-eyebrow text-mist">Evolution history</h2>
-		<ol class="mt-4 space-y-3" data-aff-history>
+	<!-- Active affirmations -->
+	<section class="mt-8" aria-labelledby="active-h">
+		<div class="flex flex-wrap items-baseline justify-between gap-3">
+			<h2 id="active-h" class="text-eyebrow text-mist">Active set</h2>
+			<p class="text-xs text-paper/50" data-resonance-strip></p>
+		</div>
+		<div class="mt-3 space-y-3" data-active-list>
+			<p class="text-paper/60">Loading…</p>
+		</div>
+		<a href="/maverick?ask=Let's work on my affirmations. I want to seed a couple in my own words first." class="mt-4 inline-block text-sm font-semibold text-emerald-glow hover:underline">
+			Shape the set in chat →
+		</a>
+	</section>
+
+	<!-- Evening check-in -->
+	<section class="mt-8 rounded-2xl bg-graphite p-6" aria-labelledby="evening-h" data-evening hidden>
+		<h2 id="evening-h" class="text-eyebrow text-mist">Evening check-in — 30 seconds</h2>
+		<form data-evening-form class="mt-4 space-y-4">
+			<div>
+				<p class="text-sm font-semibold">Did today's set feel true?</p>
+				<div class="mt-2 flex gap-2" role="radiogroup" aria-label="Resonance score 1 to 5">
+					{
+						[1, 2, 3, 4, 5].map((n) => (
+							<label class="cursor-pointer">
+								<input type="radio" name="resonance" value={n} class="peer sr-only" required />
+								<span class="block rounded-full border border-paper/25 px-4 py-2 text-sm font-bold peer-checked:border-emerald peer-checked:bg-emerald peer-checked:text-ink">
+									{n}
+								</span>
+							</label>
+						))
+					}
+				</div>
+			</div>
+			<label class="flex items-center gap-2.5 text-sm">
+				<input type="checkbox" name="connection" class="h-4 w-4 accent-emerald" />
+				Something happened today that connects
+			</label>
+			<label class="block">
+				<span class="text-sm font-semibold">One line, if it wants out</span>
+				<input type="text" name="notes" class="mt-1.5 w-full rounded-lg border border-paper/20 bg-ink px-3 py-2 text-base text-paper focus:border-emerald sm:text-sm" />
+			</label>
+			<div class="flex items-center gap-3">
+				<button type="submit" class="cursor-pointer rounded-full bg-emerald px-6 py-2.5 text-sm font-bold text-ink transition-transform hover:scale-105">Save</button>
+				<p class="text-sm text-emerald-glow" data-evening-status role="status"></p>
+			</div>
+		</form>
+	</section>
+
+	<!-- Assessment -->
+	<section class="mt-10 border-t border-paper/15 pt-8" aria-labelledby="assess-h">
+		<div class="flex flex-wrap items-baseline justify-between gap-3">
+			<h2 id="assess-h" class="text-display-sm">Where you are. Where you're going.</h2>
+			<p class="text-sm text-paper/55" data-assess-meta></p>
+		</div>
+		<div class="mt-4" data-delta hidden>
+			<h3 class="text-eyebrow text-emerald-glow">Your movement since last time</h3>
+			<div class="mt-3 space-y-2" data-delta-bars></div>
+		</div>
+		<details class="mt-4 rounded-2xl bg-graphite p-6" data-assess-details>
+			<summary class="cursor-pointer font-display text-lg font-semibold [&::-webkit-details-marker]:hidden" data-assess-summary>
+				Take the assessment (~5 minutes)
+			</summary>
+			<form data-assess-form class="mt-6 space-y-6">
+				<p class="text-sm text-paper/60">
+					For each area: where you are today (1–10), where you want to be (1–10), and how comfortable
+					this area feels to talk about (1–5). Honest beats impressive.
+				</p>
+				{
+					ASSESSMENT_DIMENSIONS.map((dim) => (
+						<fieldset class="rounded-xl bg-ink/50 p-4">
+							<legend class="px-1 text-sm font-semibold">{dim.label}</legend>
+							<div class="mt-2 grid gap-4 sm:grid-cols-3">
+								<label class="block text-xs">
+									<span class="text-paper/60">
+										Today (A): <output data-out={`${dim.id}-a`}>5</output>
+									</span>
+									<input type="range" min="1" max="10" value="5" name={`${dim.id}:a`} data-range={`${dim.id}-a`} class="mt-1 w-full accent-emerald" />
+								</label>
+								<label class="block text-xs">
+									<span class="text-paper/60">
+										Want (B): <output data-out={`${dim.id}-b`}>8</output>
+									</span>
+									<input type="range" min="1" max="10" value="8" name={`${dim.id}:b`} data-range={`${dim.id}-b`} class="mt-1 w-full accent-emerald" />
+								</label>
+								<label class="block text-xs">
+									<span class="text-paper/60">
+										Comfort discussing: <output data-out={`${dim.id}-c`}>3</output>
+									</span>
+									<input type="range" min="1" max="5" value="3" name={`${dim.id}:c`} data-range={`${dim.id}-c`} class="mt-1 w-full accent-gold" />
+								</label>
+							</div>
+						</fieldset>
+					))
+				}
+				{
+					ASSESSMENT_FREE_TEXT.map((q) => (
+						<label class="block">
+							<span class="text-sm font-semibold">{q.label}</span>
+							<textarea name={q.id} rows="2" class="mt-1.5 w-full rounded-lg border border-paper/20 bg-ink px-3 py-2 text-base text-paper focus:border-emerald sm:text-sm" />
+						</label>
+					))
+				}
+				<div class="flex items-center gap-3">
+					<button type="submit" class="cursor-pointer rounded-full bg-emerald px-7 py-2.5 text-sm font-bold text-ink transition-transform hover:scale-105">
+						Save assessment
+					</button>
+					<p class="text-sm text-emerald-glow" data-assess-status role="status"></p>
+				</div>
+			</form>
+		</details>
+	</section>
+
+	<!-- Journey -->
+	<section class="mt-10" aria-labelledby="journey-h">
+		<h2 id="journey-h" class="text-eyebrow text-mist">The journey</h2>
+		<ol class="mt-3 space-y-2" data-journey>
 			<li class="text-paper/55">Loading…</li>
 		</ol>
 	</section>
+
+	<!-- Wins & reflections (folded) -->
+	<details class="mt-8 rounded-2xl bg-graphite p-6">
+		<summary class="text-eyebrow cursor-pointer list-none text-mist [&::-webkit-details-marker]:hidden">Wins & reflections</summary>
+		<div class="mt-4 grid gap-6 lg:grid-cols-2">
+			<div>
+				<h3 class="text-xs font-bold tracking-wide text-paper/55 uppercase">Wins — last 14 days</h3>
+				<ul class="mt-3 space-y-2.5 text-sm" data-wins>
+					<li class="text-paper/55">Loading…</li>
+				</ul>
+			</div>
+			<div>
+				<h3 class="text-xs font-bold tracking-wide text-paper/55 uppercase">Reflections</h3>
+				<ul class="mt-3 space-y-4 text-sm" data-reflections>
+					<li class="text-paper/55">Loading…</li>
+				</ul>
+			</div>
+		</div>
+	</details>
 
 	<!-- Maverick's memory -->
 	<section class="mt-12 border-t border-paper/15 pt-10" aria-labelledby="mem-h">
@@ -79,7 +226,7 @@ import MaverickLayout from '../../layouts/MaverickLayout.astro';
 		</ul>
 	</section>
 
-	<!-- Add / edit dialog -->
+	<!-- Add / edit memory dialog -->
 	<dialog data-mem-dialog class="theme-fixed m-auto w-[min(94vw,560px)] rounded-2xl border border-paper/20 bg-graphite p-0 text-paper backdrop:bg-ink/70">
 		<form method="dialog" data-mem-form class="p-7">
 			<h3 class="font-display text-2xl font-semibold" data-mem-dialog-title>Add memory</h3>
@@ -109,58 +256,311 @@ import MaverickLayout from '../../layouts/MaverickLayout.astro';
 </MaverickLayout>
 
 <script>
-	import { initMaverick, invokeAgent, esc, fmtDate, todayISO } from '../../lib/maverick/client';
+	import { initMaverick, esc, fmtDate, todayISO } from '../../lib/maverick/client';
+	import { OBSERVATION_PROMPTS, DISCOMFORT_THRESHOLD, ASSESSMENT_DIMENSIONS, ASSESSMENT_FREE_TEXT } from '../../data/elevateAssessment';
+	import type { Tables } from '../../lib/maverick/db-types';
+
+	type Affirmation = Tables<'affirmations'>;
+	type AgentEvent = Tables<'agent_events'>;
 
 	const db = await initMaverick();
+	const today = todayISO();
 
-	const activeEl = document.querySelector<HTMLElement>('[data-aff-active]')!;
-	const metaEl = document.querySelector<HTMLElement>('[data-aff-meta]')!;
-	const errorEl = document.querySelector<HTMLElement>('[data-aff-error]')!;
-	const historyEl = document.querySelector<HTMLElement>('[data-aff-history]')!;
-	const evolveBtn = document.querySelector<HTMLButtonElement>('[data-aff-evolve]')!;
-
-	const loadAffirmations = async () => {
-		const { data } = await db.from('affirmations').select('*').order('created_at', { ascending: false }).limit(30);
-		const all = data ?? [];
-		const active = all.find((a) => a.active);
-		activeEl.textContent = active ? `“${active.text}”` : 'No active affirmation yet — evolve one.';
-		metaEl.textContent = active
-			? [active.theme, active.triggered_by ? `evolved by: ${active.triggered_by}` : null].filter(Boolean).join(' · ')
-			: '';
-		historyEl.innerHTML = all.length
-			? all
-					.map(
-						(a) => `
-			<li class="rounded-2xl bg-graphite p-5 ${a.active ? 'border border-emerald/50' : ''}">
-				<p class="leading-snug">“${esc(a.text)}”</p>
-				<p class="mt-2 text-xs text-paper/55">
-					${[a.theme, a.triggered_by, a.created_at ? fmtDate(a.created_at) : null].filter(Boolean).map(esc).join(' · ')}
-					${a.active ? ' · <span class="font-bold text-emerald-glow">ACTIVE</span>' : ''}
-				</p>
-			</li>`,
-					)
-					.join('')
-			: '<li class="text-paper/55">History starts with the first evolution.</li>';
+	/** Call a maverick edge function action, surfacing its error text. */
+	const fnCall = async (fn: string, body: Record<string, unknown>) => {
+		const { data, error } = await db.functions.invoke(fn, { body });
+		if (error) {
+			let message = error.message;
+			try {
+				const parsed = await (error as { context?: Response }).context?.json();
+				message = parsed?.message ?? parsed?.error ?? message;
+			} catch {
+				/* keep generic */
+			}
+			throw new Error(message);
+		}
+		return (data as { result: unknown }).result;
 	};
 
-	evolveBtn.addEventListener('click', async () => {
-		errorEl.hidden = true;
-		evolveBtn.disabled = true;
-		evolveBtn.textContent = 'Evolving…';
-		try {
-			await invokeAgent(db, 'affirmation');
-			await loadAffirmations();
-		} catch (err) {
-			errorEl.textContent = err instanceof Error ? err.message : 'Evolution failed.';
-			errorEl.hidden = false;
-		} finally {
-			evolveBtn.disabled = false;
-			evolveBtn.textContent = 'Evolve it';
+	// ------------------------------------------------------ Morning ritual --
+	const ritualList = document.querySelector<HTMLElement>('[data-ritual-list]')!;
+	const ritualBtn = document.querySelector<HTMLButtonElement>('[data-ritual-read]')!;
+	const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
+	document.querySelector('[data-ritual-observe]')!.textContent = `Today's observation: ${OBSERVATION_PROMPTS[dayOfYear % OBSERVATION_PROMPTS.length]}`;
+
+	let actives: Affirmation[] = [];
+
+	const loadRitual = async () => {
+		const [activesRes, readRes] = await Promise.all([
+			db.from('affirmations').select('*').eq('status', 'active').order('created_at', { ascending: true }),
+			db.from('affirmation_checkins').select('id').eq('type', 'morning').gte('created_at', `${today}T00:00:00`).limit(1),
+		]);
+		actives = activesRes.data ?? [];
+		const readToday = (readRes.data ?? []).length > 0;
+		ritualList.innerHTML = actives.length
+			? actives.map((a) => `<blockquote class="font-display text-xl leading-snug font-medium md:text-2xl">“${esc(a.text)}”</blockquote>`).join('')
+			: '<p class="text-paper/60">No active set yet — declare your destination in chat and Elevate builds it with you.</p>';
+		ritualBtn.disabled = readToday || !actives.length;
+		ritualBtn.textContent = readToday ? 'Read this morning ✓' : 'Mark as read';
+	};
+
+	ritualBtn.addEventListener('click', async () => {
+		await db.from('affirmation_checkins').insert({ type: 'morning', read: true });
+		loadRitual();
+	});
+
+	// -------------------------------------------------------- Destination --
+	const loadDestination = async () => {
+		const { data: goal } = await db.from('goals').select('*').eq('status', 'active').order('created_at', { ascending: false }).limit(1).maybeSingle();
+		const el = document.querySelector<HTMLElement>('[data-destination]')!;
+		if (!goal) {
+			el.innerHTML = `
+				<p class="text-paper/70">No destination declared yet.</p>
+				<a href="/maverick?ask=I want to set my destination — where I'm going and what it's worth to me. Walk me through it." class="mt-3 inline-block rounded-full bg-emerald px-6 py-2.5 text-sm font-bold text-ink transition-transform hover:scale-105">Start Elevate →</a>`;
+			(document.querySelector('[data-dest-revise]') as HTMLElement).hidden = true;
+			return;
+		}
+		const commitment = { life_changing: 'Life-changing', sticking_point: 'Sticking point', exploring: 'Exploring' }[goal.commitment_level] ?? goal.commitment_level;
+		el.innerHTML = `
+			<p class="font-display text-xl leading-snug font-medium">“${esc(goal.destination_text)}”</p>
+			<p class="mt-3 flex flex-wrap items-center gap-2 text-xs">
+				<span class="rounded-full bg-emerald-deep/40 px-2.5 py-0.5 font-bold text-emerald-glow uppercase">${esc(commitment)}</span>
+				${goal.worth_statement ? `<span class="text-paper/60">Worth: ${esc(goal.worth_statement)}</span>` : ''}
+			</p>
+			${goal.place_a_summary ? `<p class="mt-2 text-sm text-paper/60">Place A: ${esc(goal.place_a_summary)}</p>` : ''}`;
+	};
+
+	// ------------------------------------------------------ Elevate noticed --
+	const EVENT_LABELS: Record<string, string> = {
+		resonance_decay: 'Resonance is fading',
+		graduation: 'This one may be yours now',
+		outgrown: 'You may have outgrown this',
+		stall: 'A lesson keeps returning',
+		new_influence: 'A new influence keeps appearing',
+		goal_drift: 'Your direction language is shifting',
+		disengagement: 'Welcome back',
+		cadence_due: 'A rhythm check is due',
+	};
+
+	const loadNoticed = async () => {
+		const { data } = await db.from('agent_events').select('*').eq('status', 'open').order('created_at', { ascending: true });
+		const events = (data ?? []) as AgentEvent[];
+		const section = document.querySelector<HTMLElement>('[data-noticed-section]')!;
+		const wrap = document.querySelector<HTMLElement>('[data-noticed]')!;
+		section.hidden = !events.length;
+		wrap.innerHTML = events
+			.map((e) => {
+				const p = (e.payload ?? {}) as Record<string, unknown>;
+				return `
+			<article class="rounded-2xl border border-gold/40 bg-graphite p-5">
+				<p class="text-xs font-bold tracking-wide text-gold uppercase">${esc(EVENT_LABELS[e.event_type] ?? e.event_type)}</p>
+				${p.observation ? `<p class="mt-2 text-sm text-paper/80">${esc(String(p.observation))}</p>` : ''}
+				${p.current_text ? `<p class="mt-2 text-xs text-paper/50">Current: “${esc(String(p.current_text))}”</p>` : ''}
+				${p.proposed_text ? `<p class="mt-1.5 text-sm font-semibold text-emerald-glow">Proposed: “${esc(String(p.proposed_text))}”</p>` : ''}
+				<div class="mt-4 flex gap-2.5">
+					<button type="button" data-ev="${esc(e.id)}:accepted" class="cursor-pointer rounded-full bg-emerald px-5 py-2 text-xs font-bold text-ink transition-transform hover:scale-105">Accept</button>
+					<button type="button" data-ev="${esc(e.id)}:dismissed" class="cursor-pointer rounded-full border border-paper/30 px-5 py-2 text-xs font-semibold hover:border-terracotta hover:text-terracotta">Dismiss</button>
+				</div>
+			</article>`;
+			})
+			.join('');
+		wrap.querySelectorAll<HTMLButtonElement>('[data-ev]').forEach((btn) =>
+			btn.addEventListener('click', async () => {
+				const [id, decision] = btn.dataset.ev!.split(':');
+				btn.disabled = true;
+				try {
+					await fnCall('maverick-elevate', { action: 'resolve_event', event_id: id, decision });
+					loadNoticed();
+					loadRitual();
+					loadJourney();
+				} catch (err) {
+					alert(err instanceof Error ? err.message : 'Could not resolve.');
+					btn.disabled = false;
+				}
+			}),
+		);
+	};
+
+	// --------------------------------------------------- Active set + bars --
+	const loadActiveSet = async () => {
+		const { data: evenings } = await db
+			.from('affirmation_checkins')
+			.select('resonance_score,created_at')
+			.eq('type', 'evening')
+			.not('resonance_score', 'is', null)
+			.order('created_at', { ascending: false })
+			.limit(7);
+		const scores = (evenings ?? []).reverse().map((c) => c.resonance_score as number);
+		document.querySelector('[data-resonance-strip]')!.textContent = scores.length
+			? `Resonance, last ${scores.length}: ${scores.map((n) => '▁▂▃▄▅'[n - 1]).join(' ')} (${scores.join(' · ')})`
+			: 'No resonance scores yet — the evening check-in feeds this.';
+
+		const TARGET_LABELS: Record<string, string> = { goal: 'Destination', discomfort_area: 'Discomfort area', self_talk_pattern: 'Self-talk', lesson: 'Lesson' };
+		const wrap = document.querySelector<HTMLElement>('[data-active-list]')!;
+		wrap.innerHTML = actives.length
+			? actives
+					.map(
+						(a) => `
+			<article class="rounded-2xl bg-graphite p-5">
+				<p class="leading-snug">“${esc(a.text)}”</p>
+				<div class="mt-3 flex flex-wrap items-center gap-2 text-[11px]">
+					<span class="rounded-full bg-emerald-deep/40 px-2 py-0.5 font-bold text-emerald-glow uppercase">${esc(TARGET_LABELS[a.target ?? ''] ?? 'Destination')}</span>
+					<span class="text-paper/50">v${a.version}</span>
+					${a.user_seed_text ? '<span class="rounded-full border border-paper/25 px-2 py-0.5 text-paper/60">from your seed</span>' : ''}
+					${a.target_ref ? `<span class="text-paper/45">${esc(a.target_ref)}</span>` : ''}
+					<button type="button" data-graduate="${esc(a.id)}" class="ml-auto cursor-pointer rounded-full border border-paper/25 px-3 py-1 text-[11px] font-bold hover:border-emerald-glow hover:text-emerald-glow">This feels true now</button>
+				</div>
+			</article>`,
+					)
+					.join('')
+			: '<p class="text-paper/60">The set builds from your destination — start in chat.</p>';
+
+		wrap.querySelectorAll<HTMLButtonElement>('[data-graduate]').forEach((btn) =>
+			btn.addEventListener('click', async () => {
+				if (!confirm('Graduate this affirmation? It becomes internalized and Elevate writes the next level.')) return;
+				btn.disabled = true;
+				btn.textContent = 'Graduating…';
+				try {
+					const a = actives.find((x) => x.id === btn.dataset.graduate)!;
+					const { data: event, error } = await db
+						.from('agent_events')
+						.insert({ event_type: 'graduation', payload: { affirmation_id: a.id, current_text: a.text, observation: 'Marlon says it reads as plain fact now.' } })
+						.select('id')
+						.single();
+					if (error) throw new Error(error.message);
+					await fnCall('maverick-elevate', { action: 'resolve_event', event_id: event.id, decision: 'accepted' });
+					await loadRitual();
+					await loadActiveSet();
+					loadJourney();
+				} catch (err) {
+					alert(err instanceof Error ? err.message : 'Could not graduate.');
+					btn.disabled = false;
+					btn.textContent = 'This feels true now';
+				}
+			}),
+		);
+	};
+
+	// ------------------------------------------------------ Evening check-in --
+	const eveningSection = document.querySelector<HTMLElement>('[data-evening]')!;
+	const eveningForm = document.querySelector<HTMLFormElement>('[data-evening-form]')!;
+	const loadEvening = async () => {
+		const hourET = Number(new Intl.DateTimeFormat('en-US', { hour: 'numeric', hour12: false }).format(new Date()));
+		const { data } = await db.from('affirmation_checkins').select('id').eq('type', 'evening').gte('created_at', `${today}T00:00:00`).limit(1);
+		eveningSection.hidden = !(hourET >= 18 && !(data ?? []).length && actives.length > 0);
+	};
+	eveningForm.addEventListener('submit', async (e) => {
+		e.preventDefault();
+		const form = new FormData(eveningForm);
+		const { error } = await db.from('affirmation_checkins').insert({
+			type: 'evening',
+			read: true,
+			resonance_score: Number(form.get('resonance')),
+			behavior_connection: form.get('connection') === 'on',
+			notes_text: String(form.get('notes') ?? '').trim() || null,
+		});
+		const status = document.querySelector<HTMLElement>('[data-evening-status]')!;
+		status.textContent = error ? `Save failed: ${error.message}` : 'Saved ✓';
+		if (!error) setTimeout(() => loadEvening(), 900);
+	});
+
+	// ---------------------------------------------------------- Assessment --
+	document.querySelectorAll<HTMLInputElement>('[data-range]').forEach((range) => {
+		range.addEventListener('input', () => {
+			document.querySelector<HTMLElement>(`[data-out="${range.dataset.range}"]`)!.textContent = range.value;
+		});
+	});
+
+	const assessForm = document.querySelector<HTMLFormElement>('[data-assess-form]')!;
+	const loadAssessments = async () => {
+		const { data } = await db.from('assessments').select('scored_dimensions,taken_at').order('taken_at', { ascending: false }).limit(2);
+		const rows = data ?? [];
+		document.querySelector('[data-assess-meta]')!.textContent = rows.length
+			? `Last taken ${fmtDate(rows[0].taken_at)} · retake quarterly`
+			: 'Not taken yet';
+		document.querySelector('[data-assess-summary]')!.textContent = rows.length ? 'Retake the assessment (~5 minutes)' : 'Take the assessment (~5 minutes)';
+
+		const deltaWrap = document.querySelector<HTMLElement>('[data-delta]')!;
+		if (rows.length >= 2) {
+			const latest = rows[0].scored_dimensions as Record<string, { a: number; b: number }>;
+			const prior = rows[1].scored_dimensions as Record<string, { a: number; b: number }>;
+			const bars = ASSESSMENT_DIMENSIONS.filter((d) => latest[d.id] && prior[d.id])
+				.map((d) => {
+					const move = latest[d.id].a - prior[d.id].a;
+					const sign = move > 0 ? `+${move}` : `${move}`;
+					const color = move > 0 ? 'text-emerald-glow' : move < 0 ? 'text-terracotta' : 'text-paper/50';
+					return `
+				<div class="flex items-center gap-3 text-sm">
+					<span class="w-56 shrink-0 truncate text-paper/70">${esc(d.label)}</span>
+					<span class="flex-1 rounded-full bg-ink/60"><span class="block h-2 rounded-full bg-emerald" style="width:${latest[d.id].a * 10}%"></span></span>
+					<span class="w-14 text-right font-bold ${color}">${sign}</span>
+				</div>`;
+				})
+				.join('');
+			document.querySelector('[data-delta-bars]')!.innerHTML = bars;
+			deltaWrap.hidden = !bars;
+		} else {
+			deltaWrap.hidden = true;
+		}
+	};
+
+	assessForm.addEventListener('submit', async (e) => {
+		e.preventDefault();
+		const form = new FormData(assessForm);
+		const scored: Record<string, { a: number; b: number; comfort: number }> = {};
+		const flags: string[] = [];
+		for (const dim of ASSESSMENT_DIMENSIONS) {
+			const entry = { a: Number(form.get(`${dim.id}:a`)), b: Number(form.get(`${dim.id}:b`)), comfort: Number(form.get(`${dim.id}:c`)) };
+			scored[dim.id] = entry;
+			if (entry.comfort <= DISCOMFORT_THRESHOLD) flags.push(dim.id);
+		}
+		const responses: Record<string, string> = {};
+		for (const q of ASSESSMENT_FREE_TEXT) responses[q.id] = String(form.get(q.id) ?? '').trim();
+		const { data: goal } = await db.from('goals').select('id').eq('status', 'active').order('created_at', { ascending: false }).limit(1).maybeSingle();
+		const { error } = await db.from('assessments').insert({
+			goal_id: goal?.id ?? null,
+			responses,
+			scored_dimensions: scored,
+			discomfort_flags: flags,
+		});
+		const status = document.querySelector<HTMLElement>('[data-assess-status]')!;
+		status.textContent = error ? `Save failed: ${error.message}` : `Saved ✓ — ${flags.length} area(s) flagged to start from`;
+		if (!error) {
+			(document.querySelector('[data-assess-details]') as HTMLDetailsElement).open = false;
+			loadAssessments();
 		}
 	});
 
-	// Wins: tasks completed in the last 14 days
-	const since = new Date(`${todayISO()}T00:00:00`);
+	// -------------------------------------------------------------- Journey --
+	const loadJourney = async () => {
+		const { data } = await db
+			.from('affirmations')
+			.select('text,status,version,created_at')
+			.neq('status', 'active')
+			.order('created_at', { ascending: false })
+			.limit(15);
+		const CHIP: Record<string, string> = {
+			internalized: 'border-emerald/60 text-emerald-glow',
+			reshaped: 'border-mist/50 text-mist',
+			retired: 'border-paper/30 text-paper/50',
+		};
+		const el = document.querySelector<HTMLElement>('[data-journey]')!;
+		el.innerHTML = data?.length
+			? data
+					.map(
+						(a) => `
+			<li class="flex flex-wrap items-baseline gap-2 border-b border-paper/8 pb-2 text-sm">
+				<span class="rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase ${CHIP[a.status] ?? ''}">${esc(a.status)}</span>
+				<span class="min-w-0 flex-1 text-paper/75">“${esc(a.text)}”</span>
+				<span class="text-xs text-paper/40">v${a.version} · ${fmtDate(a.created_at)}</span>
+			</li>`,
+					)
+					.join('')
+			: '<li class="text-paper/55">Reshaped, internalized, and retired affirmations land here — the record of the road.</li>';
+	};
+
+	// ------------------------------------------------- Wins & reflections --
+	const since = new Date(`${today}T00:00:00`);
 	since.setDate(since.getDate() - 14);
 	db.from('tasks')
 		.select('title,completed_at,pillar')
@@ -183,9 +583,8 @@ import MaverickLayout from '../../layouts/MaverickLayout.astro';
 				: '<li class="text-paper/55">Close a task and it lands here.</li>';
 		});
 
-	// Reflections from daily check-ins
 	db.from('daily_checkins')
-		.select('date,reflection,gratitude')
+		.select('date,reflection')
 		.not('reflection', 'is', null)
 		.order('date', { ascending: false })
 		.limit(10)
@@ -203,8 +602,6 @@ import MaverickLayout from '../../layouts/MaverickLayout.astro';
 						.join('')
 				: '<li class="text-paper/55">Evening reflections from your daily check-ins show up here.</li>';
 		});
-
-	loadAffirmations();
 
 	// ---------------------------------------------------------- Memory --
 	type Memory = { id: string; content: string; kind: string; source: string; created_at: string };
@@ -233,21 +630,8 @@ import MaverickLayout from '../../layouts/MaverickLayout.astro';
 		memErrorEl.hidden = !msg;
 	};
 
-	/** Call a maverick-memory action; surfaces the function's error text. */
-	const memApi = async (action: string, payload: Record<string, unknown> = {}) => {
-		const { data, error } = await db.functions.invoke('maverick-memory', { body: { action, ...payload } });
-		if (error) {
-			let message = error.message;
-			try {
-				const body = await (error as { context?: Response }).context?.json();
-				message = body?.message ?? body?.error ?? message;
-			} catch {
-				/* keep generic */
-			}
-			throw new Error(message);
-		}
-		return (data as { result: unknown }).result;
-	};
+	const memApi = async (action: string, payload: Record<string, unknown> = {}) =>
+		fnCall('maverick-memory', { action, ...payload });
 
 	const renderMemories = (memories: Memory[], searching = false) => {
 		if (!searching) memCountEl.textContent = `${memories.length} ${memories.length === 1 ? 'memory' : 'memories'}`;
@@ -290,7 +674,6 @@ import MaverickLayout from '../../layouts/MaverickLayout.astro';
 		);
 	};
 
-	// Listing reads the table directly (RLS-guarded) — no embedding needed.
 	const loadMemories = async () => {
 		memError(null);
 		memSearchEl.value = '';
@@ -355,5 +738,13 @@ import MaverickLayout from '../../layouts/MaverickLayout.astro';
 		}
 	});
 
+	// ------------------------------------------------------------- Boot --
+	await loadRitual();
+	loadDestination();
+	loadNoticed();
+	loadActiveSet();
+	loadEvening();
+	loadAssessments();
+	loadJourney();
 	loadMemories();
 </script>

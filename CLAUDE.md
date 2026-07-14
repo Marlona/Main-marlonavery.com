@@ -25,9 +25,12 @@ Astro 5 + Tailwind CSS v4 + TypeScript (strict). Static output, deployed to GitH
 - **Cinematic sequences**: `src/components/ScrollSequence.astro` scroll-scrubs the three Higgsfield
   hero clips registered in `src/data/heroClips.ts`. A `null` clip entry renders that section's
   static photographic fallback — set the entry once a clip is approved. Videos live in
-  `public/video/` and MUST be encoded with dense keyframes for seeking:
-  `ffmpeg -i in.mp4 -an -c:v libx264 -preset slow -crf 23 -g 12 -pix_fmt yuv420p -movflags +faststart out.mp4`
-  (use `node -e "console.log(require('ffmpeg-static'))"` for the ffmpeg binary).
+  `public/video/` and every clip ships TWO renditions encoded from the `media-src/` master —
+  desktop scrub: `ffmpeg -i in.mp4 -an -c:v libx264 -preset slow -crf 27 -g 12 -pix_fmt yuv420p -movflags +faststart out.mp4`
+  (dense keyframes for seeking; keep clips ≲3.5 MB) and mobile `out-720.mp4`: same but
+  `-vf "scale=-2:720" -crf 28 -g 48` (use `node -e "console.log(require('ffmpeg-static'))"` for
+  the ffmpeg binary). ScrollSequence blob-prefetches the clip so scrolling never waits on the
+  network; the first sequence on a page gets the `priority` prop (eager poster + immediate fetch).
 - **Identity rule**: every AI-generated image/video of Marlon must use the curated Higgsfield
   identity element `marlon-avery-face` (id `d8da558a-1579-4180-9d64-61e17e55e201`, six tight
   face-forward photos) — embed `<<<d8da558a-1579-4180-9d64-61e17e55e201>>>` in the generation
@@ -102,6 +105,11 @@ calendars, moves money, or contacts anyone externally on its own. Any future ext
 be enqueued to `approval_queue` and dispatched ONLY from a row with status `approved`, writing to
 `audit_log` — enforce in the execution layer, not just UI. Phase 1 performs internal actions only
 (briefings, affirmations, review drafts).
+
+**Elevate is LIVE (2026-07-09) — the Growth page is now the Elevate coaching engine (goals,
+validated affirmations, morning ritual, nightly adjustment loop). Read `docs/maverick-elevate.md`
+before touching anything affirmation-related; the linguistic framework and observe-don't-judge
+contract are hard rules. M4 (quadrant audits) not built.**
 
 **Phase 2A is LIVE (2026-07-07); 2B/2C remain — read `docs/maverick-phase2.md` before touching.**
 The /maverick home is Maverick chat (hybrid layout): SSE streaming from the `maverick-chat` edge

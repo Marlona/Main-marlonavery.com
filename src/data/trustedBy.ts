@@ -7,11 +7,13 @@ export interface Brand {
 	color: string;
 	/** Per-letter colors (used for multicolor wordmarks like Google) */
 	letters?: string[];
+	/** 2×2 window-glyph colors rendered before the name (Microsoft), TL/TR/BL/BR */
+	squares?: [string, string, string, string];
 }
 
 export const TRUSTED_BRANDS: Brand[] = [
 	{ name: 'JPMorgan Chase', color: '#117aca' },
-	{ name: 'Microsoft', color: '#737373' },
+	{ name: 'Microsoft', color: '#737373', squares: ['#F25022', '#7FBA00', '#00A4EF', '#FFB900'] },
 	{
 		name: 'Google',
 		color: '#4285F4',

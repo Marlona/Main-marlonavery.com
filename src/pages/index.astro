@@ -262,6 +262,7 @@ const credibilityStats = [
 						title={project.data.title.split('—')[0].trim()}
 						description={project.data.description}
 						impact={project.data.impactSummary}
+						partner={project.data.partners[0]}
 						tech={project.data.primaryTech}
 						date={project.data.publishDate}
 						videoUrl={project.data.videoUrl && `/projects/${project.id}#film`}

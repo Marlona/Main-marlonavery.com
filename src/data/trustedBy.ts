@@ -32,6 +32,7 @@ export const TRUSTED_BRANDS: Brand[] = [
 	{ name: 'Vizcaya Museum & Gardens', color: '#44604a' },
 	{ name: 'GaETC', color: '#f58220' },
 	{ name: 'Dream Machine', color: '#b8860b' },
+	{ name: 'Operation HOPE', color: '#1b5fae' },
 	{ name: 'Udacity', color: '#02b3e4' },
 	{ name: 'Treehouse', color: '#5fcf80' },
 	{ name: 'LiveRamp', color: '#00b2e3' },

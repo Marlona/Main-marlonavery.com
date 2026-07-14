@@ -50,6 +50,13 @@ const projects = defineCollection({
 		gallery: z.array(z.string()).default([]),
 		videoUrl: z.string().optional(),
 		videoPoster: z.string().optional(),
+		/** Partner organizations — rendered as wordmark chips on the case study;
+		 *  the first partner appears as "In partnership with X" on the home card */
+		partners: z.array(z.string()).default([]),
+		/** Tour/deployment footprint — "N cities and counting" band on the case study */
+		cities: z.array(z.string()).default([]),
+		/** Per-city recap films — click-to-play YouTube embeds on the case study */
+		cityFilms: z.array(z.object({ city: z.string(), youtubeId: z.string() })).default([]),
 		lessonsLearned: z.array(z.string()).default([]),
 		resources: z.array(resourceSchema).default([]),
 		// tolerated legacy fields from the 2026 repo

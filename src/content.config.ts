@@ -50,6 +50,8 @@ const projects = defineCollection({
 		gallery: z.array(z.string()).default([]),
 		videoUrl: z.string().optional(),
 		videoPoster: z.string().optional(),
+		/** Heading over the film on the case study + accessible name of the home-card popup */
+		videoTitle: z.string().default('The film'),
 		/** Partner organizations — rendered as wordmark chips on the case study;
 		 *  the first partner appears as "In partnership with X" on the home card */
 		partners: z.array(z.string()).default([]),

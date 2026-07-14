@@ -10,11 +10,27 @@ interface Props {
 	partner?: string;
 	tech?: string[];
 	date?: Date;
-	videoUrl?: string;
+	/** Video file URL — "Watch video" opens it in an in-page popup player */
+	videoSrc?: string;
+	videoPoster?: string;
+	/** Accessible name of the popup, e.g. "The A.I. × Library Project recap" */
+	videoTitle?: string;
 	tone?: 'light' | 'dark';
 }
 
-const { href, title, description, impact, partner, tech = [], date, videoUrl, tone = 'dark' } = Astro.props;
+const {
+	href,
+	title,
+	description,
+	impact,
+	partner,
+	tech = [],
+	date,
+	videoSrc,
+	videoPoster,
+	videoTitle = 'Project film',
+	tone = 'dark',
+} = Astro.props;
 const partnerBrand = partner ? TRUSTED_BRANDS.find((b) => b.name === partner) : undefined;
 const dateLabel = date
 	? new Intl.DateTimeFormat('en-US', { month: 'short', year: 'numeric' }).format(date)
@@ -79,21 +95,77 @@ const dateLabel = date
 			Case study →<span class="sr-only"> for {title}</span>
 		</a>
 		{
-			videoUrl && (
-				<a
-					href={videoUrl}
-					rel="noopener"
-					class:list={[
-						'relative z-10 inline-block rounded-full border px-5 py-2.5 text-sm font-bold transition-colors',
-						tone === 'dark'
-							? 'border-paper/30 text-paper hover:border-emerald-glow hover:text-emerald-glow'
-							: 'border-ink/25 text-ink hover:border-emerald-deep hover:text-emerald-deep',
-					]}
-				>
-					Watch video ▸<span class="sr-only"> about {title}</span>
-				</a>
+			videoSrc && (
+				<>
+					<button
+						type="button"
+						data-video-trigger
+						class:list={[
+							'relative z-10 inline-block cursor-pointer rounded-full border px-5 py-2.5 text-sm font-bold transition-colors',
+							tone === 'dark'
+								? 'border-paper/30 text-paper hover:border-emerald-glow hover:text-emerald-glow'
+								: 'border-ink/25 text-ink hover:border-emerald-deep hover:text-emerald-deep',
+						]}
+					>
+						Watch video ▸<span class="sr-only"> — {videoTitle}</span>
+					</button>
+					{/* Popup player — native <dialog> in the top layer; Esc, ✕, and backdrop all close it */}
+					<dialog
+						data-video-modal
+						aria-label={videoTitle}
+						class="m-auto w-[min(96vw,64rem)] rounded-2xl bg-ink p-0 backdrop:bg-ink/80 backdrop:backdrop-blur-sm"
+					>
+						<div class="relative">
+							{/* preload=none: nothing downloads until the visitor asks for the film */}
+							<video
+								src={videoSrc}
+								poster={videoPoster}
+								controls
+								playsinline
+								preload="none"
+								class="aspect-video w-full bg-graphite"
+							>
+								<p class="p-6 text-paper">
+									Your browser can't play this video —
+									<a href={videoSrc} class="text-emerald-glow underline">download it instead</a>.
+								</p>
+							</video>
+							<button
+								type="button"
+								data-video-close
+								aria-label="Close video"
+								class="absolute top-3 right-3 z-10 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-ink/70 text-paper transition-colors hover:bg-ink"
+							>
+								<svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+									<path d="M6 6l12 12M18 6L6 18"></path>
+								</svg>
+							</button>
+						</div>
+					</dialog>
+				</>
 			)
 		}
 	</div>
 	<a href={href} class="absolute inset-0" tabindex="-1" aria-hidden="true"></a>
 </article>
+
+<script>
+	for (const trigger of document.querySelectorAll<HTMLButtonElement>('[data-video-trigger]')) {
+		const dialog = trigger.nextElementSibling as HTMLDialogElement | null;
+		if (!dialog || !dialog.matches('[data-video-modal]')) continue;
+		const video = dialog.querySelector('video');
+
+		trigger.addEventListener('click', () => {
+			dialog.showModal();
+			video?.play().catch(() => {
+				/* the visitor can press play on the native controls */
+			});
+		});
+		// Native close (Esc, ✕, backdrop) — always stop playback
+		dialog.addEventListener('close', () => video?.pause());
+		dialog.querySelector('[data-video-close]')?.addEventListener('click', () => dialog.close());
+		dialog.addEventListener('click', (e) => {
+			if (e.target === dialog) dialog.close();
+		});
+	}
+</script>

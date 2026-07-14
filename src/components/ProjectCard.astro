@@ -1,5 +1,5 @@
 ---
-import { TRUSTED_BRANDS } from '../data/trustedBy';
+import BrandWordmark from './BrandWordmark.astro';
 
 interface Props {
 	href: string;
@@ -31,9 +31,8 @@ const {
 	videoTitle = 'Project film',
 	tone = 'dark',
 } = Astro.props;
-const partnerBrand = partner ? TRUSTED_BRANDS.find((b) => b.name === partner) : undefined;
 const dateLabel = date
-	? new Intl.DateTimeFormat('en-US', { month: 'short', year: 'numeric' }).format(date)
+	? new Intl.DateTimeFormat('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' }).format(date)
 	: undefined;
 ---
 
@@ -55,15 +54,8 @@ const dateLabel = date
 				<span class:list={['text-xs font-semibold tracking-wide uppercase', tone === 'dark' ? 'text-paper/60' : 'text-slate']}>
 					In partnership with
 				</span>
-				<span
-					class="rounded-lg bg-paper px-3 py-1.5 font-display text-base font-semibold tracking-tight"
-					style={partnerBrand?.letters ? undefined : `color: ${partnerBrand?.color ?? '#141414'}`}
-				>
-					{partnerBrand?.letters
-						? partner
-								.split('')
-								.map((ch, i) => <span style={`color: ${partnerBrand.letters![i % partnerBrand.letters!.length]}`}>{ch}</span>)
-						: partner}
+				<span class="rounded-lg bg-paper px-3 py-1.5 font-display text-base font-semibold tracking-tight">
+					<BrandWordmark name={partner} />
 				</span>
 			</p>
 		)

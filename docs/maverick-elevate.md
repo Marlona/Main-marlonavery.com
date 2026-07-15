@@ -42,6 +42,15 @@ or negation-of-negative · his vocabulary. Enforced by `validateAffirmation()` i
   noticed" proposal cards (Accept/Dismiss), assessment form + delta bars, evening check-in,
   journey lineage. Home side rail = compact ritual + one-tap evening resonance.
   `/maverick?ask=…` prefills the chat composer for deep-linked coaching prompts.
+- **Onboarding wizard** (added 2026-07-15): "Let's start here →" on the empty destination card
+  opens a 12-step dialog on the Growth page — destination, worth, commitment, Place A, the
+  assessment in three themed cards, the three story questions, optional seed phrases, then a
+  read-back that generates the set (`generate` with `replace: true`). Every free-text card has a
+  mic (Web Speech dictation, `src/lib/maverick/dictation.ts`; hidden where unsupported).
+  **Saves as it goes, executes at the end**: answers autosave into the single `elevate_drafts`
+  row (survives refresh/devices), but `goals`/`assessments` are written — and the set generated —
+  only at "Build my set"; the draft row is then deleted. "Start over" on a declared destination
+  reruns the wizard and marks the old goal `revised`. Chat remains the coaching/revision surface.
 
 ## Signal table (adjust loop — events carry proposals; nothing changes without Accept)
 

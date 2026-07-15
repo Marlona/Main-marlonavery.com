@@ -61,14 +61,14 @@ export function initMaverick(): Promise<DB> {
 	});
 }
 
-/** Invoke a maverick-agent action, surfacing the function's error message. */
-export async function invokeAgent<T = unknown>(db: DB, action: 'daily_briefing' | 'affirmation' | 'weekly_review'): Promise<T> {
-	const { data, error } = await db.functions.invoke('maverick-agent', { body: { action } });
+/** Invoke a maverick edge-function action, surfacing the function's error message. */
+export async function invokeFn<T = unknown>(db: DB, fn: string, body: Record<string, unknown>): Promise<T> {
+	const { data, error } = await db.functions.invoke(fn, { body });
 	if (error) {
 		let message = error.message;
 		try {
-			const body = await (error as { context?: Response }).context?.json();
-			message = body?.message ?? body?.error ?? message;
+			const parsed = await (error as { context?: Response }).context?.json();
+			message = parsed?.message ?? parsed?.error ?? message;
 		} catch {
 			// non-JSON error body — keep the generic message
 		}
@@ -76,6 +76,9 @@ export async function invokeAgent<T = unknown>(db: DB, action: 'daily_briefing' 
 	}
 	return (data as { result: T }).result;
 }
+
+export const invokeAgent = <T = unknown>(db: DB, action: 'daily_briefing' | 'affirmation' | 'weekly_review'): Promise<T> =>
+	invokeFn<T>(db, 'maverick-agent', { action });
 
 // ---------------------------------------------------------------------------
 // Domain constants + formatters

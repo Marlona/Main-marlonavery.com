@@ -26,6 +26,13 @@ export const ASSESSMENT_DIMENSIONS: AssessmentDimension[] = [
 	{ id: 'execution', label: 'Follow-through on commitments' },
 ];
 
+/** Wizard pacing: the twelve dimensions in three themed cards of four. */
+export const ASSESSMENT_GROUPS = [
+	{ id: 'direction', label: 'Direction & follow-through', dims: ['clarity', 'focus', 'discipline', 'execution'] },
+	{ id: 'inner', label: 'The inner game', dims: ['self_talk', 'boundaries', 'faith', 'learning'] },
+	{ id: 'fuel', label: 'Fuel & environment', dims: ['health', 'relationships', 'media', 'finances'] },
+] as const;
+
 export const ASSESSMENT_FREE_TEXT = [
 	{ id: 'current_habits', label: 'What are you doing today that already points at where you want to go?' },
 	{ id: 'prior_attempts', label: 'What have you tried before, and what happened?' },

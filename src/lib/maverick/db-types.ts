@@ -390,6 +390,30 @@ export type Database = {
 				};
 				Relationships: [];
 			};
+			elevate_drafts: {
+				Row: {
+					created_at: string;
+					id: string;
+					state: Json;
+					step: number;
+					updated_at: string;
+				};
+				Insert: {
+					created_at?: string;
+					id?: string;
+					state?: Json;
+					step?: number;
+					updated_at?: string;
+				};
+				Update: {
+					created_at?: string;
+					id?: string;
+					state?: Json;
+					step?: number;
+					updated_at?: string;
+				};
+				Relationships: [];
+			};
 			email_summaries: {
 				Row: {
 					category: string | null;
@@ -548,6 +572,7 @@ export type Database = {
 					place_a_summary: string | null;
 					revised_at: string | null;
 					status: string;
+					vision_image_path: string | null;
 					worth_statement: string | null;
 				};
 				Insert: {
@@ -558,6 +583,7 @@ export type Database = {
 					place_a_summary?: string | null;
 					revised_at?: string | null;
 					status?: string;
+					vision_image_path?: string | null;
 					worth_statement?: string | null;
 				};
 				Update: {
@@ -568,6 +594,7 @@ export type Database = {
 					place_a_summary?: string | null;
 					revised_at?: string | null;
 					status?: string;
+					vision_image_path?: string | null;
 					worth_statement?: string | null;
 				};
 				Relationships: [];

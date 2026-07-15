@@ -40,6 +40,12 @@ const defaultType =
 		Every inquiry gets a personal reply — usually within 2–3 business days.
 	</p>
 
+	{/* Honeypot — offscreen, tab-skipped; humans never see or fill it */}
+	<div class="absolute -left-[9999px] h-px w-px overflow-hidden" aria-hidden="true">
+		<label for="bf-website">Website</label>
+		<input id="bf-website" name="website" type="text" tabindex="-1" autocomplete="off" />
+	</div>
+
 	<div class="mt-8 grid gap-6 md:grid-cols-2">
 		<div>
 			<label for="bf-name" class="block text-sm font-semibold">Name *</label>
@@ -140,6 +146,8 @@ const defaultType =
 	import { submitInquiry } from '../lib/backend';
 
 	for (const form of document.querySelectorAll<HTMLFormElement>('[data-booking-form]')) {
+		// Fill-time tracking: sub-human submit times get spam-flagged server-side
+		const startedAt = Date.now();
 		form.addEventListener('submit', async (e) => {
 			e.preventDefault();
 			if (!form.reportValidity()) return;
@@ -161,6 +169,8 @@ const defaultType =
 						'Audience size': String(data.get('audienceSize') || '—'),
 						Message: String(data.get('message') || ''),
 					},
+					website: String(data.get('website') || '') || undefined,
+					elapsedMs: Date.now() - startedAt,
 				});
 				form.innerHTML = `
 					<h3 class="font-display text-2xl font-semibold">Sent ✓</h3>

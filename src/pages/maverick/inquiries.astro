@@ -26,21 +26,23 @@ import MaverickLayout from '../../layouts/MaverickLayout.astro';
 			count.textContent = `Could not load inquiries: ${error.message}`;
 			return;
 		}
-		const fresh = data.filter((i) => i.status === 'new').length;
+		const fresh = data.filter((i) => i.status === 'new' && !i.spam).length;
+		const flagged = data.filter((i) => i.spam).length;
 		count.textContent = data.length
-			? `${data.length} total · ${fresh} new`
+			? `${data.length} total · ${fresh} new${flagged ? ` · ${flagged} flagged as spam` : ''}`
 			: 'No inquiries yet — they land here the moment someone hits send.';
 
 		list.innerHTML = data
 			.map(
 				(i) => `
-			<details class="rounded-2xl bg-graphite p-6 ${i.status === 'new' ? 'border border-emerald/50' : ''}">
+			<details class="rounded-2xl bg-graphite p-6 ${i.spam ? 'opacity-60' : i.status === 'new' ? 'border border-emerald/50' : ''}">
 				<summary class="flex cursor-pointer list-none flex-wrap items-baseline gap-x-4 gap-y-1 [&::-webkit-details-marker]:hidden">
 					<span class="text-xs font-bold tracking-wide text-emerald-glow uppercase">${esc(i.intent)}</span>
 					<span class="font-semibold">${esc(i.name ?? i.email)}</span>
 					<span class="text-sm text-paper/50">${esc(i.organization ?? '')}</span>
 					<span class="ml-auto text-xs text-paper/50">${new Date(i.created_at).toLocaleString()}</span>
-					${i.status === 'new' ? '<span class="rounded-full bg-emerald px-2 py-0.5 text-[10px] font-bold text-ink uppercase">new</span>' : ''}
+					${i.spam ? `<span class="rounded-full bg-terracotta px-2 py-0.5 text-[10px] font-bold text-ink uppercase" title="${esc(i.spam_reason ?? '')}">spam · ${esc(i.spam_reason ?? '')}</span>` : ''}
+					${i.status === 'new' && !i.spam ? '<span class="rounded-full bg-emerald px-2 py-0.5 text-[10px] font-bold text-ink uppercase">new</span>' : ''}
 				</summary>
 				<dl class="mt-4 space-y-2 text-sm">
 					<div><dt class="inline font-semibold">Email:</dt> <dd class="inline text-paper/80"><a class="text-emerald-glow hover:underline" href="mailto:${esc(i.email)}">${esc(i.email)}</a></dd></div>

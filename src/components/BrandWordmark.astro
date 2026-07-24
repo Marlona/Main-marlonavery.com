@@ -1,0 +1,40 @@
+---
+/**
+ * Typographic brand wordmark — the site's "logo" idiom. Colors (and the
+ * multicolor-letter / window-glyph variants) come from TRUSTED_BRANDS, the
+ * single source of truth. Unknown names fall back to plain ink text.
+ * Used by the TrustedBy marquee, project partner chips, and the home card.
+ */
+import { TRUSTED_BRANDS } from '../data/trustedBy';
+
+interface Props {
+	name: string;
+	class?: string;
+}
+
+const { name, class: className } = Astro.props;
+const brand = TRUSTED_BRANDS.find((b) => b.name === name);
+---
+
+<span
+	class:list={['inline-flex items-center gap-[0.4em]', className]}
+	style={brand?.letters ? undefined : `color: ${brand?.color ?? '#141414'}`}
+>
+	{
+		brand?.squares && (
+			<svg viewBox="0 0 21 21" class="h-[0.85em] w-[0.85em] shrink-0" aria-hidden="true">
+				<rect x="0" y="0" width="10" height="10" fill={brand.squares[0]} />
+				<rect x="11" y="0" width="10" height="10" fill={brand.squares[1]} />
+				<rect x="0" y="11" width="10" height="10" fill={brand.squares[2]} />
+				<rect x="11" y="11" width="10" height="10" fill={brand.squares[3]} />
+			</svg>
+		)
+	}
+	<span>
+		{
+			brand?.letters
+				? name.split('').map((ch, i) => <span style={`color: ${brand.letters![i % brand.letters!.length]}`}>{ch}</span>)
+				: name
+		}
+	</span>
+</span>

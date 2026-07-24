@@ -265,7 +265,9 @@ const credibilityStats = [
 						partner={project.data.partners[0]}
 						tech={project.data.primaryTech}
 						date={project.data.publishDate}
-						videoUrl={project.data.videoUrl && `/projects/${project.id}#film`}
+						videoSrc={project.data.videoUrl}
+						videoPoster={project.data.videoPoster}
+						videoTitle={project.data.videoTitle}
 					/>
 				))
 			}

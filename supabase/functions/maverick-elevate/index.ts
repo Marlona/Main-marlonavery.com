@@ -13,6 +13,10 @@
  *   adjust        — nightly signal loop → agent_events carrying PROPOSALS;
  *                   nothing changes until Marlon accepts (resolve_event)
  *   resolve_event — {event_id, decision} → executes or dismisses a proposal
+ *   rewrite       — {goal_id?} → dictation cleanup of the declared destination
+ *                   (his words kept — artifacts out), updates the goals row
+ *   visualize     — {goal_id?} → paints Place B (image model → storage bucket
+ *                   `elevate`), sets goals.vision_image_path
  *
  * Auth: owner JWT or the pg_cron vault secret (same pattern as maverick-agent).
  */
@@ -26,15 +30,17 @@ const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const OPENROUTER_API_KEY = Deno.env.get('OPENROUTER_API_KEY');
 
 const MODEL_PROFILES = {
-	reasoning: Deno.env.get('MODEL_REASONING') ?? 'anthropic/claude-sonnet-5',
-	writing: Deno.env.get('MODEL_WRITING') ?? 'anthropic/claude-sonnet-5',
+	reasoning: { model: Deno.env.get('MODEL_REASONING') ?? 'anthropic/claude-sonnet-5', fallbacks: ['anthropic/claude-sonnet-4.6', 'anthropic/claude-sonnet-4.5'] },
+	writing: { model: Deno.env.get('MODEL_WRITING') ?? 'anthropic/claude-sonnet-5', fallbacks: ['anthropic/claude-sonnet-4.6', 'anthropic/claude-sonnet-4.5'] },
+	// Dictation cleanup — latest Gemini text model (Marlon's call, 2026-07-15).
+	rewrite: { model: Deno.env.get('MODEL_REWRITE') ?? 'google/gemini-3.5-flash', fallbacks: ['google/gemini-3.1-pro-preview', 'anthropic/claude-sonnet-5'] },
+	// Destination vision image — latest Gemini image model.
+	image: { model: Deno.env.get('MODEL_IMAGE') ?? 'google/gemini-3.1-flash-image', fallbacks: ['google/gemini-3-pro-image', 'google/gemini-2.5-flash-image'] },
 } as const;
 
 const routeFor = (profile: keyof typeof MODEL_PROFILES) => ({
-	models: [MODEL_PROFILES[profile], 'anthropic/claude-sonnet-4.6', 'anthropic/claude-sonnet-4.5'].filter(
-		(m, i, a) => a.indexOf(m) === i,
-	),
-	provider: { order: ['Anthropic'], data_collection: 'deny' },
+	models: [MODEL_PROFILES[profile].model, ...MODEL_PROFILES[profile].fallbacks].filter((m, i, a) => a.indexOf(m) === i),
+	provider: { data_collection: 'deny' },
 });
 
 const ALLOWED_ORIGINS = new Set([
@@ -79,6 +85,31 @@ async function callModel(profile: keyof typeof MODEL_PROFILES, system: string, u
 	const text = body?.choices?.[0]?.message?.content;
 	if (typeof text !== 'string' || !text.trim()) throw new Error('OpenRouter returned an empty response');
 	return text.trim();
+}
+
+/** One image via OpenRouter's multimodal output — returns raw bytes + mime. */
+async function callImageModel(prompt: string): Promise<{ bytes: Uint8Array; mime: string }> {
+	const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+		method: 'POST',
+		headers: {
+			Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+			'Content-Type': 'application/json',
+			'HTTP-Referer': 'https://marlonavery.com',
+			'X-Title': 'Maverick Elevate',
+		},
+		body: JSON.stringify({
+			...routeFor('image'),
+			modalities: ['image', 'text'],
+			messages: [{ role: 'user', content: prompt }],
+		}),
+	});
+	const body = await res.json().catch(() => ({}));
+	if (!res.ok) throw new Error(body?.error?.message ?? `OpenRouter error ${res.status}`);
+	const dataUrl = body?.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+	if (typeof dataUrl !== 'string' || !dataUrl.startsWith('data:image/')) throw new Error('Image model returned no image');
+	const mime = dataUrl.slice(5, dataUrl.indexOf(';'));
+	const b64 = dataUrl.slice(dataUrl.indexOf(',') + 1);
+	return { bytes: Uint8Array.from(atob(b64), (c) => c.charCodeAt(0)), mime };
 }
 
 const parseJson = (raw: string) => {
@@ -229,6 +260,77 @@ async function generate(body: { goal_id?: string; seeds?: string[]; replace?: bo
 		related_id: goal.id,
 	});
 	return { affirmations: inserted, rejected };
+}
+
+// ---------------------------------------------------------------------------
+// rewrite + visualize — clean up the dictated destination, then paint it
+// ---------------------------------------------------------------------------
+
+async function loadGoal(goal_id?: string) {
+	const query = goal_id
+		? db.from('goals').select('*').eq('id', goal_id).maybeSingle()
+		: db.from('goals').select('*').eq('status', 'active').order('created_at', { ascending: false }).limit(1).maybeSingle();
+	const { data: goal } = await query;
+	if (!goal) throw new Error('No destination found — declare where you want to go first.');
+	return goal;
+}
+
+async function rewriteGoal(body: { goal_id?: string }) {
+	const goal = await loadGoal(body.goal_id);
+	const raw = await callModel(
+		'rewrite',
+		`${ELEVATE_VOICE}\n\nYou clean up dictated text. The user's words matter more than yours: keep his vocabulary, ` +
+			`his rhythm, his meaning. Remove transcription artifacts — false starts, filler, duplicated words, mis-heard ` +
+			`fragments — fix punctuation, and tighten. Never add ideas, never coach, never inflate. First person stays first person.`,
+		`Clean up each field of this dictated destination declaration. Return ONLY JSON in the shape ` +
+			`{"destination_text": "...", "worth_statement": "..." | null, "place_a_summary": "..." | null} — ` +
+			`null for any field that is empty below.\n\n` +
+			`destination_text: ${goal.destination_text}\n` +
+			`worth_statement: ${goal.worth_statement ?? '(empty)'}\n` +
+			`place_a_summary: ${goal.place_a_summary ?? '(empty)'}`,
+	);
+	const cleaned = parseJson(raw) as { destination_text?: string; worth_statement?: string | null; place_a_summary?: string | null };
+	const destination = String(cleaned.destination_text ?? '').trim();
+	if (!destination) throw new Error('Rewrite returned no destination text');
+	const patch = {
+		destination_text: destination,
+		worth_statement: goal.worth_statement ? String(cleaned.worth_statement ?? '').trim() || goal.worth_statement : null,
+		place_a_summary: goal.place_a_summary ? String(cleaned.place_a_summary ?? '').trim() || goal.place_a_summary : null,
+	};
+	const { error } = await db.from('goals').update(patch).eq('id', goal.id);
+	if (error) throw new Error(error.message);
+	await audit({
+		observed: `dictated goal "${goal.destination_text.slice(0, 60)}"`,
+		recommended: 'clean up dictation artifacts, keep his words',
+		action_taken: `rewrote to "${destination.slice(0, 60)}"`,
+		action_type: 'elevate:rewrite',
+		related_id: goal.id,
+	});
+	return { goal_id: goal.id, ...patch };
+}
+
+async function visualize(body: { goal_id?: string }) {
+	const goal = await loadGoal(body.goal_id);
+	const { bytes, mime } = await callImageModel(
+		`A cinematic, warmly lit photographic scene that embodies this personal destination as already achieved: ` +
+			`"${goal.destination_text}". Grounded and evocative — real places, real light, golden-hour warmth. ` +
+			`No recognizable faces, no text or lettering, no logos, no collage. One coherent scene a person ` +
+			`would pin above their desk. Landscape 16:9.`,
+	);
+	const ext = mime === 'image/jpeg' ? 'jpg' : mime === 'image/webp' ? 'webp' : 'png';
+	const path = `vision/${goal.id}.${ext}`;
+	const { error: uploadError } = await db.storage.from('elevate').upload(path, bytes, { contentType: mime, upsert: true });
+	if (uploadError) throw new Error(uploadError.message);
+	const { error } = await db.from('goals').update({ vision_image_path: path }).eq('id', goal.id);
+	if (error) throw new Error(error.message);
+	await audit({
+		observed: `destination "${goal.destination_text.slice(0, 60)}"`,
+		recommended: 'paint the destination (vision image)',
+		action_taken: `stored ${path}`,
+		action_type: 'elevate:visualize',
+		related_id: goal.id,
+	});
+	return { goal_id: goal.id, vision_image_path: path };
 }
 
 // ---------------------------------------------------------------------------
@@ -563,6 +665,8 @@ Deno.serve(async (req: Request) => {
 			action === 'generate' ? await generate(body)
 			: action === 'adjust' ? await adjust()
 			: action === 'resolve_event' ? await resolveEvent(body)
+			: action === 'rewrite' ? await rewriteGoal(body)
+			: action === 'visualize' ? await visualize(body)
 			: null;
 		if (result === null) return new Response(JSON.stringify({ error: `Unknown action "${action}"` }), { status: 400, headers });
 		return new Response(JSON.stringify({ ok: true, result }), { headers });

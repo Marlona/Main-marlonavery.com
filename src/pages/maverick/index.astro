@@ -95,7 +95,7 @@ import MaverickLayout from '../../layouts/MaverickLayout.astro';
 
 		<!-- Side rail -->
 		<aside class="min-w-0 space-y-4">
-			<section class="rounded-2xl bg-emerald-deep/25 p-5" aria-labelledby="ritual-h">
+			<section class="rounded-2xl bg-emerald-deep/25 p-5" aria-labelledby="ritual-h" data-ritual-card>
 				<div class="flex items-center justify-between gap-2">
 					<h2 id="ritual-h" class="text-eyebrow text-emerald-glow">Morning ritual</h2>
 					<button
@@ -529,6 +529,7 @@ import MaverickLayout from '../../layouts/MaverickLayout.astro';
 	};
 
 	// --- Elevate morning ritual + one-tap evening resonance ---
+	const ritualCard = document.querySelector<HTMLElement>('[data-ritual-card]')!;
 	const ritualList = document.querySelector<HTMLElement>('[data-ritual-list]')!;
 	const ritualBtn = document.querySelector<HTMLButtonElement>('[data-ritual-read]')!;
 	const eveningCard = document.querySelector<HTMLElement>('[data-evening-card]')!;
@@ -541,9 +542,11 @@ import MaverickLayout from '../../layouts/MaverickLayout.astro';
 		]);
 		const actives = activesRes.data ?? [];
 		const readToday = (morningRes.data ?? []).length > 0;
+		// Read this morning → the card rests until tomorrow's set.
+		ritualCard.hidden = readToday;
 		ritualList.innerHTML = actives.length
 			? actives.map((a) => `<blockquote class="font-display text-sm leading-snug font-medium">“${esc(a.text)}”</blockquote>`).join('')
-			: '<p class="text-sm text-paper/60">Declare your destination in chat — Elevate builds the set with you.</p>';
+			: '<p class="text-sm text-paper/60">Start Elevate on the Growth page — it builds the set with you.</p>';
 		ritualBtn.disabled = readToday || !actives.length;
 		ritualBtn.textContent = readToday ? 'Read ✓' : 'Mark read';
 

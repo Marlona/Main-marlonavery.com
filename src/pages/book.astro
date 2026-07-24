@@ -116,6 +116,11 @@ import { SITE_CONFIG } from '../config';
 						<input id="bk-org2" name="contact:organization" data-question="Organization" type="text" autocomplete="organization" class="mt-2 w-full rounded-lg border border-paper/20 bg-ink px-4 py-3 text-sm text-paper focus:border-emerald" />
 					</div>
 				</div>
+				{/* Honeypot — offscreen, tab-skipped; humans never see or fill it */}
+				<div class="absolute -left-[9999px] h-px w-px overflow-hidden" aria-hidden="true">
+					<label for="bk-website">Website</label>
+					<input id="bk-website" name="website" type="text" tabindex="-1" autocomplete="off" />
+				</div>
 			</fieldset>
 
 			<div class="mt-10 flex items-center justify-between gap-4">
@@ -148,6 +153,8 @@ import { SITE_CONFIG } from '../config';
 
 		const root = document.querySelector<HTMLElement>('[data-book]');
 		if (root) {
+			// Fill-time tracking: sub-human submit times get spam-flagged server-side
+			const startedAt = Date.now();
 			const intentButtons = [...root.querySelectorAll<HTMLButtonElement>('[data-intent]')];
 			const steps = [...root.querySelectorAll<HTMLElement>('[data-book-step]')];
 			const progress = root.querySelector<HTMLElement>('[data-book-progress]');
@@ -238,6 +245,8 @@ import { SITE_CONFIG } from '../config';
 						email: get('email') ?? '',
 						organization: get('organization'),
 						answers,
+						website: root.querySelector<HTMLInputElement>('[name="website"]')?.value || undefined,
+						elapsedMs: Date.now() - startedAt,
 					});
 					root.innerHTML = `
 						<p class="text-eyebrow text-emerald-glow">Sent ✓</p>

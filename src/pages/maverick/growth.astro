@@ -1,5 +1,6 @@
 ---
 import MaverickLayout from '../../layouts/MaverickLayout.astro';
+import ElevateWizard from '../../components/maverick/ElevateWizard.astro';
 import { ASSESSMENT_DIMENSIONS, ASSESSMENT_FREE_TEXT } from '../../data/elevateAssessment';
 
 /**
@@ -41,9 +42,14 @@ import { ASSESSMENT_DIMENSIONS, ASSESSMENT_FREE_TEXT } from '../../data/elevateA
 	<section class="mt-6 rounded-2xl bg-graphite p-6" aria-labelledby="dest-h">
 		<div class="flex flex-wrap items-center justify-between gap-3">
 			<h2 id="dest-h" class="text-eyebrow text-mist">Destination — Place B</h2>
-			<a href="/maverick?ask=Let's revisit my destination — where I'm headed and what it's worth to me." class="rounded-full border border-paper/25 px-4 py-1.5 text-xs font-bold hover:border-emerald-glow hover:text-emerald-glow" data-dest-revise>
-				Revise in chat
-			</a>
+			<div class="flex gap-2">
+				<a href="/maverick?ask=Let's revisit my destination — where I'm headed and what it's worth to me." class="rounded-full border border-paper/25 px-4 py-1.5 text-xs font-bold hover:border-emerald-glow hover:text-emerald-glow" data-dest-revise>
+					Revise in chat
+				</a>
+				<button type="button" data-dest-restart hidden class="cursor-pointer rounded-full border border-paper/25 px-4 py-1.5 text-xs font-bold hover:border-emerald-glow hover:text-emerald-glow">
+					Start over
+				</button>
+			</div>
 		</div>
 		<div class="mt-3" data-destination>
 			<p class="text-paper/60">Loading…</p>
@@ -95,7 +101,16 @@ import { ASSESSMENT_DIMENSIONS, ASSESSMENT_FREE_TEXT } from '../../data/elevateA
 			</label>
 			<label class="block">
 				<span class="text-sm font-semibold">One line, if it wants out</span>
-				<input type="text" name="notes" class="mt-1.5 w-full rounded-lg border border-paper/20 bg-ink px-3 py-2 text-base text-paper focus:border-emerald sm:text-sm" />
+				<div class="relative mt-1.5">
+					<input type="text" name="notes" class="w-full rounded-lg border border-paper/20 bg-ink px-3 py-2 pr-12 text-base text-paper focus:border-emerald sm:text-sm" />
+					<button type="button" data-evening-mic aria-label="Dictate" aria-pressed="false" class="wiz-mic absolute top-1/2 right-2 -translate-y-1/2 !h-7 !w-7">
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+							<rect x="9" y="2" width="6" height="12" rx="3"></rect>
+							<path d="M5 10v1a7 7 0 0 0 14 0v-1"></path>
+							<line x1="12" y1="18" x2="12" y2="22"></line>
+						</svg>
+					</button>
+				</div>
 			</label>
 			<div class="flex items-center gap-3">
 				<button type="submit" class="cursor-pointer rounded-full bg-emerald px-6 py-2.5 text-sm font-bold text-ink transition-transform hover:scale-105">Save</button>
@@ -253,10 +268,14 @@ import { ASSESSMENT_DIMENSIONS, ASSESSMENT_FREE_TEXT } from '../../data/elevateA
 			</div>
 		</form>
 	</dialog>
+
+	<ElevateWizard />
 </MaverickLayout>
 
 <script>
-	import { initMaverick, esc, fmtDate, todayISO } from '../../lib/maverick/client';
+	import { initMaverick, esc, fmtDate, todayISO, invokeFn } from '../../lib/maverick/client';
+	import { initElevateWizard } from '../../lib/maverick/elevateWizard';
+	import { attachDictation } from '../../lib/maverick/dictation';
 	import { OBSERVATION_PROMPTS, DISCOMFORT_THRESHOLD, ASSESSMENT_DIMENSIONS, ASSESSMENT_FREE_TEXT } from '../../data/elevateAssessment';
 	import type { Tables } from '../../lib/maverick/db-types';
 
@@ -266,23 +285,10 @@ import { ASSESSMENT_DIMENSIONS, ASSESSMENT_FREE_TEXT } from '../../data/elevateA
 	const db = await initMaverick();
 	const today = todayISO();
 
-	/** Call a maverick edge function action, surfacing its error text. */
-	const fnCall = async (fn: string, body: Record<string, unknown>) => {
-		const { data, error } = await db.functions.invoke(fn, { body });
-		if (error) {
-			let message = error.message;
-			try {
-				const parsed = await (error as { context?: Response }).context?.json();
-				message = parsed?.message ?? parsed?.error ?? message;
-			} catch {
-				/* keep generic */
-			}
-			throw new Error(message);
-		}
-		return (data as { result: unknown }).result;
-	};
+	const fnCall = (fn: string, body: Record<string, unknown>) => invokeFn(db, fn, body);
 
 	// ------------------------------------------------------ Morning ritual --
+	const ritualSection = document.querySelector<HTMLElement>('[data-ritual]')!;
 	const ritualList = document.querySelector<HTMLElement>('[data-ritual-list]')!;
 	const ritualBtn = document.querySelector<HTMLButtonElement>('[data-ritual-read]')!;
 	const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
@@ -297,9 +303,11 @@ import { ASSESSMENT_DIMENSIONS, ASSESSMENT_FREE_TEXT } from '../../data/elevateA
 		]);
 		actives = activesRes.data ?? [];
 		const readToday = (readRes.data ?? []).length > 0;
+		// Read this morning → the card rests for the day; tomorrow brings it back.
+		ritualSection.hidden = readToday;
 		ritualList.innerHTML = actives.length
 			? actives.map((a) => `<blockquote class="font-display text-xl leading-snug font-medium md:text-2xl">“${esc(a.text)}”</blockquote>`).join('')
-			: '<p class="text-paper/60">No active set yet — declare your destination in chat and Elevate builds it with you.</p>';
+			: '<p class="text-paper/60">No active set yet — hit “Let\'s start here” under Destination and Elevate builds it with you.</p>';
 		ritualBtn.disabled = readToday || !actives.length;
 		ritualBtn.textContent = readToday ? 'Read this morning ✓' : 'Mark as read';
 	};
@@ -313,21 +321,50 @@ import { ASSESSMENT_DIMENSIONS, ASSESSMENT_FREE_TEXT } from '../../data/elevateA
 	const loadDestination = async () => {
 		const { data: goal } = await db.from('goals').select('*').eq('status', 'active').order('created_at', { ascending: false }).limit(1).maybeSingle();
 		const el = document.querySelector<HTMLElement>('[data-destination]')!;
+		const reviseBtn = document.querySelector<HTMLElement>('[data-dest-revise]')!;
+		const restartBtn = document.querySelector<HTMLElement>('[data-dest-restart]')!;
 		if (!goal) {
 			el.innerHTML = `
-				<p class="text-paper/70">No destination declared yet.</p>
-				<a href="/maverick?ask=I want to set my destination — where I'm going and what it's worth to me. Walk me through it." class="mt-3 inline-block rounded-full bg-emerald px-6 py-2.5 text-sm font-bold text-ink transition-transform hover:scale-105">Start Elevate →</a>`;
-			(document.querySelector('[data-dest-revise]') as HTMLElement).hidden = true;
+				<p class="max-w-xl text-paper/70">From where you are to where you said you want to go — Elevate walks it with you, one question at a time. About ten minutes. Talk or type.</p>
+				<button type="button" data-wiz-open class="mt-4 cursor-pointer rounded-full bg-emerald px-7 py-3 text-sm font-bold text-ink transition-transform hover:scale-105">Let's start here →</button>`;
+			el.querySelector('[data-wiz-open]')!.addEventListener('click', () => wizard.open());
+			reviseBtn.hidden = true;
+			restartBtn.hidden = true;
 			return;
 		}
+		reviseBtn.hidden = false;
+		restartBtn.hidden = false;
 		const commitment = { life_changing: 'Life-changing', sticking_point: 'Sticking point', exploring: 'Exploring' }[goal.commitment_level] ?? goal.commitment_level;
+		let visionHtml = '';
+		if (goal.vision_image_path) {
+			const { data: signed } = await db.storage.from('elevate').createSignedUrl(goal.vision_image_path, 3600);
+			if (signed?.signedUrl) {
+				visionHtml = `<img src="${esc(signed.signedUrl)}" alt="Elevate's painting of this destination" loading="lazy" class="mb-4 aspect-video w-full rounded-xl object-cover" />`;
+			}
+		}
 		el.innerHTML = `
+			${visionHtml}
 			<p class="font-display text-xl leading-snug font-medium">“${esc(goal.destination_text)}”</p>
 			<p class="mt-3 flex flex-wrap items-center gap-2 text-xs">
 				<span class="rounded-full bg-emerald-deep/40 px-2.5 py-0.5 font-bold text-emerald-glow uppercase">${esc(commitment)}</span>
 				${goal.worth_statement ? `<span class="text-paper/60">Worth: ${esc(goal.worth_statement)}</span>` : ''}
 			</p>
-			${goal.place_a_summary ? `<p class="mt-2 text-sm text-paper/60">Place A: ${esc(goal.place_a_summary)}</p>` : ''}`;
+			${goal.place_a_summary ? `<p class="mt-2 text-sm text-paper/60">Place A: ${esc(goal.place_a_summary)}</p>` : ''}
+			<button type="button" data-dest-paint class="mt-4 cursor-pointer rounded-full border border-paper/25 px-4 py-1.5 text-xs font-bold hover:border-emerald-glow hover:text-emerald-glow">${goal.vision_image_path ? 'Repaint it' : 'Paint the destination'}</button>`;
+		el.querySelector<HTMLButtonElement>('[data-dest-paint]')!.addEventListener('click', async (e) => {
+			const btn = e.currentTarget as HTMLButtonElement;
+			const label = btn.textContent;
+			btn.disabled = true;
+			btn.textContent = 'Elevate is painting… (~30s)';
+			try {
+				await fnCall('maverick-elevate', { action: 'visualize', goal_id: goal.id });
+				loadDestination();
+			} catch (err) {
+				btn.disabled = false;
+				btn.textContent = label;
+				alert(err instanceof Error ? err.message : 'Could not paint it — try again.');
+			}
+		});
 	};
 
 	// ------------------------------------------------------ Elevate noticed --
@@ -463,6 +500,10 @@ import { ASSESSMENT_DIMENSIONS, ASSESSMENT_FREE_TEXT } from '../../data/elevateA
 		status.textContent = error ? `Save failed: ${error.message}` : 'Saved ✓';
 		if (!error) setTimeout(() => loadEvening(), 900);
 	});
+	attachDictation(
+		document.querySelector<HTMLButtonElement>('[data-evening-mic]')!,
+		eveningForm.querySelector<HTMLInputElement>('[name="notes"]')!,
+	);
 
 	// ---------------------------------------------------------- Assessment --
 	document.querySelectorAll<HTMLInputElement>('[data-range]').forEach((range) => {
@@ -737,6 +778,19 @@ import { ASSESSMENT_DIMENSIONS, ASSESSMENT_FREE_TEXT } from '../../data/elevateA
 			memError(err instanceof Error ? err.message : 'Could not save.');
 		}
 	});
+
+	// ------------------------------------------------------ Elevate wizard --
+	const wizard = initElevateWizard(db, {
+		onComplete: async () => {
+			await loadRitual();
+			loadDestination();
+			loadNoticed();
+			loadActiveSet();
+			loadEvening();
+			loadJourney();
+		},
+	});
+	document.querySelector('[data-dest-restart]')!.addEventListener('click', () => wizard.open());
 
 	// ------------------------------------------------------------- Boot --
 	await loadRitual();

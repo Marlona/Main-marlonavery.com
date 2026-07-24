@@ -6,6 +6,7 @@
  * global animation kill-switch.
  */
 import { TRUSTED_BRANDS as brands } from '../data/trustedBy';
+import BrandWordmark from './BrandWordmark.astro';
 ---
 
 <section aria-label="Companies and stages Marlon has worked with" class="border-y border-ink/8 bg-paper py-12">
@@ -16,15 +17,8 @@ import { TRUSTED_BRANDS as brands } from '../data/trustedBy';
 				[0, 1].map((copy) => (
 					<ul class="flex items-center gap-14" aria-hidden={copy === 1 ? 'true' : undefined}>
 						{brands.map((brand) => (
-							<li
-								class="font-display text-xl font-semibold whitespace-nowrap tracking-tight opacity-85 md:text-2xl"
-								style={brand.letters ? undefined : `color: ${brand.color}`}
-							>
-								{brand.letters
-									? brand.name
-											.split('')
-											.map((ch, i) => <span style={`color: ${brand.letters![i % brand.letters!.length]}`}>{ch}</span>)
-									: brand.name}
+							<li class="font-display text-xl font-semibold whitespace-nowrap tracking-tight opacity-85 md:text-2xl">
+								<BrandWordmark name={brand.name} />
 							</li>
 						))}
 					</ul>

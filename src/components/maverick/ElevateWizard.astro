@@ -1,0 +1,310 @@
+---
+import { ASSESSMENT_DIMENSIONS, ASSESSMENT_FREE_TEXT, ASSESSMENT_GROUPS } from '../../data/elevateAssessment';
+
+/**
+ * Elevate onboarding wizard — dictation-first, one big question per card.
+ * Markup only: `initElevateWizard()` (src/lib/maverick/elevateWizard.ts)
+ * drives navigation, the server-draft autosave, and the execute-at-the-end
+ * flow; growth.astro owns the single initMaverick() session and mounts this.
+ */
+
+interface TextStep {
+	kind: 'text';
+	key: string;
+	eyebrow: string;
+	question: string;
+	hint?: string;
+	rows: number;
+}
+type Step =
+	| TextStep
+	| { kind: 'commitment'; key: string }
+	| { kind: 'assess'; key: string; label: string; dims: readonly string[]; eyebrow: string }
+	| { kind: 'review'; key: string };
+
+const text = (key: string, eyebrow: string, question: string, hint: string | undefined, rows: number): TextStep => ({
+	kind: 'text',
+	key,
+	eyebrow,
+	question,
+	hint,
+	rows,
+});
+
+const STEPS: Step[] = [
+	text('destination', 'The destination', 'Where are you going?', 'Say it like you’re already on the way. Your words — Elevate keeps them.', 6),
+	text('worth', 'The worth', 'What is this worth to you?', 'When the road gets long, this is the line that answers. What changes when you arrive — and for whom?', 5),
+	{ kind: 'commitment', key: 'commitment' },
+	text('place_a', 'Place A', 'And where are you standing today?', 'No judgment — just observe. What’s true about right now?', 5),
+	...ASSESSMENT_GROUPS.map((g, i) => ({
+		kind: 'assess' as const,
+		key: `assess-${g.id}`,
+		label: g.label,
+		dims: g.dims,
+		eyebrow: `The read — ${i + 1} of ${ASSESSMENT_GROUPS.length}`,
+	})),
+	...ASSESSMENT_FREE_TEXT.map((q, i) => text(q.id, `The story — ${i + 1} of ${ASSESSMENT_FREE_TEXT.length}`, q.label, undefined, 4)),
+	text('seeds', 'In your own words', 'Any phrases you already say to yourself?', 'Up to three, one per line. Elevate reshapes these first — your vocabulary stays.', 4),
+	{ kind: 'review', key: 'review' },
+];
+
+const COMMITMENT_OPTIONS = [
+	{ value: 'life_changing', label: 'Life-changing', detail: 'This changes everything — hold me to it.' },
+	{ value: 'sticking_point', label: 'A sticking point', detail: 'I keep circling this one. Time to move.' },
+	{ value: 'exploring', label: 'Exploring', detail: 'I’m feeling out the edges first.' },
+];
+
+const dimLabel = (id: string) => ASSESSMENT_DIMENSIONS.find((d) => d.id === id)?.label ?? id;
+
+const micButton = `absolute top-3 right-3`;
+---
+
+<dialog
+	data-elevate-wizard
+	class="theme-fixed m-auto w-[min(94vw,680px)] rounded-3xl border border-paper/15 bg-graphite p-0 text-paper backdrop:bg-ink/80"
+>
+	<div class="flex max-h-[88dvh] flex-col p-7 md:p-9">
+		<!-- Header: progress + close -->
+		<div class="flex items-center gap-4">
+			<div class="min-w-0 flex-1">
+				<div class="flex items-baseline justify-between gap-3">
+					<p class="text-eyebrow text-mist" data-wiz-count aria-live="polite">Step 1 of {STEPS.length}</p>
+					<p class="text-xs text-paper/45" data-wiz-saved role="status"></p>
+				</div>
+				<div class="mt-2 h-1 overflow-hidden rounded-full bg-paper/10">
+					<div class="wiz-bar h-1 rounded-full bg-emerald" data-wiz-bar style="width: 0%"></div>
+				</div>
+			</div>
+			<button
+				type="button"
+				data-wiz-close
+				aria-label="Close — your progress is saved"
+				class="cursor-pointer rounded-full border border-paper/25 px-3 py-1 text-sm font-bold hover:border-terracotta hover:text-terracotta"
+			>
+				✕
+			</button>
+		</div>
+		<p class="mt-2 text-xs text-emerald-glow" data-wiz-note hidden>Picked up where you left off.</p>
+
+		<!-- Steps -->
+		<div class="mt-5 min-h-0 flex-1 overflow-y-auto pr-1" data-wiz-track>
+			{
+				STEPS.map((s) => (
+					<section data-wiz-step={s.key} hidden class="wiz-step">
+						{s.kind === 'text' && (
+							<>
+								<p class="text-eyebrow text-emerald-glow">{s.eyebrow}</p>
+								<h3 class="mt-3 font-display text-2xl leading-snug font-semibold md:text-3xl">{s.question}</h3>
+								{s.hint && <p class="mt-2 text-sm text-paper/60">{s.hint}</p>}
+								<div class="relative mt-5">
+									<textarea
+										data-wiz-field={s.key}
+										rows={s.rows}
+										placeholder="Talk or type…"
+										class="w-full rounded-xl border border-paper/20 bg-ink px-4 py-3 pr-14 text-base leading-relaxed text-paper focus:border-emerald"
+									/>
+									<button type="button" data-mic aria-label="Dictate" aria-pressed="false" class:list={['wiz-mic', micButton]}>
+										<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+											<rect x="9" y="2" width="6" height="12" rx="3" />
+											<path d="M5 10v1a7 7 0 0 0 14 0v-1" />
+											<line x1="12" y1="18" x2="12" y2="22" />
+										</svg>
+									</button>
+								</div>
+								<p class="mt-2 text-xs text-terracotta" data-wiz-mic-hint role="alert" hidden />
+							</>
+						)}
+						{s.kind === 'commitment' && (
+							<>
+								<p class="text-eyebrow text-emerald-glow">The commitment</p>
+								<h3 class="mt-3 font-display text-2xl leading-snug font-semibold md:text-3xl">How deep does this one go?</h3>
+								<p class="mt-2 text-sm text-paper/60">Elevate calibrates its tone to this — be straight about it.</p>
+								<div class="mt-5 grid gap-3">
+									{COMMITMENT_OPTIONS.map((opt) => (
+										<button
+											type="button"
+											data-wiz-commit={opt.value}
+											aria-pressed="false"
+											class="cursor-pointer rounded-xl border border-paper/15 p-5 text-left transition-colors hover:border-emerald-glow aria-pressed:border-emerald aria-pressed:bg-emerald-deep/40"
+										>
+											<span class="block font-display text-xl font-semibold">{opt.label}</span>
+											<span class="mt-1 block text-sm text-paper/60">{opt.detail}</span>
+										</button>
+									))}
+								</div>
+							</>
+						)}
+						{s.kind === 'assess' && (
+							<>
+								<p class="text-eyebrow text-emerald-glow">{s.eyebrow}</p>
+								<h3 class="mt-3 font-display text-2xl leading-snug font-semibold md:text-3xl">{s.label}</h3>
+								<p class="mt-2 text-sm text-paper/60">
+									Where you are today (1–10), where you want to be (1–10), and how comfortable it feels to talk about (1–5).
+								</p>
+								<div class="mt-5 space-y-4">
+									{s.dims.map((id) => (
+										<fieldset class="rounded-xl bg-ink/50 p-4">
+											<legend class="px-1 text-sm font-semibold">{dimLabel(id)}</legend>
+											<div class="mt-2 grid gap-4 sm:grid-cols-3">
+												<label class="block text-xs">
+													<span class="text-paper/60">
+														Today (A): <output data-wiz-out={`${id}:a`}>5</output>
+													</span>
+													<input type="range" min="1" max="10" value="5" data-wiz-range={`${id}:a`} class="mt-1 w-full accent-emerald" />
+												</label>
+												<label class="block text-xs">
+													<span class="text-paper/60">
+														Want (B): <output data-wiz-out={`${id}:b`}>8</output>
+													</span>
+													<input type="range" min="1" max="10" value="8" data-wiz-range={`${id}:b`} class="mt-1 w-full accent-emerald" />
+												</label>
+												<label class="block text-xs">
+													<span class="text-paper/60">
+														Comfort discussing: <output data-wiz-out={`${id}:c`}>3</output>
+													</span>
+													<input type="range" min="1" max="5" value="3" data-wiz-range={`${id}:c`} class="mt-1 w-full accent-gold" />
+												</label>
+											</div>
+										</fieldset>
+									))}
+								</div>
+							</>
+						)}
+						{s.kind === 'review' && (
+							<>
+								<p class="text-eyebrow text-emerald-glow">The read-back</p>
+								<h3 class="mt-3 font-display text-2xl leading-snug font-semibold md:text-3xl">Here’s what you said.</h3>
+								<p class="mt-2 text-sm text-paper/60">Elevate builds your set from every word of this. Step back to change anything.</p>
+								<dl class="mt-5 space-y-4" data-wiz-recap />
+								<p class="mt-4 text-sm text-terracotta" data-wiz-error role="alert" hidden />
+							</>
+						)}
+					</section>
+				))
+			}
+			<!-- Finale (not counted in the steps) -->
+			<section data-wiz-step="done" hidden class="wiz-step">
+				<p class="text-eyebrow text-emerald-glow">Your set</p>
+				<h3 class="mt-3 font-display text-2xl leading-snug font-semibold md:text-3xl">Words that are yours now.</h3>
+				<div class="mt-6 space-y-4" data-wiz-set></div>
+				<p class="mt-6 border-t border-paper/15 pt-4 text-sm text-paper/60">
+					These land on your morning ritual card, starting tomorrow. Read them out loud — first thing, before the phone wins.
+				</p>
+			</section>
+		</div>
+
+		<!-- Footer -->
+		<div class="mt-6 flex items-center justify-between gap-4 border-t border-paper/15 pt-5">
+			<button
+				type="button"
+				data-wiz-back
+				class="cursor-pointer rounded-full border border-paper/30 px-6 py-2.5 text-sm font-semibold transition-colors hover:border-emerald-glow"
+			>
+				← Back
+			</button>
+			<button
+				type="button"
+				data-wiz-next
+				class="ml-auto cursor-pointer rounded-full bg-emerald px-8 py-2.5 text-sm font-bold text-ink transition-transform hover:scale-105 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:scale-100"
+			>
+				Next →
+			</button>
+		</div>
+	</div>
+</dialog>
+
+<style is:global>
+	/* Step slide-in: the wizard script adds .wiz-in-fwd / .wiz-in-back on the
+	   incoming card, then removes it next frame so the transition runs. */
+	.wiz-step {
+		transition:
+			opacity 300ms ease,
+			transform 300ms ease;
+	}
+	.wiz-step.wiz-in-fwd {
+		opacity: 0;
+		transform: translateX(2.5rem);
+	}
+	.wiz-step.wiz-in-back {
+		opacity: 0;
+		transform: translateX(-2.5rem);
+	}
+	.wiz-bar {
+		transition: width 300ms ease;
+	}
+
+	/* Mic toggle — reusable outside the wizard (evening check-in note). */
+	.wiz-mic {
+		position: relative;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.25rem;
+		height: 2.25rem;
+		border-radius: 9999px;
+		border: 1px solid color-mix(in srgb, var(--color-paper) 25%, transparent);
+		color: color-mix(in srgb, var(--color-paper) 65%, transparent);
+		cursor: pointer;
+	}
+	.wiz-mic svg {
+		width: 1.05rem;
+		height: 1.05rem;
+	}
+	.wiz-mic:hover {
+		border-color: var(--color-emerald-glow);
+		color: var(--color-emerald-glow);
+	}
+	.wiz-mic[data-listening] {
+		border-color: var(--color-emerald);
+		background: var(--color-emerald);
+		color: var(--color-ink);
+	}
+	.wiz-mic[data-listening]::after {
+		content: '';
+		position: absolute;
+		inset: -4px;
+		border-radius: 9999px;
+		border: 2px solid var(--color-emerald);
+		animation: wiz-pulse 1.4s ease-out infinite;
+	}
+	@keyframes wiz-pulse {
+		0% {
+			opacity: 0.9;
+			transform: scale(1);
+		}
+		100% {
+			opacity: 0;
+			transform: scale(1.45);
+		}
+	}
+
+	/* Finale: staggered reveal (script sets --wiz-i per item). */
+	.wiz-reveal {
+		animation: wiz-reveal 500ms ease both;
+		animation-delay: calc(var(--wiz-i, 0) * 180ms);
+	}
+	@keyframes wiz-reveal {
+		from {
+			opacity: 0;
+			transform: translateY(0.6rem);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.wiz-step,
+		.wiz-bar {
+			transition: none;
+		}
+		.wiz-mic[data-listening]::after {
+			animation: none;
+			opacity: 0.5;
+		}
+		.wiz-reveal {
+			animation: none;
+		}
+	}
+</style>

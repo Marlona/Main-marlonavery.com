@@ -34,6 +34,7 @@ const projects = (await getCollection('projects', ({ data }) => !data.confidenti
 						description={project.data.description}
 						impact={project.data.impactSummary}
 						tech={project.data.primaryTech}
+						youtubeVideo={project.data.youtubeVideo}
 					/>
 				))
 			}

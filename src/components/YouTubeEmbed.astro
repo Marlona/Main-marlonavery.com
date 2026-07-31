@@ -1,16 +1,19 @@
 ---
 /**
  * Click-to-play YouTube embed — renders only the thumbnail (one small image)
- * until asked for, then swaps in a youtube-nocookie iframe. Keeps pages with
- * several films light and loads zero YouTube script up front.
+ * until asked for, then adds a youtube-nocookie iframe. The player can be
+ * reset with a `youtube:reset` event, which lets modal callers stop playback
+ * and restore the thumbnail. Loads zero YouTube script up front.
  */
 interface Props {
 	youtubeId: string;
 	/** Accessible film title, e.g. "A.I. × Library Project — Detroit" */
 	title: string;
+	/** Dialogs manage focus themselves so Escape remains available to close them */
+	focusPlayer?: boolean;
 }
 
-const { youtubeId, title } = Astro.props;
+const { youtubeId, title, focusPlayer = true } = Astro.props;
 ---
 
 <div
@@ -18,46 +21,55 @@ const { youtubeId, title } = Astro.props;
 	data-yt-embed
 	data-yt-id={youtubeId}
 	data-yt-title={title}
+	data-yt-focus-player={focusPlayer ? 'true' : 'false'}
 >
-	<img
-		src={`https://i.ytimg.com/vi/${youtubeId}/hqdefault.jpg`}
-		alt=""
-		loading="lazy"
-		decoding="async"
-		class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-	/>
-	<div class="pointer-events-none absolute inset-0 bg-ink/30 transition-colors group-hover:bg-ink/10" aria-hidden="true"></div>
-	<button
-		type="button"
-		class="absolute inset-0 flex w-full cursor-pointer items-center justify-center focus-visible:outline-3 focus-visible:outline-offset-[-3px] focus-visible:outline-emerald-glow"
-		aria-label={`Play film: ${title}`}
-	>
-		<span
-			class="flex h-16 w-16 items-center justify-center rounded-full bg-paper/90 shadow-lg transition-transform group-hover:scale-110"
-			aria-hidden="true"
+	<div class="absolute inset-0" data-yt-placeholder>
+		<img
+			src={`https://i.ytimg.com/vi/${youtubeId}/hqdefault.jpg`}
+			alt=""
+			loading="lazy"
+			decoding="async"
+			class="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+		/>
+		<div class="pointer-events-none absolute inset-0 bg-ink/30 transition-colors group-hover:bg-ink/10" aria-hidden="true"></div>
+		<button
+			type="button"
+			class="absolute inset-0 flex w-full cursor-pointer items-center justify-center focus-visible:outline-3 focus-visible:outline-offset-[-3px] focus-visible:outline-emerald-glow"
+			aria-label={`Play film: ${title}`}
 		>
-			<svg viewBox="0 0 24 24" class="ml-1 h-7 w-7 fill-ink" aria-hidden="true">
-				<path d="M8 5.5v13l11-6.5z"></path>
-			</svg>
-		</span>
-	</button>
+			<span
+				class="flex h-16 w-16 items-center justify-center rounded-full bg-paper/90 shadow-lg transition-transform group-hover:scale-110"
+				aria-hidden="true"
+			>
+				<svg viewBox="0 0 24 24" class="ml-1 h-7 w-7 fill-ink" aria-hidden="true">
+					<path d="M8 5.5v13l11-6.5z"></path>
+				</svg>
+			</span>
+		</button>
+	</div>
 </div>
 
 <script>
 	for (const box of document.querySelectorAll<HTMLElement>('[data-yt-embed]')) {
-		box.querySelector('button')?.addEventListener(
-			'click',
-			() => {
-				const iframe = document.createElement('iframe');
-				iframe.src = `https://www.youtube-nocookie.com/embed/${box.dataset.ytId}?autoplay=1&rel=0`;
-				iframe.title = box.dataset.ytTitle ?? 'Video';
-				iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
-				iframe.allowFullscreen = true;
-				iframe.className = 'absolute inset-0 h-full w-full border-0';
-				box.replaceChildren(iframe);
-				iframe.focus();
-			},
-			{ once: true },
-		);
+		const placeholder = box.querySelector<HTMLElement>('[data-yt-placeholder]');
+
+		placeholder?.querySelector('button')?.addEventListener('click', () => {
+			if (box.querySelector('iframe')) return;
+
+			const iframe = document.createElement('iframe');
+			iframe.src = `https://www.youtube-nocookie.com/embed/${box.dataset.ytId}?autoplay=1&rel=0`;
+			iframe.title = box.dataset.ytTitle ?? 'Video';
+			iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+			iframe.allowFullscreen = true;
+			iframe.className = 'absolute inset-0 h-full w-full border-0';
+			placeholder.hidden = true;
+			box.append(iframe);
+			if (box.dataset.ytFocusPlayer === 'true') iframe.focus();
+		});
+
+		box.addEventListener('youtube:reset', () => {
+			box.querySelector('iframe')?.remove();
+			if (placeholder) placeholder.hidden = false;
+		});
 	}
 </script>

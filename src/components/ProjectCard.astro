@@ -1,5 +1,11 @@
 ---
 import BrandWordmark from './BrandWordmark.astro';
+import YouTubeEmbed from './YouTubeEmbed.astro';
+
+interface YouTubeVideo {
+	id: string;
+	title: string;
+}
 
 interface Props {
 	href: string;
@@ -13,6 +19,8 @@ interface Props {
 	/** Video file URL — "Watch video" opens it in an in-page popup player */
 	videoSrc?: string;
 	videoPoster?: string;
+	/** YouTube recording — opens in the same accessible popup as local video */
+	youtubeVideo?: YouTubeVideo;
 	/** Accessible name of the popup, e.g. "The A.I. × Library Project recap" */
 	videoTitle?: string;
 	tone?: 'light' | 'dark';
@@ -28,12 +36,15 @@ const {
 	date,
 	videoSrc,
 	videoPoster,
+	youtubeVideo,
 	videoTitle = 'Project film',
 	tone = 'dark',
 } = Astro.props;
 const dateLabel = date
 	? new Intl.DateTimeFormat('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' }).format(date)
 	: undefined;
+const modalTitle = youtubeVideo?.title ?? videoTitle;
+const hasVideo = Boolean(youtubeVideo || videoSrc);
 ---
 
 <article
@@ -87,7 +98,7 @@ const dateLabel = date
 			Case study →<span class="sr-only"> for {title}</span>
 		</a>
 		{
-			videoSrc && (
+			hasVideo && (
 				<>
 					<button
 						type="button"
@@ -99,29 +110,35 @@ const dateLabel = date
 								: 'border-ink/25 text-ink hover:border-emerald-deep hover:text-emerald-deep',
 						]}
 					>
-						Watch video ▸<span class="sr-only"> — {videoTitle}</span>
+						Watch video ▸<span class="sr-only"> — {modalTitle}</span>
 					</button>
 					{/* Popup player — native <dialog> in the top layer; Esc, ✕, and backdrop all close it */}
 					<dialog
 						data-video-modal
-						aria-label={videoTitle}
+						aria-label={modalTitle}
 						class="m-auto w-[min(96vw,64rem)] rounded-2xl bg-ink p-0 backdrop:bg-ink/80 backdrop:backdrop-blur-sm"
 					>
 						<div class="relative">
-							{/* preload=none: nothing downloads until the visitor asks for the film */}
-							<video
-								src={videoSrc}
-								poster={videoPoster}
-								controls
-								playsinline
-								preload="none"
-								class="aspect-video w-full bg-graphite"
-							>
-								<p class="p-6 text-paper">
-									Your browser can't play this video —
-									<a href={videoSrc} class="text-emerald-glow underline">download it instead</a>.
-								</p>
-							</video>
+							{
+								youtubeVideo ? (
+									<YouTubeEmbed youtubeId={youtubeVideo.id} title={youtubeVideo.title} focusPlayer={false} />
+								) : videoSrc ? (
+									/* preload=none: nothing downloads until the visitor asks for the film */
+									<video
+										src={videoSrc}
+										poster={videoPoster}
+										controls
+										playsinline
+										preload="none"
+										class="aspect-video w-full bg-graphite"
+									>
+										<p class="p-6 text-paper">
+											Your browser can't play this video —
+											<a href={videoSrc} class="text-emerald-glow underline">download it instead</a>.
+										</p>
+									</video>
+								) : null
+							}
 							<button
 								type="button"
 								data-video-close
@@ -146,16 +163,30 @@ const dateLabel = date
 		const dialog = trigger.nextElementSibling as HTMLDialogElement | null;
 		if (!dialog || !dialog.matches('[data-video-modal]')) continue;
 		const video = dialog.querySelector('video');
+		const youtube = dialog.querySelector<HTMLElement>('[data-yt-embed]');
 
 		trigger.addEventListener('click', () => {
 			dialog.showModal();
-			video?.play().catch(() => {
-				/* the visitor can press play on the native controls */
-			});
+			if (youtube) {
+				youtube.querySelector<HTMLButtonElement>('[data-yt-placeholder] button')?.click();
+				dialog.querySelector<HTMLButtonElement>('[data-video-close]')?.focus();
+			} else {
+				video?.play().catch(() => {
+					/* the visitor can press play on the native controls */
+				});
+			}
 		});
 		// Native close (Esc, ✕, backdrop) — always stop playback
-		dialog.addEventListener('close', () => video?.pause());
+		dialog.addEventListener('close', () => {
+			video?.pause();
+			youtube?.dispatchEvent(new Event('youtube:reset'));
+		});
 		dialog.querySelector('[data-video-close]')?.addEventListener('click', () => dialog.close());
+		dialog.addEventListener('keydown', (event) => {
+			if (event.key !== 'Escape') return;
+			event.preventDefault();
+			dialog.close();
+		});
 		dialog.addEventListener('click', (e) => {
 			if (e.target === dialog) dialog.close();
 		});

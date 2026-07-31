@@ -52,6 +52,16 @@ const projects = defineCollection({
 		videoPoster: z.string().optional(),
 		/** Heading over the film on the case study + accessible name of the home-card popup */
 		videoTitle: z.string().default('The film'),
+		/** Click-to-play YouTube recording and its publisher-supplied display metadata */
+		youtubeVideo: z
+			.object({
+				id: z.string(),
+				title: z.string(),
+				publisher: z.string(),
+				publishedDate: z.coerce.date(),
+				duration: z.string(),
+			})
+			.optional(),
 		/** Partner organizations — rendered as wordmark chips on the case study;
 		 *  the first partner appears as "In partnership with X" on the home card */
 		partners: z.array(z.string()).default([]),

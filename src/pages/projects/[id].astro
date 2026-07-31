@@ -21,6 +21,9 @@ const { project } = Astro.props;
 const { data } = project;
 const { Content } = await render(project);
 const shortTitle = data.title.split('—')[0].trim();
+const youtubePublishedLabel = data.youtubeVideo
+	? new Intl.DateTimeFormat('en-US', { dateStyle: 'long', timeZone: 'UTC' }).format(data.youtubeVideo.publishedDate)
+	: undefined;
 ---
 
 <BaseLayout title={shortTitle} description={data.description.slice(0, 155)}>
@@ -61,10 +64,35 @@ const shortTitle = data.title.split('—')[0].trim();
 	</div>
 
 	{
+		data.youtubeVideo && (
+			<div class="theme-fixed bg-ink px-6 pb-20 text-paper">
+				<div class="mx-auto max-w-5xl">
+					<h2 id="film" class="text-eyebrow reveal mb-5 text-emerald-glow">{data.youtubeVideo.title}</h2>
+					<YouTubeEmbed youtubeId={data.youtubeVideo.id} title={data.youtubeVideo.title} />
+					<div class="reveal mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-paper/70">
+						<p>
+							Published by {data.youtubeVideo.publisher} ·{' '}
+							<time datetime={data.youtubeVideo.publishedDate.toISOString().slice(0, 10)}>{youtubePublishedLabel}</time> ·{' '}
+							{data.youtubeVideo.duration}
+						</p>
+						<a
+							href={`https://www.youtube.com/watch?v=${data.youtubeVideo.id}`}
+							rel="noopener"
+							class="font-semibold text-emerald-glow hover:underline"
+						>
+							Watch on YouTube ↗
+						</a>
+					</div>
+				</div>
+			</div>
+		)
+	}
+
+	{
 		data.videoUrl && (
 			<div class="theme-fixed bg-ink px-6 pb-20 text-paper">
 				<div class="mx-auto max-w-5xl">
-					<h2 id="film" class="text-eyebrow reveal mb-5 text-emerald-glow">
+					<h2 id={data.youtubeVideo ? undefined : 'film'} class="text-eyebrow reveal mb-5 text-emerald-glow">
 						{data.videoTitle}
 					</h2>
 					{/* Click-to-play with native controls — no motion until asked for */}

@@ -141,6 +141,9 @@ The live staging deployment has passed the following checks:
   UI, same-origin API, Hyperdrive, and the staging Neon branch. The record was removed afterward.
 - The staging API and web Workers have `workers.dev` and preview URLs disabled. The API is
   reachable only through the web Worker's service binding.
+- The two legacy staging `/api/*` and `/public/*` routes that still targeted the production API
+  Worker were removed. No zone-level Worker route remains on the staging hostname, and the
+  Access-protected dashboard was rechecked successfully after removal.
 - The exact PR head passes Astro diagnostics, Worker type-checking, all 20 tests, the Workers
   Assets build, and a source/build scan with no legacy client, project URL, or runtime reference.
 

@@ -32,6 +32,10 @@ if (!sourceUrl || !targetUrl) {
 
 const apply = process.env.RECONCILE_APPLY === '1';
 const reportPath = process.env.RECONCILIATION_REPORT ?? 'reconciliation-report.json';
+const expectedTargetHost = process.env.RECONCILE_TARGET_HOST;
+if (apply && (!expectedTargetHost || new URL(targetUrl).hostname !== expectedTargetHost)) {
+  throw new Error('Apply mode requires RECONCILE_TARGET_HOST to exactly match the target connection hostname.');
+}
 const source = postgres(sourceUrl, { max: 2, prepare: false });
 const target = postgres(targetUrl, { max: 2, prepare: false });
 
@@ -73,13 +77,16 @@ const report = {
   target: 'neon',
   tables: {},
   totals: { sourceRows: 0, targetRows: 0, missingInTarget: 0, updatesAppliedOrPlanned: 0, conflicts: 0 },
+  applyStatus: apply ? 'pending' : 'not-requested',
 };
 
-try {
+async function reconcile(targetSql) {
   for (const table of TABLES) {
-    const [sourceSchema, targetSchema] = await Promise.all([schema(source, table), schema(target, table)]);
+    const [sourceSchema, targetSchema] = await Promise.all([schema(source, table), schema(targetSql, table)]);
     const schemaMatches = digest(sourceSchema) === digest(targetSchema);
-    const primaryKey = sourceSchema.primaryKey[0];
+    const sourcePrimaryKeys = sourceSchema.primaryKey;
+    const targetPrimaryKeys = targetSchema.primaryKey;
+    const primaryKey = sourcePrimaryKeys.length === 1 ? sourcePrimaryKeys[0] : null;
     const entry = {
       schemaMatches,
       sourceSchemaDigest: digest(sourceSchema),
@@ -95,15 +102,15 @@ try {
     };
     report.tables[table] = entry;
 
-    if (!schemaMatches || !primaryKey || targetSchema.primaryKey[0] !== primaryKey) {
-      entry.conflicts.push({ kind: 'schema', message: 'Schema or primary-key mismatch; table was not reconciled.' });
+    if (!schemaMatches || !primaryKey || targetPrimaryKeys.length !== 1 || targetPrimaryKeys[0] !== primaryKey) {
+      entry.conflicts.push({ kind: 'schema', message: 'Schema or single-column primary-key mismatch; table was not reconciled.' });
       report.totals.conflicts += 1;
       continue;
     }
 
     const [sourceRows, targetRows] = await Promise.all([
       rowsByPrimaryKey(source, table, primaryKey),
-      rowsByPrimaryKey(target, table, primaryKey),
+      rowsByPrimaryKey(targetSql, table, primaryKey),
     ]);
     entry.sourceRows = sourceRows.size;
     entry.targetRows = targetRows.size;
@@ -117,7 +124,7 @@ try {
       if (!targetRow) {
         entry.inserted.push(id);
         report.totals.missingInTarget += 1;
-        if (apply) await target`insert into ${target(table)} ${target(sourceRow)} on conflict (${target(primaryKey)}) do nothing`;
+        if (apply) await targetSql`insert into ${targetSql(table)} ${targetSql(sourceRow)} on conflict (${targetSql(primaryKey)}) do nothing`;
         continue;
       }
       if (digest(sourceRow) === digest(targetRow)) continue;
@@ -131,7 +138,7 @@ try {
           if (apply) {
             const values = { ...sourceRow };
             delete values[primaryKey];
-            await target`update ${target(table)} set ${target(values)} where ${target(primaryKey)} = ${sourceRow[primaryKey]}`;
+            await targetSql`update ${targetSql(table)} set ${targetSql(values)} where ${targetSql(primaryKey)} = ${sourceRow[primaryKey]}`;
           }
           continue;
         }
@@ -147,9 +154,30 @@ try {
       report.totals.conflicts += 1;
     }
   }
+}
+
+let reconciliationError;
+try {
+  if (apply) {
+    await target.begin(async (transaction) => {
+      await reconcile(transaction);
+      if (report.totals.conflicts > 0) throw new Error('Reconciliation conflicts detected; transaction rolled back.');
+    });
+    report.applyStatus = 'committed';
+  } else {
+    await reconcile(target);
+  }
+} catch (error) {
+  reconciliationError = error;
+  report.applyStatus = apply ? 'rolled-back' : 'failed';
 } finally {
   await Promise.allSettled([source.end({ timeout: 5 }), target.end({ timeout: 5 })]);
 }
 
 await writeFile(reportPath, `${JSON.stringify(report, null, 2)}\n`, { mode: 0o600 });
 console.log(JSON.stringify({ mode: report.mode, reportPath, totals: report.totals }, null, 2));
+if (reconciliationError) throw reconciliationError;
+if (report.totals.conflicts > 0) {
+  console.error('Reconciliation conflicts require documented resolution; see the report.');
+  process.exitCode = 2;
+}

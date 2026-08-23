@@ -1,9 +1,18 @@
 const API_PREFIXES = ['/maverick/api/', '/public/inquiry'] as const;
 const R2_MEDIA_PREFIX = '/video/';
 
-function isResolvedRange(range: R2Range): range is { offset: number; length: number } {
-  return 'offset' in range && 'length' in range &&
-    typeof range.offset === 'number' && typeof range.length === 'number';
+function resolvedRange(range: R2Range | undefined, size: number): { offset: number; length: number } | null {
+  if (!range) return null;
+  if ('suffix' in range && typeof range.suffix === 'number') {
+    const length = Math.min(Math.max(range.suffix, 0), size);
+    return { offset: size - length, length };
+  }
+  if ('offset' in range && typeof range.offset === 'number') {
+    const offset = Math.min(Math.max(range.offset, 0), size);
+    const requestedLength = 'length' in range && typeof range.length === 'number' ? range.length : size - offset;
+    return { offset, length: Math.min(Math.max(requestedLength, 0), size - offset) };
+  }
+  return null;
 }
 
 function securityHeaders(response: Response): Response {
@@ -31,15 +40,15 @@ async function publicMedia(request: Request, env: Env, path: string): Promise<Re
   }
   headers.set('Cache-Control', 'public, max-age=31536000, immutable');
   headers.set('Accept-Ranges', 'bytes');
-  if (object.range && isResolvedRange(object.range)) {
-    const range = object.range;
+  const range = resolvedRange(object.range, object.size);
+  if (range) {
     headers.set('Content-Range', `bytes ${range.offset}-${range.offset + range.length - 1}/${object.size}`);
     headers.set('Content-Length', String(range.length));
   } else {
     headers.set('Content-Length', String(object.size));
   }
   return securityHeaders(new Response(request.method === 'HEAD' ? null : object.body, {
-    status: object.range ? 206 : 200,
+    status: range ? 206 : 200,
     headers,
   }));
 }

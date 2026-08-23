@@ -27,3 +27,20 @@ export async function authorizeAccess(request: Request, env: AppEnv): Promise<bo
 export function forbidden(): Response {
   return Response.json({ data: null, error: { code: 'forbidden', message: 'This studio is for MA.' } }, { status: 403 });
 }
+
+export function privateMutationAllowed(request: Request, env: AppEnv): boolean {
+  if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method)) return true;
+  const allowedOrigins = env.ENVIRONMENT === 'production'
+    ? new Set(['https://marlonavery.com', 'https://www.marlonavery.com'])
+    : env.ENVIRONMENT === 'staging'
+      ? new Set(['https://staging.marlonavery.com'])
+      : new Set(['http://localhost:4321', 'http://127.0.0.1:4321']);
+  const origin = request.headers.get('Origin');
+  const fetchSite = request.headers.get('Sec-Fetch-Site');
+  if (!origin || !allowedOrigins.has(origin) || (fetchSite && fetchSite !== 'same-origin')) return false;
+  if (request.method !== 'DELETE') {
+    const contentType = request.headers.get('Content-Type')?.toLowerCase() ?? '';
+    if (!contentType.startsWith('application/json')) return false;
+  }
+  return true;
+}

@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { maverick } from '../src/lib/maverick/client';
+import { invokeFn } from '../src/lib/maverick/client';
 
 describe('same-origin Maverick data client', () => {
   beforeEach(() => {
@@ -41,5 +42,14 @@ describe('same-origin Maverick data client', () => {
     expect(init?.method).toBe('PATCH');
     expect(new Headers(init?.headers).has('authorization')).toBe(false);
     expect(JSON.parse(String(init?.body))).toEqual({ where: { id: 'p1' }, set: { name: 'Updated' } });
+  });
+
+  it('maps the Growth forget action to the memory DELETE route', async () => {
+    const fetchMock = vi.fn(async () => Response.json({ deleted: 1 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await invokeFn(maverick(), 'maverick-memory', { action: 'forget', id: 'memory-1' });
+
+    expect(fetchMock).toHaveBeenCalledWith('/maverick/api/memories/memory-1', expect.objectContaining({ method: 'DELETE' }));
   });
 });

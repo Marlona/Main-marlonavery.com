@@ -204,9 +204,9 @@ export async function invokeFn<T = unknown>(_db: DB, fn: string, body: Record<st
 	} else if (fn === 'maverick-elevate') {
 		path = `elevate/${action}`;
 	} else if (fn === 'maverick-memory') {
-		path = action === 'update' || action === 'delete' ? `memories/${encodeURIComponent(String(payload.id ?? ''))}` : `memories/${action}`;
+		path = action === 'update' || action === 'delete' || action === 'forget' ? `memories/${encodeURIComponent(String(payload.id ?? ''))}` : `memories/${action}`;
 		if (action === 'update') method = 'PATCH';
-		if (action === 'delete') method = 'DELETE';
+		if (action === 'delete' || action === 'forget') method = 'DELETE';
 		delete payload.id;
 	} else {
 		throw new Error(`Unknown Maverick action service: ${fn}`);

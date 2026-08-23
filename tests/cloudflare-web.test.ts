@@ -65,4 +65,25 @@ describe('Cloudflare web Worker', () => {
     expect(response.headers.get('content-range')).toBe('bytes 10-14/100');
     expect(env.ASSETS.fetch).not.toHaveBeenCalled();
   });
+
+  it('resolves suffix R2 ranges for browser video seeking', async () => {
+    const env = environment();
+    env.PUBLIC_MEDIA = {
+      get: vi.fn(async () => ({
+        body: new Blob(['video']).stream(),
+        size: 100,
+        range: { suffix: 20 },
+        httpEtag: '"media-etag"',
+        writeHttpMetadata: (headers: Headers) => headers.set('content-type', 'video/mp4'),
+      })),
+    } as unknown as R2Bucket;
+
+    const response = await worker.fetch(new Request('https://marlonavery.com/video/clip.mp4', {
+      headers: { Range: 'bytes=-20' },
+    }), env, context);
+
+    expect(response.status).toBe(206);
+    expect(response.headers.get('content-range')).toBe('bytes 80-99/100');
+    expect(response.headers.get('content-length')).toBe('20');
+  });
 });

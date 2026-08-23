@@ -87,12 +87,14 @@ The script compares schema, primary keys, exact row counts, and stable SHA-256 f
 all 25 tables. It writes `reconciliation-report.json` with mode `0600`, never deletes data, and
 defaults to a dry run. Missing primary keys are insert-only. Tables with reliable `updated_at`
 timestamps update only when the legacy record is newer. All other differences preserve Neon and
-are emitted as conflicts.
+are emitted as conflicts. Any conflict exits non-zero. Apply mode runs as one transaction and
+rolls back the entire delta if a conflict or database error occurs.
 
 Only after the dry-run report is reviewed and a restore point exists:
 
 ```sh
-RECONCILE_APPLY=1 SOURCE_DATABASE_URL='…' TARGET_DATABASE_URL='…' npm run reconcile:dry-run
+RECONCILE_APPLY=1 RECONCILE_TARGET_HOST='exact-neon-hostname' \
+  SOURCE_DATABASE_URL='…' TARGET_DATABASE_URL='…' npm run reconcile:dry-run
 ```
 
 Run a second dry run immediately afterward and archive both reports with the final export.

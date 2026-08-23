@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { authorizeAccess } from '../workers/api/src/auth';
+import { authorizeAccess, privateMutationAllowed } from '../workers/api/src/auth';
 import { hasEqualityConstraint } from '../workers/api/src/db';
 import { handleInquiry, verifyTurnstile } from '../workers/api/src/inquiry';
 
@@ -29,6 +29,29 @@ describe('Maverick API security guards', () => {
     expect(hasEqualityConstraint({ status: { op: 'neq', value: 'done' } })).toBe(false);
     expect(hasEqualityConstraint({ created_at: { op: 'gte', value: '2026-01-01' } })).toBe(false);
     expect(hasEqualityConstraint({})).toBe(false);
+  });
+
+  it('requires private mutations to be same-origin JSON requests', () => {
+    const env = { ENVIRONMENT: 'production' } as never;
+    const allowed = new Request('https://marlonavery.com/maverick/api/db/projects', {
+      method: 'PATCH',
+      headers: { Origin: 'https://marlonavery.com', 'Sec-Fetch-Site': 'same-origin', 'Content-Type': 'application/json' },
+      body: '{}',
+    });
+    const crossSite = new Request('https://marlonavery.com/maverick/api/db/projects', {
+      method: 'PATCH',
+      headers: { Origin: 'https://attacker.example', 'Sec-Fetch-Site': 'cross-site', 'Content-Type': 'application/json' },
+      body: '{}',
+    });
+    const formEncoded = new Request('https://marlonavery.com/maverick/api/chat', {
+      method: 'POST',
+      headers: { Origin: 'https://marlonavery.com', 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'message=hello',
+    });
+
+    expect(privateMutationAllowed(allowed, env)).toBe(true);
+    expect(privateMutationAllowed(crossSite, env)).toBe(false);
+    expect(privateMutationAllowed(formEncoded, env)).toBe(false);
   });
 
   it('rejects inquiry origins before touching storage', async () => {

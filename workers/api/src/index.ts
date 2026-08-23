@@ -1,4 +1,4 @@
-import { authorizeAccess, forbidden } from './auth';
+import { authorizeAccess, forbidden, privateMutationAllowed } from './auth';
 import { handleDataRequest, openSql } from './db';
 import { handleInquiry } from './inquiry';
 import type { AppEnv } from './runtime';
@@ -41,9 +41,15 @@ export default {
 
       if (url.pathname.startsWith(PRIVATE_PREFIX)) {
         if (!(await authorizeAccess(request, runtimeEnv))) return forbidden();
+        if (!privateMutationAllowed(request, runtimeEnv)) {
+          return Response.json({ data: null, error: { code: 'invalid_origin', message: 'Private mutations must be same-origin JSON requests.' } }, { status: 403 });
+        }
         if (url.pathname === `${PRIVATE_PREFIX}/health`) return privateHealth(runtimeEnv);
         const dataMatch = url.pathname.match(/^\/maverick\/api\/db\/([a-z0-9_]+)\/?$/);
         if (dataMatch) return handleDataRequest(request, runtimeEnv, dataMatch[1]);
+        if (url.pathname.startsWith(`${PRIVATE_PREFIX}/db/`)) {
+          return Response.json({ data: null, error: { code: 'not_found', message: 'Unknown database route.' } }, { status: 404 });
+        }
         return productionBaseline.fetch(rewriteForBaseline(request), baselineEnvironment(runtimeEnv), ctx);
       }
 

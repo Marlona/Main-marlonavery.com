@@ -130,6 +130,25 @@ rows, zero missing legacy primary keys, zero unresolved exceptions, all 193 Neon
 preserved, and all four Neon pgvector embeddings preserved. The disposable test branch was
 deleted after verification; the production restore branch remains available.
 
+## Staging acceptance status
+
+The live staging deployment has passed the following checks:
+
+- The entire hostname rejects anonymous requests and forged Access assertions.
+- The approved Google identity reaches every Maverick page through Access.
+- All eight Maverick pages load their real staging data without a client or API error.
+- A temporary project completed a create, counted/read-back, update, and delete cycle through the
+  UI, same-origin API, Hyperdrive, and the staging Neon branch. The record was removed afterward.
+- The staging API and web Workers have `workers.dev` and preview URLs disabled. The API is
+  reachable only through the web Worker's service binding.
+- The exact PR head passes Astro diagnostics, Worker type-checking, all 20 tests, the Workers
+  Assets build, and a source/build scan with no legacy client, project URL, or runtime reference.
+
+Chat, memory, Elevate, inquiry, manual schedule, and live media-range acceptance remain pending
+until the distinct staging OpenRouter and Turnstile secrets are installed. Inquiry notification
+delivery also remains pending. Deployment workflows now fail before publishing when their
+environment-specific public Turnstile site key is empty.
+
 ## Cutover checklist
 
 The web Worker custom domains are declared in `workers/web/wrangler.jsonc`. Cloudflare cannot

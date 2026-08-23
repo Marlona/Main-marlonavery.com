@@ -1,13 +1,6 @@
 import { openSql } from './db';
 import type { AppEnv } from './runtime';
 
-const ALLOWED_ORIGINS = new Set([
-  'https://marlonavery.com',
-  'https://www.marlonavery.com',
-  'https://staging.marlonavery.com',
-  'http://localhost:4321',
-  'http://127.0.0.1:4321',
-]);
 const OWNER_EMAIL = 'hi@marlonavery.com';
 const ACTION = 'inquiry';
 const MAX_BODY_BYTES = 65_536;
@@ -41,6 +34,44 @@ const sha256 = async (value: string) => {
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value));
   return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
 };
+
+function allowedOrigins(env: AppEnv): ReadonlySet<string> {
+  if (env.ENVIRONMENT === 'production') {
+    return new Set(['https://marlonavery.com', 'https://www.marlonavery.com']);
+  }
+  if (env.ENVIRONMENT === 'staging') return new Set(['https://staging.marlonavery.com']);
+  return new Set(['http://localhost:4321', 'http://127.0.0.1:4321']);
+}
+
+async function boundedInquiryJson(request: Request): Promise<unknown> {
+  const declaredLength = Number(request.headers.get('content-length') ?? 0);
+  if (Number.isFinite(declaredLength) && declaredLength > MAX_BODY_BYTES) return null;
+  const reader = request.body?.getReader();
+  if (!reader) return null;
+  const chunks: Uint8Array[] = [];
+  let length = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    length += value.byteLength;
+    if (length > MAX_BODY_BYTES) {
+      await reader.cancel();
+      return null;
+    }
+    chunks.push(value);
+  }
+  const bytes = new Uint8Array(length);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  try {
+    return JSON.parse(new TextDecoder().decode(bytes));
+  } catch {
+    return null;
+  }
+}
 
 function isInquiryBody(value: unknown): value is InquiryBody {
   if (value === null || typeof value !== 'object' || Array.isArray(value)) return false;
@@ -101,13 +132,13 @@ async function deliverInquiryEmail(env: AppEnv, id: string, body: InquiryBody): 
 
 export async function handleInquiry(request: Request, env: AppEnv, ctx: ExecutionContext): Promise<Response> {
   const origin = request.headers.get('Origin') ?? '';
-  if (!ALLOWED_ORIGINS.has(origin)) return Response.json({ error: 'forbidden' }, { status: 403 });
+  if (!allowedOrigins(env).has(origin)) return Response.json({ error: 'forbidden' }, { status: 403 });
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: responseHeaders(origin) });
   if (request.method !== 'POST') return json(origin, { error: 'method not allowed' }, 405);
 
   const contentLength = Number(request.headers.get('content-length') ?? 0);
   if (contentLength > MAX_BODY_BYTES) return json(origin, { error: 'request too large' }, 413);
-  const parsed: unknown = await request.json().catch(() => null);
+  const parsed = await boundedInquiryJson(request);
   if (!isInquiryBody(parsed)) return json(origin, { error: 'intent, email, and answers are required' }, 400);
   if (typeof parsed.website === 'string' && parsed.website.trim()) return json(origin, { ok: true });
   if (!(await verifyTurnstile(request, env, parsed.turnstile_token))) return json(origin, { error: 'verification failed — reload and try again' }, 403);

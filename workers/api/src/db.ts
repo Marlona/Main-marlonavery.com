@@ -145,9 +145,47 @@ function prepareRow(sql: Sql, table: string, value: unknown, allowId = true): Re
 }
 
 async function boundedJson(request: Request): Promise<unknown> {
-  const length = Number(request.headers.get('content-length') ?? 0);
-  if (length > 131_072) throw new ApiError(413, 'body_too_large', 'Request body is too large.');
-  return request.json();
+  const maximum = 131_072;
+  const declaredLength = Number(request.headers.get('content-length') ?? 0);
+  if (Number.isFinite(declaredLength) && declaredLength > maximum) {
+    throw new ApiError(413, 'body_too_large', 'Request body is too large.');
+  }
+
+  const reader = request.body?.getReader();
+  if (!reader) throw new ApiError(400, 'invalid_json', 'A JSON request body is required.');
+  const chunks: Uint8Array[] = [];
+  let length = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    length += value.byteLength;
+    if (length > maximum) {
+      await reader.cancel();
+      throw new ApiError(413, 'body_too_large', 'Request body is too large.');
+    }
+    chunks.push(value);
+  }
+
+  const bytes = new Uint8Array(length);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  try {
+    return JSON.parse(new TextDecoder().decode(bytes));
+  } catch {
+    throw new ApiError(400, 'invalid_json', 'Request body is not valid JSON.');
+  }
+}
+
+function boundedInteger(raw: string | null, fallback: number, minimum: number, maximum: number, label: string): number {
+  if (raw === null) return fallback;
+  const value = Number(raw);
+  if (!Number.isSafeInteger(value) || value < minimum || value > maximum) {
+    throw new ApiError(400, 'invalid_pagination', `${label} must be an integer between ${minimum} and ${maximum}.`);
+  }
+  return value;
 }
 
 class ApiError extends Error {
@@ -180,8 +218,8 @@ export async function handleDataRequest(request: Request, env: AppEnv, table: st
       const where = parseWhere(table, whereRaw);
       const selectParam = url.searchParams.get('select') ?? '*';
       const selected = selectParam === '*' ? allowedColumns : selectParam.split(',').map((column) => assertColumn(table, column.trim()));
-      const limit = Math.min(Math.max(Number(url.searchParams.get('limit') ?? 200), 0), 1000);
-      const offset = Math.max(Number(url.searchParams.get('offset') ?? 0), 0);
+      const limit = boundedInteger(url.searchParams.get('limit'), 200, 0, 1000, 'limit');
+      const offset = boundedInteger(url.searchParams.get('offset'), 0, 0, 1_000_000, 'offset');
       const countRequested = url.searchParams.get('count') === 'exact';
       const head = url.searchParams.get('head') === 'true';
       const whereSql = whereFragment(sql, where);

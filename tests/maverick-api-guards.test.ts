@@ -34,11 +34,27 @@ describe('Maverick API security guards', () => {
   it('rejects inquiry origins before touching storage', async () => {
     const response = await handleInquiry(
       new Request('https://marlonavery.com/public/inquiry', { method: 'POST', headers: { Origin: 'https://attacker.example' } }),
-      {} as never,
+      { ENVIRONMENT: 'production' } as never,
       {} as never,
     );
 
     expect(response.status).toBe(403);
+  });
+
+  it('does not allow production and staging inquiry origins to cross environments', async () => {
+    const production = await handleInquiry(
+      new Request('https://marlonavery.com/public/inquiry', { method: 'OPTIONS', headers: { Origin: 'https://staging.marlonavery.com' } }),
+      { ENVIRONMENT: 'production' } as never,
+      {} as never,
+    );
+    const staging = await handleInquiry(
+      new Request('https://staging.marlonavery.com/public/inquiry', { method: 'OPTIONS', headers: { Origin: 'https://marlonavery.com' } }),
+      { ENVIRONMENT: 'staging' } as never,
+      {} as never,
+    );
+
+    expect(production.status).toBe(403);
+    expect(staging.status).toBe(403);
   });
 
   it('accepts only a successful inquiry Turnstile action on an allowed hostname', async () => {

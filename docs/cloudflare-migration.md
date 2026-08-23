@@ -69,9 +69,9 @@ API Worker environment configuration.
 
 ## Data baseline
 
-The 25 production and staging tables had matching exact row counts at the 2026-08-23 audit: 233
-rows total. The staging schema was inspected directly and matches the explicit table/column
-allowlist in `workers/api/src/db.ts`.
+Before reconciliation, the 25-table legacy export contained 236 rows and production Neon
+contained 237 rows. The staging schema was inspected directly and matches the explicit
+table/column allowlist in `workers/api/src/db.ts`.
 
 The repository-owned staging workflow deployed commit `a593bca` successfully. Live Worker
 settings confirm `maverick-api-staging` is bound only to staging Hyperdrive
@@ -87,6 +87,11 @@ application tables. Restore branch `pre-cloudflare-cutover-2026-08-23`
 (`br-dawn-boat-awc970dp`) was created directly from production before the marker was applied.
 Production branch protection remains unavailable while the Neon project is on the Free plan;
 Neon's protected-branch control requires a paid plan.
+
+The final 2026-08-23 legacy export is retained outside the repository with restrictive file
+permissions. Its data archive SHA-256 is
+`b84c315850e47dd99cdb4ab17d2614395a6c40a114c4d6c0b94d2ed07bae079f`; its schema archive
+SHA-256 is `10c7ef88f54d633dae5eacf48158801bdf8c31e6cb60a2e1440360614a678a63`.
 
 ## Reconciliation
 
@@ -111,6 +116,19 @@ RECONCILE_APPLY=1 RECONCILE_TARGET_HOST='exact-neon-hostname' \
 ```
 
 Run a second dry run immediately afterward and archive both reports with the final export.
+
+The 2026-08-23 dry run found 192 legacy primary keys missing from Neon, 193 Neon-only primary
+keys, no legacy-newer mutable rows, and five same-key digest differences. Four differences were
+the JSON-versus-pgvector representation of existing memory embeddings; Neon remained
+authoritative for those vectors. The remaining difference was an Elevate vision path pointing
+to a nonexistent PNG in Neon while the legacy bucket contained the real JPEG.
+
+The real JPEG was copied to the same R2 key in both environments. The full delta was then tested
+on a disposable Neon branch and applied to production as one transaction: all 192 missing rows
+were inserted and the vision path was corrected to the JPEG. The post-apply audit reports 429
+rows, zero missing legacy primary keys, zero unresolved exceptions, all 193 Neon-only records
+preserved, and all four Neon pgvector embeddings preserved. The disposable test branch was
+deleted after verification; the production restore branch remains available.
 
 ## Cutover checklist
 
@@ -137,8 +155,8 @@ the `www` CNAME only inside the approved production cutover window.
 - [x] Protect the entire staging hostname with Access.
 - [ ] Run every CRUD, chat, memory, Elevate, media, inquiry, and manual-schedule acceptance test.
 - [x] Confirm staging cannot access production Neon or R2.
-- [ ] Export legacy schema/data and create a Neon production restore point.
-- [ ] Run dry-run and applied delta reconciliation with zero unresolved conflicts.
+- [x] Export legacy schema/data and create a Neon production restore point.
+- [x] Run dry-run and applied delta reconciliation with zero unresolved conflicts.
 - [ ] Put the legacy Maverick UI into brief read-only mode and run the final delta.
 - [ ] Deploy production Workers and attach the apex/www domains.
 - [x] Protect `/maverick*`; verify missing Access assertions now and validate invalid, expired, and valid assertions during cutover testing.

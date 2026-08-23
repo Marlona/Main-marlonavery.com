@@ -52,8 +52,6 @@ Never deploy a hand-edited Worker from the Cloudflare dashboard.
 
 These values are intentionally not committed:
 
-- Cloudflare Access Google identity provider OAuth client ID and client secret.
-- A separate Access application/audience for production and staging.
 - Distinct production and staging Turnstile widget secrets and public site keys.
 - A distinct staging `OPENROUTER_KEY` Worker secret; staging never receives the production Secrets Store binding.
 - `RESEND_API_KEY` on both API Workers, using a verified `inquiries@marlonavery.com` sender.
@@ -63,8 +61,11 @@ These values are intentionally not committed:
 - GitHub environment variable `PUBLIC_TURNSTILE_SITE_KEY`, distinct in each environment.
 - A read-only legacy Postgres connection for final reconciliation.
 
-Until Access applications exist, `ACCESS_AUD` deliberately remains
-`PENDING_ACCESS_APPLICATION`; private API requests fail closed.
+Cloudflare Access uses the `Maverick Google` identity provider. The production application
+protects `marlonavery.com/maverick*`; the staging application protects the entire
+`staging.marlonavery.com` hostname. Both allow only `hi@marlonavery.com`, require the Google
+login method, redirect directly to that provider, and use distinct audience IDs committed in the
+API Worker environment configuration.
 
 ## Data baseline
 
@@ -115,20 +116,20 @@ the `www` CNAME only inside the approved production cutover window.
 - [x] Add Turnstile client and canonical server-side Siteverify integration.
 - [x] Remove the legacy JavaScript client, edge-function sources, Pages CNAME, and Pages workflow.
 - [ ] Apply and verify schema-version tracking on staging, then production.
-- [ ] Configure Google as the Access identity provider.
-- [ ] Create production and staging Access applications and replace both audience placeholders.
+- [x] Configure Google as the Access identity provider.
+- [x] Create production and staging Access applications and replace both audience placeholders.
 - [ ] Create distinct Turnstile widgets, save Worker secrets, and set GitHub public-site-key variables.
 - [ ] Configure and validate Resend without making email delivery authoritative.
 - [ ] Upload `public/video/*` objects to both R2 buckets and verify byte ranges/content types.
 - [ ] Deploy staging from the repository and attach `staging.marlonavery.com`.
-- [ ] Protect the entire staging hostname with Access.
+- [x] Protect the entire staging hostname with Access.
 - [ ] Run every CRUD, chat, memory, Elevate, media, inquiry, and manual-schedule acceptance test.
 - [ ] Confirm staging cannot access production Neon or R2.
 - [ ] Export legacy schema/data and create a Neon production restore point.
 - [ ] Run dry-run and applied delta reconciliation with zero unresolved conflicts.
 - [ ] Put the legacy Maverick UI into brief read-only mode and run the final delta.
 - [ ] Deploy production Workers and attach the apex/www domains.
-- [ ] Protect `/maverick*`; verify missing, invalid, expired, and valid Access assertions.
+- [x] Protect `/maverick*`; verify missing Access assertions now and validate invalid, expired, and valid assertions during cutover testing.
 - [ ] Verify Workers Assets is the origin and no legacy database or Pages traffic remains.
 - [ ] Reopen writes, monitor production cron audit events, and retain the prior Worker version.
 - [ ] Make the legacy project read-only and retain its export for 30 days.

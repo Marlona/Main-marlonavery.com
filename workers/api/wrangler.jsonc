@@ -18,7 +18,7 @@
       "vars": {
         "ENVIRONMENT": "production",
         "ACCESS_TEAM_DOMAIN": "broad-dust-cbb8.cloudflareaccess.com",
-        "ACCESS_AUD": "PENDING_ACCESS_APPLICATION",
+        "ACCESS_AUD": "879e0ff05032eabf36bad8ea8db6d6e74085a992c003749ecdb682b62c445f82",
         "TURNSTILE_HOSTNAMES": "marlonavery.com,www.marlonavery.com"
       },
       "ai": { "binding": "AI" },
@@ -44,7 +44,7 @@
       "vars": {
         "ENVIRONMENT": "staging",
         "ACCESS_TEAM_DOMAIN": "broad-dust-cbb8.cloudflareaccess.com",
-        "ACCESS_AUD": "PENDING_ACCESS_APPLICATION",
+        "ACCESS_AUD": "f72b13f358b4070d80257d1805c1e711bfd6960a6fdec1a5d39180303952b01c",
         "TURNSTILE_HOSTNAMES": "staging.marlonavery.com"
       },
       "ai": { "binding": "AI" },

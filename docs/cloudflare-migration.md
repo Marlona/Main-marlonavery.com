@@ -101,6 +101,11 @@ Run a second dry run immediately afterward and archive both reports with the fin
 
 ## Cutover checklist
 
+The web Worker custom domains are declared in `workers/web/wrangler.jsonc`. Cloudflare cannot
+create them while the same hostnames still have GitHub Pages CNAME records. Remove the staging
+CNAME immediately before the first staging deployment; remove the apex GitHub Pages records and
+the `www` CNAME only inside the approved production cutover window.
+
 - [x] Recover the deployed API implementation into the repository.
 - [x] Replace browser database/auth calls with the same-origin typed API client.
 - [x] Add explicit table/column/filter allowlists and equality-constrained mutations.

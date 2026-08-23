@@ -23,6 +23,10 @@
     "production": {
       "name": "marlonavery-web",
       "vars": { "ENVIRONMENT": "production" },
+	  "routes": [
+		{ "pattern": "marlonavery.com", "custom_domain": true },
+		{ "pattern": "www.marlonavery.com", "custom_domain": true }
+	  ],
 	  "assets": {
 		"directory": "../../dist",
 		"binding": "ASSETS",
@@ -36,6 +40,9 @@
     "staging": {
       "name": "marlonavery-web-staging",
       "vars": { "ENVIRONMENT": "staging" },
+	  "routes": [
+		{ "pattern": "staging.marlonavery.com", "custom_domain": true }
+	  ],
 	  "assets": {
 		"directory": "../../dist",
 		"binding": "ASSETS",

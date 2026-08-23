@@ -82,6 +82,12 @@ and the isolated R2 bucket contains all eight configured video objects.
 `workers/api/migrations/0000_schema_migrations.sql` adds only migration tracking. Apply it to
 staging first, verify, then apply to production after a Neon restore point has been recorded.
 
+Marker `0000` is now present on both staging and production, and production still reports all 25
+application tables. Restore branch `pre-cloudflare-cutover-2026-08-23`
+(`br-dawn-boat-awc970dp`) was created directly from production before the marker was applied.
+Production branch protection remains unavailable while the Neon project is on the Free plan;
+Neon's protected-branch control requires a paid plan.
+
 ## Reconciliation
 
 Run the comparison with a read-only legacy connection first:
@@ -121,7 +127,7 @@ the `www` CNAME only inside the approved production cutover window.
 - [x] Add repository-only production/staging deployment workflows.
 - [x] Add Turnstile client and canonical server-side Siteverify integration.
 - [x] Remove the legacy JavaScript client, edge-function sources, Pages CNAME, and Pages workflow.
-- [ ] Apply and verify schema-version tracking on staging, then production.
+- [x] Apply and verify schema-version tracking on staging, then production.
 - [x] Configure Google as the Access identity provider.
 - [x] Create production and staging Access applications and replace both audience placeholders.
 - [ ] Create distinct Turnstile widgets, save Worker secrets, and set GitHub public-site-key variables.

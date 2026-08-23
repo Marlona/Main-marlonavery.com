@@ -23,11 +23,11 @@ The Growth page (`/maverick/growth`) is Elevate: moves Marlon from **Place A** (
 Present tense current state ("I am…") · "I am becoming…" permitted · first person, his own
 version of life · forward-severing allowed ("no longer serves who I am becoming") · no judgment
 or negation-of-negative · his vocabulary. Enforced by `validateAffirmation()` in
-`supabase/functions/maverick-elevate/index.ts` (regex heuristics → one LLM rewrite → drop).
+`workers/api` (regex heuristics → one LLM rewrite → drop).
 
 ## Architecture
 
-- **`maverick-elevate` edge function** (owner JWT or cron secret): `generate` (seed-then-shape,
+- **`maverick-elevate` Worker route** (Access assertion or scheduled handler): `generate` (seed-then-shape,
   validator-gated, active set capped at 5), `adjust` (nightly signal loop), `resolve_event`
   (executes accepted proposals), `rewrite` (dictation cleanup of the goal — his words kept,
   original archived to audit_log by the caller when needed), `visualize` (paints Place B →

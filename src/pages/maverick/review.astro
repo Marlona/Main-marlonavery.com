@@ -74,7 +74,7 @@ const LIST_FIELDS = [
 
 	const db = await initMaverick();
 
-	// Monday of the current week (local) — mirrors the edge function's logic
+	// Monday of the current week (local) — mirrors the API Worker's logic
 	const monday = (() => {
 		const d = new Date(`${todayISO()}T00:00:00Z`);
 		d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7));

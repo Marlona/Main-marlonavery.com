@@ -3,9 +3,8 @@ import BaseLayout from './BaseLayout.astro';
 
 /**
  * Shell for every Maverick Command Center page: noindex, the always-dark
- * studio surface, the Supabase login gate, and section navigation. Page
- * scripts call initMaverick() from src/lib/maverick/client.ts — it wires the
- * gate markup below and resolves once Marlon is signed in.
+ * studio surface and section navigation. Cloudflare Access authenticates
+ * Marlon before any /maverick asset or API request reaches the application.
  */
 interface Props {
 	title: string;
@@ -33,44 +32,7 @@ const NAV = [
 
 	<div class="theme-fixed min-h-screen bg-ink px-6 pt-32 pb-24 text-paper md:pt-40">
 		<div class="mx-auto max-w-6xl">
-			<!-- Login gate -->
-			<div data-mav-gate hidden>
-				<p class="text-eyebrow text-emerald-glow">Maverick</p>
-				<h1 class="text-display-md mt-5">Who goes there?</h1>
-				<p class="mt-4 max-w-md text-paper/70">
-					This studio is for MA. Everyone else — the good stuff is on the
-					<a href="/writing" class="text-emerald-glow hover:underline">writing page</a>.
-				</p>
-				<form data-mav-login class="mt-8 max-w-md space-y-4">
-					<div>
-						<label for="mav-email" class="block text-sm font-semibold">Email</label>
-						<input
-							id="mav-email"
-							type="email"
-							required
-							autocomplete="username"
-							class="mt-2 w-full rounded-lg border border-paper/25 bg-graphite px-4 py-3 text-paper focus:border-emerald"
-						/>
-					</div>
-					<div>
-						<label for="mav-pass" class="block text-sm font-semibold">Password</label>
-						<input
-							id="mav-pass"
-							type="password"
-							required
-							autocomplete="current-password"
-							class="mt-2 w-full rounded-lg border border-paper/25 bg-graphite px-4 py-3 text-paper focus:border-emerald"
-						/>
-					</div>
-					<button type="submit" class="cursor-pointer rounded-full bg-emerald px-8 py-3.5 font-bold text-ink transition-transform hover:scale-105">
-						Sign in
-					</button>
-					<p data-mav-error hidden class="text-sm text-terracotta" role="alert">Sign-in failed. Check your credentials.</p>
-				</form>
-			</div>
-
-			<!-- Studio -->
-			<div data-mav-studio hidden>
+			<div data-mav-studio>
 				<div class="flex flex-wrap items-center justify-between gap-4">
 					<p class="text-eyebrow text-emerald-glow">Maverick Command Center</p>
 					<button

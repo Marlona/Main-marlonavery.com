@@ -1,10 +1,10 @@
 ---
 import { SITE_CONFIG } from '../config';
+import TurnstileWidget from './TurnstileWidget.astro';
 
 /**
- * Booking inquiry form. Static-host friendly: submission composes a structured
- * email to Marlon. Swap FORM_ENDPOINT for a Cloudflare Worker URL to capture
- * submissions in D1 instead — the payload shape stays the same.
+ * Booking inquiry form. The public Cloudflare API verifies Turnstile, persists
+ * the record in Neon, and attempts an email notification.
  */
 interface Props {
 	heading?: string;
@@ -129,6 +129,8 @@ const defaultType =
 		</div>
 	</div>
 
+	<TurnstileWidget />
+
 	<button
 		type="submit"
 		class="mt-8 w-full cursor-pointer rounded-full bg-ink px-8 py-4 font-semibold text-paper transition-colors hover:bg-emerald-deep"
@@ -141,11 +143,12 @@ const defaultType =
 </form>
 
 <script>
-	// Submissions are stored in Supabase and email-forwarded by the
-	// submit-inquiry edge function; mailto remains as an offline fallback.
-	import { submitInquiry } from '../lib/backend';
+	// Submissions are persisted in Neon by the Cloudflare API Worker;
+	// mailto remains an offline fallback.
+	import { inquiryTurnstileToken, renderInquiryTurnstile, submitInquiry } from '../lib/backend';
 
 	for (const form of document.querySelectorAll<HTMLFormElement>('[data-booking-form]')) {
+		renderInquiryTurnstile(form);
 		// Fill-time tracking: sub-human submit times get spam-flagged server-side
 		const startedAt = Date.now();
 		form.addEventListener('submit', async (e) => {
@@ -171,6 +174,7 @@ const defaultType =
 					},
 					website: String(data.get('website') || '') || undefined,
 					elapsedMs: Date.now() - startedAt,
+					turnstileToken: inquiryTurnstileToken(form),
 				});
 				form.innerHTML = `
 					<h3 class="font-display text-2xl font-semibold">Sent ✓</h3>

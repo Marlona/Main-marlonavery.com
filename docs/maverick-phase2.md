@@ -8,11 +8,11 @@
 > + side rail stay) · invoicing targets **Stripe** · code bridge = **GitHub handoff** · briefing
 > cron at **7:00 AM ET** (`0 11 * * *` UTC — shift to `0 12` when DST ends in November).
 >
-> **✅ Built in 2A:** `maverick-chat` edge function (SSE streaming, Sonnet 5 via OpenRouter,
+> **✅ Built in 2A:** Maverick chat Worker route (SSE streaming via OpenRouter,
 > tool loop with internal tools: task/project/engagement/revenue CRUD, memory remember/recall,
 > check-ins, snapshot; audit-logged), chat_conversations/chat_messages tables, hybrid chat home,
-> Approval Queue UI (`/maverick/approvals` — decisions live, dispatchers pending), pg_cron
-> morning briefing (vault-secret auth) that seeds the briefing as the first message of each
+> Approval Queue UI (`/maverick/approvals` — decisions live, dispatchers pending), Worker cron
+> morning briefing that seeds the briefing as the first message of each
 > day's conversation.
 >
 > **⏳ 2B (needs Marlon's Google OAuth setup):** Gmail/Calendar read mirrors, Email Center,
@@ -54,8 +54,8 @@ those platforms, but the system is called **Maverick**. Capabilities:
   panel or stay reachable from the nav.
 - **Voice**: reuse the Web Speech API dictation already shipped in `/maverick/write` — mic button
   in the composer, transcript lands in the input. (Voice *output* is out of scope for now.)
-- **Model**: OpenRouter via a new `maverick-chat` edge function (verify_jwt + owner email check,
-  same as `maverick-agent`). Streaming via SSE — Supabase edge functions support streamed
+- **Model**: OpenRouter through the Cloudflare API Worker (Access assertion + owner email check).
+  Streaming uses SSE through the same-origin service binding.
   responses. Model = `MODEL_REASONING` profile by default with a per-conversation override.
 - **Context**: system prompt embeds the live dashboard snapshot (reuse `gatherContext()` from
   `maverick-agent`) so Maverick can answer "what's my week look like?" from real data.
@@ -98,11 +98,11 @@ The store and its API exist today; Phase 2's chat loop is what starts using them
 - **Table**: `public.maverick_memories` — content, `vector(384)` embedding (HNSW cosine index),
   kind (`fact | preference | decision | person | project_context | conversation_summary`),
   source, metadata jsonb. RLS email-pinned like everything else.
-- **Embeddings**: Supabase edge runtime's built-in `gte-small` (384 dims, mean-pooled,
-  normalized) — zero external APIs, zero keys. If we ever switch models (e.g. OpenAI
+- **Embeddings**: Cloudflare Workers AI `gte-small` (384 dims, mean-pooled,
+  normalized). If we ever switch models (e.g. OpenAI
   text-embedding-3-small, 1536 dims), that's a column migration + re-embed of all rows.
 - **Search**: `match_maverick_memories(query_embedding, match_count, min_similarity)` RPC.
-- **API**: `maverick-memory` edge function (verify_jwt + owner check) — actions `remember`,
+- **API**: `maverick-api` Worker (Access assertion + owner check) — actions `remember`,
   `recall`, `list`, `forget`. Verified E2E: seeded 3 memories, semantic recall ranks correctly
   on paraphrased queries.
 - **Phase 2 wiring**: the chat loop (a) recalls top-k memories for each user message and injects
@@ -119,8 +119,7 @@ The store and its API exist today; Phase 2's chat loop is what starts using them
 - Google Calendar read → `calendar_events` mirror; Gmail read + classify + draft (no send) →
   `email_summaries`; Email Center page.
 - **Approval Queue UI** (`/maverick/approvals`) — becomes load-bearing for the tools above.
-- Morning briefing + evening wrap-up on schedule via `pg_cron` + `pg_net` invoking the edge
-  functions (no Vercel here).
+- Morning briefing + evening wrap-up on Cloudflare Worker cron triggers.
 - Audit log surfaced in the UI.
 
 ## Prerequisites / secrets to collect at kickoff

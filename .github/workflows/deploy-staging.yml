@@ -1,16 +1,4 @@
-name: CI (staging integration)
-
-# Pure CI for the integration flow: feature branches open PRs into `staging`,
-# `staging` promotes into `main`. This workflow verifies every PR and every
-# push to `staging` with a full type-check + build.
-#
-# It deliberately does NOT deploy GitHub Pages: one repository serves one
-# Pages site, and this repository's Pages is production (marlonavery.com,
-# deployed from `main` by deploy.yml). The staging environment at
-# staging.marlonavery.com is served by the separate Main-marlonavery-staging
-# repository — promote to it by pushing `staging` there:
-#
-#   git push staging-origin staging:main
+name: Verify and deploy Cloudflare staging
 
 on:
   push:
@@ -23,7 +11,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: cloudflare-staging-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -32,18 +20,44 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-
       - name: Install dependencies
         run: npm ci
+      - name: Verify application and Workers
+        run: npm run check:all
+      - name: Run migration parity tests
+        run: npm test
+      - name: Build Workers Assets
+        run: npm run build:cloudflare
 
-      - name: Type check
-        run: npm run check
-
-      - name: Build
-        run: npm run build
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: verify
+    runs-on: ubuntu-latest
+    environment: staging
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.PUBLIC_TURNSTILE_SITE_KEY }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Build Workers Assets
+        run: npm run build:cloudflare
+      - name: Deploy isolated API Worker
+        run: npm run deploy:staging:api
+      - name: Sync public video to isolated R2
+        run: npm run sync:r2:staging
+      - name: Deploy isolated web Worker
+        run: npm run deploy:staging:web

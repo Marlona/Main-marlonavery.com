@@ -1,7 +1,7 @@
 # MarlonAvery.com — Cinematic Personal Platform
 
-Astro 5 + Tailwind CSS v4 + TypeScript (strict). Static output, deployed to GitHub Pages via
-`.github/workflows/deploy.yml`. Do not upgrade Astro past v5 or Vite past v6 without checking
+Astro 5 + Tailwind CSS v4 + TypeScript (strict). Static output is served by Cloudflare Workers
+Assets; the private API is a separate service-bound Worker. Do not upgrade Astro past v5 or Vite past v6 without checking
 `@tailwindcss/vite` type compatibility (`npm run check` must stay clean).
 
 ## Commands
@@ -9,6 +9,8 @@ Astro 5 + Tailwind CSS v4 + TypeScript (strict). Static output, deployed to GitH
 - `npm run dev` — dev server
 - `npm run build` — production build (must pass clean)
 - `npm run check` — `astro check` type/diagnostic pass
+- `npm run check:all` — Astro and both Cloudflare Workers
+- `npm test` — migration/security contract tests
 - `npm run process-photos` — downscale new photos from `public/images/*.png` into `src/assets/photos/`
 
 ## Architecture
@@ -77,28 +79,24 @@ sections, footer, page heroes). Any new always-dark block needs `theme-fixed`.
 
 All booking/contact CTAs route to `/book` (deep-linkable via `?intent=keynote|workshop|podcast|
 curriculum|learn|advisory|other`). Flows are data-driven in `src/data/bookingFlows.ts` — add a new
-intent there and it appears automatically. Submissions POST to the Supabase `submit-inquiry` edge
-function (stored in `inquiries` + emailed via Resend), falling back to mailto if it's unreachable.
+intent there and it appears automatically. Submissions POST to `/public/inquiry` on the Cloudflare
+API Worker (Turnstile-verified, stored in Neon, then emailed via Resend), falling back to mailto if unreachable.
 Wiring lives in `src/lib/backend.ts`.
 
 ## Maverick Command Center (/maverick)
 
-Marlon's private daily-operations dashboard, built INTO the static site (his call — no separate
-Next.js app). Client-side pages talk straight to Supabase (project `nxqoskuddntalcgcuvvi`): the
-publishable key ships to the browser and Row Level Security pins every command-center table to
-the authenticated `hi@marlonavery.com` session. Structure:
+Marlon's private daily-operations dashboard, built into the static site. Cloudflare Access with
+Google protects `/maverick*` for `hi@marlonavery.com`; browser code calls the same-origin typed
+API under `/maverick/api/*`. Neon is reached only by the API Worker through Hyperdrive. Structure:
 
-- `src/layouts/MaverickLayout.astro` — noindex shell, login gate, section nav.
-- `src/lib/maverick/client.ts` — typed Supabase singleton, `initMaverick()` auth promise,
-  formatters. `src/lib/maverick/db-types.ts` is GENERATED (Supabase MCP
-  `generate_typescript_types`) — regenerate after any migration, never hand-edit.
+- `src/layouts/MaverickLayout.astro` — noindex shell and section navigation; Access is the login boundary.
+- `src/lib/maverick/client.ts` — typed same-origin API client and domain formatters.
+  `src/lib/maverick/db-types.ts` mirrors the Neon schema and must be regenerated after migrations.
 - Pages: `/maverick` (home: briefing, top 3, check-in), `/maverick/projects` (pillar-filtered
   CRUD + tasks), `/maverick/speaking` (engagement pipeline + revenue), `/maverick/growth`
   (affirmations), `/maverick/review` (weekly reviews), `/maverick/inquiries`, `/maverick/write`.
-- AI actions run in the `maverick-agent` edge function (source mirrored in
-  `supabase/functions/maverick-agent/`, excluded from tsconfig — it's Deno). verify_jwt +
-  email-pinned. Model profiles are env-driven: `MODEL_FAST` / `MODEL_REASONING` /
-  `MODEL_WRITING` (OpenRouter slugs); requires the `OPENROUTER_API_KEY` function secret.
+- AI actions run in `maverick-api` on Cloudflare. The Worker validates the Access assertion and
+  exact owner email. OpenRouter is provided through Cloudflare Secrets Store; Workers AI provides embeddings.
 
 **Approval guardrail (standing rule for Phases 2–3):** the agent NEVER sends email, touches
 calendars, moves money, or contacts anyone externally on its own. Any future external action must
@@ -112,14 +110,12 @@ before touching anything affirmation-related; the linguistic framework and obser
 contract are hard rules. M4 (quadrant audits) not built.**
 
 **Phase 2A is LIVE (2026-07-07); 2B/2C remain — read `docs/maverick-phase2.md` before touching.**
-The /maverick home is Maverick chat (hybrid layout): SSE streaming from the `maverick-chat` edge
-function (Sonnet 5 via OpenRouter) with an INTERNAL-only tool loop — task/project/engagement/
+The /maverick home is Maverick chat (hybrid layout): SSE streaming from the API Worker
+(via OpenRouter) with an INTERNAL-only tool loop — task/project/engagement/
 revenue CRUD, vector-store memory (remember/recall), check-ins, snapshot — every execution
-audit-logged. Memory: `maverick_memories` pgvector table (384-dim gte-small from the edge
-runtime, no external API) + `match_maverick_memories` RPC + `maverick-memory` function.
-Morning briefing runs on pg_cron at 11:00 UTC (7 AM EDT; shift to 12:00 when DST ends),
-authenticated by a vault secret via `get_cron_secret()`, and lands as the first message of the
-day's conversation. `/maverick/approvals` records approve/reject decisions; **no dispatcher
+audit-logged. Memory: `maverick_memories` pgvector table (384-dimensional Workers AI embeddings)
++ `match_maverick_memories`. Morning briefing and memory/Elevate jobs run as Worker cron triggers.
+`/maverick/approvals` records approve/reject decisions; **no dispatcher
 exists yet** — 2B adds Gmail/Calendar reads + email send (needs Marlon's Google OAuth), 2C adds
 Stripe invoicing + GitHub code_task handoff. External action contracts live in the spec doc.
 

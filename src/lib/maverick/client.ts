@@ -1,80 +1,228 @@
-/**
- * Shared client for the Maverick Command Center pages.
- *
- * Everything runs in the browser against Supabase: the publishable key is
- * public by design and Row Level Security pins every table to Marlon's
- * authenticated session. AI actions go through the `maverick-agent` edge
- * function, which is the only place secrets live.
- */
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from '../backend';
+/** Same-origin Cloudflare API client for the Maverick Command Center. */
 import type { Database, Enums } from './db-types';
 
-export type DB = SupabaseClient<Database>;
+type Tables = Database['public']['Tables'];
+type TableName = keyof Tables & string;
+type TableRow<T extends TableName> = Tables[T] extends { Row: infer Row } ? Row : never;
+type ApiError = { code: string; message: string };
+type QueryResult<T> = { data: T; error: ApiError | null; count: number | null };
+type Filter = unknown | { op: string; value: unknown };
+type Mode = 'select' | 'insert' | 'update' | 'delete' | 'upsert';
 
+type ApiEnvelope = {
+	data?: unknown;
+	error?: ApiError | null;
+	meta?: { count?: number };
+};
+
+class QueryBuilder<T extends TableName> implements PromiseLike<QueryResult<TableRow<T>[]>> {
+	private mode: Mode = 'select';
+	private columns = '*';
+	private where: Record<string, Filter> = {};
+	private orderBy: string | undefined;
+	private row: unknown;
+	private countRequested = false;
+	private head = false;
+	private rowLimit = 200;
+	private rowOffset = 0;
+	private conflictColumn: string | undefined;
+
+	constructor(private readonly table: T) {}
+
+	select(columns = '*', options?: { count?: 'exact'; head?: boolean }): this {
+		this.columns = columns;
+		this.countRequested = options?.count === 'exact';
+		this.head = options?.head === true;
+		return this;
+	}
+
+	insert(value: Tables[T] extends { Insert: infer Insert } ? Insert | Insert[] : unknown): this {
+		this.mode = 'insert';
+		this.row = value;
+		return this;
+	}
+
+	update(value: Tables[T] extends { Update: infer Update } ? Update : unknown): this {
+		this.mode = 'update';
+		this.row = value;
+		return this;
+	}
+
+	delete(): this {
+		this.mode = 'delete';
+		return this;
+	}
+
+	upsert(value: Tables[T] extends { Insert: infer Insert } ? Insert : unknown, options?: { onConflict?: string }): this {
+		this.mode = 'upsert';
+		this.row = value;
+		this.conflictColumn = options?.onConflict;
+		return this;
+	}
+
+	eq(column: string, value: unknown): this { this.where[column] = value; return this; }
+	neq(column: string, value: unknown): this { this.where[column] = { op: 'neq', value }; return this; }
+	gt(column: string, value: unknown): this { this.where[column] = { op: 'gt', value }; return this; }
+	gte(column: string, value: unknown): this { this.where[column] = { op: 'gte', value }; return this; }
+	lt(column: string, value: unknown): this { this.where[column] = { op: 'lt', value }; return this; }
+	lte(column: string, value: unknown): this { this.where[column] = { op: 'lte', value }; return this; }
+	like(column: string, value: string): this { this.where[column] = { op: 'like', value }; return this; }
+	ilike(column: string, value: string): this { this.where[column] = { op: 'ilike', value }; return this; }
+	is(column: string, value: unknown): this { this.where[column] = { op: 'is', value }; return this; }
+	in(column: string, value: readonly unknown[]): this { this.where[column] = { op: 'in', value: [...value] }; return this; }
+	not(column: string, operator: 'is' | 'in' | string, value: unknown): this {
+		this.where[column] = { op: operator === 'is' ? 'isnot' : operator === 'in' ? 'notin' : 'neq', value };
+		return this;
+	}
+
+	order(column: string, options?: { ascending?: boolean; nullsFirst?: boolean }): this {
+		this.orderBy = `${column}.${options?.ascending === false ? 'desc' : 'asc'}.${options?.nullsFirst ? 'first' : 'last'}`;
+		return this;
+	}
+
+	limit(value: number): this { this.rowLimit = value; return this; }
+	range(from: number, to: number): this { this.rowOffset = from; this.rowLimit = Math.max(to - from + 1, 0); return this; }
+
+	async single(): Promise<QueryResult<TableRow<T>>> {
+		return this.executeOne(false);
+	}
+
+	async maybeSingle(): Promise<QueryResult<TableRow<T> | null>> {
+		const result = await this.executeMany();
+		if (result.error) return { data: null, error: result.error, count: result.count };
+		const rows = result.data;
+		if (rows.length <= 1) return { data: rows[0] ?? null, error: null, count: result.count };
+		return { data: null, error: { code: 'row_count', message: `Expected at most one row, received ${rows.length}.` }, count: result.count };
+	}
+
+	then<TResult1 = QueryResult<TableRow<T>[]>, TResult2 = never>(
+		onfulfilled?: ((value: QueryResult<TableRow<T>[]>) => TResult1 | PromiseLike<TResult1>) | null,
+		onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null,
+	): Promise<TResult1 | TResult2> {
+		return this.executeMany().then(onfulfilled, onrejected);
+	}
+
+	private async request(): Promise<QueryResult<unknown>> {
+		const url = new URL(`/maverick/api/db/${this.table}`, location.origin);
+		const headers = new Headers({ 'Content-Type': 'application/json' });
+		let method = 'GET';
+		let body: string | undefined;
+
+		if (this.mode === 'select') {
+			url.searchParams.set('select', this.columns);
+			url.searchParams.set('where', JSON.stringify(this.where));
+			url.searchParams.set('limit', String(this.rowLimit));
+			url.searchParams.set('offset', String(this.rowOffset));
+			if (this.orderBy) url.searchParams.set('order', this.orderBy);
+			if (this.countRequested) url.searchParams.set('count', 'exact');
+			if (this.head) url.searchParams.set('head', 'true');
+		} else if (this.mode === 'insert') {
+			method = 'POST';
+			body = JSON.stringify(this.row);
+		} else if (this.mode === 'update') {
+			method = 'PATCH';
+			body = JSON.stringify({ where: this.where, set: this.row });
+		} else if (this.mode === 'delete') {
+			method = 'DELETE';
+			body = JSON.stringify({ where: this.where });
+		} else {
+			method = 'PUT';
+			body = JSON.stringify({ row: this.row, onConflict: this.conflictColumn });
+		}
+
+		try {
+			const response = await fetch(url, { method, headers, body, credentials: 'same-origin' });
+			const parsed: unknown = await response.json().catch(() => null);
+			const envelope: ApiEnvelope = parsed && typeof parsed === 'object' ? parsed as ApiEnvelope : {};
+			if (!response.ok || envelope.error) {
+				return {
+					data: null,
+					error: envelope.error ?? { code: `http_${response.status}`, message: `Request failed (${response.status}).` },
+					count: envelope.meta?.count ?? null,
+				};
+			}
+			return { data: envelope.data ?? null, error: null, count: envelope.meta?.count ?? null };
+		} catch (error) {
+			return { data: null, error: { code: 'network_error', message: error instanceof Error ? error.message : 'Network error.' }, count: null };
+		}
+	}
+
+	private async executeMany(): Promise<QueryResult<TableRow<T>[]>> {
+		const result = await this.request();
+		if (result.error) return { data: [], error: result.error, count: result.count };
+		const rows = result.data === null ? [] : Array.isArray(result.data) ? result.data : [result.data];
+		return { data: rows as TableRow<T>[], error: null, count: result.count };
+	}
+
+	private async executeOne(_optional: boolean): Promise<QueryResult<TableRow<T>>> {
+		const result = await this.executeMany();
+		if (result.error) return { data: null as TableRow<T>, error: result.error, count: result.count };
+		const rows = result.data;
+		if (rows.length === 1) return { data: rows[0], error: null, count: result.count };
+		return { data: null as TableRow<T>, error: { code: 'row_count', message: `Expected one row, received ${rows.length}.` }, count: result.count };
+	}
+}
+
+class MaverickClient {
+	from<T extends TableName>(table: T): QueryBuilder<T> { return new QueryBuilder(table); }
+
+	readonly storage = {
+		from: (_bucket: string) => ({
+			createSignedUrl: async (path: string, _expiresIn: number) => ({
+				data: { signedUrl: `/maverick/api/media/${encodeURIComponent(path)}` },
+				error: null as ApiError | null,
+			}),
+		}),
+	};
+}
+
+export type DB = MaverickClient;
 let client: DB | undefined;
-export const supabase = (): DB => (client ??= createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY));
+export const maverick = (): DB => (client ??= new MaverickClient());
 
 /**
- * Wire the MaverickLayout login gate and resolve with the client once a
- * session exists. Every command-center page script starts with:
+ * Cloudflare Access authenticates before this page is served. Every page starts with:
  *   const db = await initMaverick();
  */
 export function initMaverick(): Promise<DB> {
-	const db = supabase();
-	const gate = document.querySelector<HTMLElement>('[data-mav-gate]')!;
-	const studio = document.querySelector<HTMLElement>('[data-mav-studio]')!;
-	const loginForm = document.querySelector<HTMLFormElement>('[data-mav-login]')!;
-	const loginError = document.querySelector<HTMLElement>('[data-mav-error]')!;
-
-	document.querySelector('[data-mav-signout]')?.addEventListener('click', async () => {
-		await db.auth.signOut();
-		location.reload();
+	const db = maverick();
+	document.querySelector('[data-mav-signout]')?.addEventListener('click', () => {
+		location.assign('/cdn-cgi/access/logout');
 	});
-
-	return new Promise((resolve) => {
-		const enter = () => {
-			gate.hidden = true;
-			studio.hidden = false;
-			resolve(db);
-		};
-
-		db.auth.getSession().then(({ data }) => {
-			if (data.session) {
-				enter();
-				return;
-			}
-			gate.hidden = false;
-			loginForm.addEventListener('submit', async (e) => {
-				e.preventDefault();
-				loginError.hidden = true;
-				const email = (document.getElementById('mav-email') as HTMLInputElement).value;
-				const password = (document.getElementById('mav-pass') as HTMLInputElement).value;
-				const { error } = await db.auth.signInWithPassword({ email, password });
-				if (error) {
-					loginError.hidden = false;
-					return;
-				}
-				enter();
-			});
-		});
-	});
+	return Promise.resolve(db);
 }
 
-/** Invoke a maverick edge-function action, surfacing the function's error message. */
-export async function invokeFn<T = unknown>(db: DB, fn: string, body: Record<string, unknown>): Promise<T> {
-	const { data, error } = await db.functions.invoke(fn, { body });
-	if (error) {
-		let message = error.message;
-		try {
-			const parsed = await (error as { context?: Response }).context?.json();
-			message = parsed?.message ?? parsed?.error ?? message;
-		} catch {
-			// non-JSON error body — keep the generic message
-		}
-		throw new Error(message);
+/** Invoke a dedicated Maverick Worker action. */
+export async function invokeFn<T = unknown>(_db: DB, fn: string, body: Record<string, unknown>): Promise<T> {
+	const action = String(body.action ?? '');
+	const payload = { ...body };
+	delete payload.action;
+	let path: string;
+	let method = 'POST';
+	if (fn === 'maverick-agent') {
+		path = action === 'daily_briefing' ? 'agent/briefing' : action === 'weekly_review' ? 'agent/review' : `agent/${action}`;
+	} else if (fn === 'maverick-elevate') {
+		path = `elevate/${action}`;
+	} else if (fn === 'maverick-memory') {
+		path = action === 'update' || action === 'delete' ? `memories/${encodeURIComponent(String(payload.id ?? ''))}` : `memories/${action}`;
+		if (action === 'update') method = 'PATCH';
+		if (action === 'delete') method = 'DELETE';
+		delete payload.id;
+	} else {
+		throw new Error(`Unknown Maverick action service: ${fn}`);
 	}
-	return (data as { result: T }).result;
+	const response = await fetch(`/maverick/api/${path}`, {
+		method,
+		headers: { 'Content-Type': 'application/json' },
+		body: method === 'DELETE' ? undefined : JSON.stringify(payload),
+		credentials: 'same-origin',
+	});
+	const data: unknown = await response.json().catch(() => null);
+	if (!response.ok) {
+		const error = data && typeof data === 'object' ? data as { message?: string; error?: string } : null;
+		throw new Error(error?.message ?? error?.error ?? `Maverick action failed (${response.status}).`);
+	}
+	return data as T;
 }
 
 export const invokeAgent = <T = unknown>(db: DB, action: 'daily_briefing' | 'affirmation' | 'weekly_review'): Promise<T> =>

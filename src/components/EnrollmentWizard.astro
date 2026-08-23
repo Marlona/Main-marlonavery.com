@@ -1,5 +1,6 @@
 ---
 import { SITE_CONFIG } from '../config';
+import TurnstileWidget from './TurnstileWidget.astro';
 
 /**
  * Workshop enrollment onboarding: four quick questions build a profile,
@@ -166,6 +167,7 @@ const steps = [
 				<textarea id="wz-goals" name="goals" rows="4" required class="mt-2 w-full rounded-lg border border-paper/20 bg-ink px-4 py-3 text-sm text-paper focus:border-emerald"></textarea>
 			</div>
 		</div>
+		<TurnstileWidget />
 	</div>
 
 	<div class="mt-10 flex items-center justify-between gap-4">
@@ -189,7 +191,7 @@ const steps = [
 </div>
 
 <script>
-	import { submitInquiry } from '../lib/backend';
+	import { inquiryTurnstileToken, renderInquiryTurnstile, submitInquiry } from '../lib/backend';
 
 	interface WorkshopSummary {
 		id: string;
@@ -251,6 +253,7 @@ const steps = [
 			if (errorEl) errorEl.hidden = true;
 
 			if (index === stepEls.length - 1 && recommendationEl) {
+				renderInquiryTurnstile(wizard);
 				const goal = answers('goal')[0];
 				if (goal === 'speaking') {
 					recommendationEl.innerHTML = `
@@ -312,6 +315,7 @@ const steps = [
 					answers: payloadAnswers,
 					website: wizard.querySelector<HTMLInputElement>('[name="website"]')?.value || undefined,
 					elapsedMs: Date.now() - startedAt,
+					turnstileToken: inquiryTurnstileToken(wizard),
 				});
 				wizard.innerHTML = `
 					<p class="text-eyebrow text-emerald-glow">Sent ✓</p>

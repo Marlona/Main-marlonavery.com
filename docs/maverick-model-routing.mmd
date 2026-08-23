@@ -6,7 +6,7 @@ flowchart TB
         MIC --> UI
     end
 
-    subgraph edge["Supabase Edge Functions — the only place with keys"]
+    subgraph edge["Cloudflare API Worker — the only place with keys"]
         CHAT["maverick-chat<br/>agentic tool loop"]
         AGENT["maverick-agent<br/>briefing · affirmation · review"]
         MEMFN["maverick-memory"]
@@ -23,7 +23,7 @@ flowchart TB
     end
 
     DB[("Postgres + pgvector<br/>memories · chats · pipeline · audit log")]
-    CRON["pg_cron · 7:00 AM ET"] --> AGENT
+    CRON["Worker cron · 7:00 AM ET"] --> AGENT
 
     UI -->|SSE stream| CHAT
     CHAT --> TABLE

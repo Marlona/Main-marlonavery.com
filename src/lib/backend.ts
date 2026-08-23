@@ -1,15 +1,5 @@
-/**
- * Supabase backend wiring.
- *
- * The URL and publishable key are safe to ship to the browser — data access
- * is governed by Row Level Security (anonymous visitors can only hit the
- * submit-inquiry edge function; reading anything requires Marlon's
- * authenticated session).
- */
-export const SUPABASE_URL = 'https://nxqoskuddntalcgcuvvi.supabase.co';
-export const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_rIFok8EotoLyJW2tc8Zs7g_ADDV3M4l';
-
-const INQUIRY_ENDPOINT = `${SUPABASE_URL}/functions/v1/submit-inquiry`;
+/** Public, same-origin Cloudflare Worker endpoint for inquiry capture. */
+const INQUIRY_ENDPOINT = '/public/inquiry';
 
 export interface InquiryPayload {
 	intent: string;
@@ -21,20 +11,47 @@ export interface InquiryPayload {
 	website?: string;
 	/** Milliseconds between form render and submit — sub-human times are flagged as spam */
 	elapsedMs?: number;
+	/** Single-use Cloudflare Turnstile token. */
+	turnstileToken?: string;
+}
+
+export function inquiryTurnstileToken(root: ParentNode): string | undefined {
+	const value = root.querySelector<HTMLInputElement>('input[name="cf-turnstile-response"]')?.value.trim();
+	return value || undefined;
+}
+
+type TurnstileApi = {
+	render: (element: HTMLElement, options: { sitekey: string; action: string; theme: 'auto' }) => string;
+};
+
+export function renderInquiryTurnstile(root: ParentNode, attempts = 0): void {
+	const element = root.querySelector<HTMLElement>('[data-turnstile-widget]');
+	if (!element || element.dataset.rendered === 'true') return;
+	const turnstile = (window as typeof window & { turnstile?: TurnstileApi }).turnstile;
+	if (!turnstile) {
+		if (attempts < 40) window.setTimeout(() => renderInquiryTurnstile(root, attempts + 1), 100);
+		return;
+	}
+	const sitekey = element.dataset.sitekey;
+	if (!sitekey) return;
+	turnstile.render(element, { sitekey, action: 'inquiry', theme: 'auto' });
+	element.dataset.rendered = 'true';
 }
 
 /**
- * Store an inquiry (and trigger the email forward) via the edge function.
+ * Store an inquiry (and trigger the email forward) via the Cloudflare API Worker.
  * Throws on network/server failure so callers can fall back to mailto.
  */
 export async function submitInquiry(payload: InquiryPayload): Promise<{ id: string }> {
-	const { elapsedMs, ...rest } = payload;
+	const { elapsedMs, turnstileToken, ...rest } = payload;
 	const res = await fetch(INQUIRY_ENDPOINT, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify({ ...rest, elapsed_ms: elapsedMs, source_page: location.pathname }),
+		credentials: 'same-origin',
+		body: JSON.stringify({ ...rest, elapsed_ms: elapsedMs, turnstile_token: turnstileToken, source_page: location.pathname }),
 	});
-	const body = await res.json().catch(() => ({}));
-	if (!res.ok || !body.ok) throw new Error(body.error ?? `submit failed (${res.status})`);
+	const parsed: unknown = await res.json().catch(() => null);
+	const body = parsed && typeof parsed === 'object' ? parsed as { ok?: boolean; id?: string; error?: string } : {};
+	if (!res.ok || !body.ok || !body.id) throw new Error(body.error ?? `submit failed (${res.status})`);
 	return { id: body.id };
 }

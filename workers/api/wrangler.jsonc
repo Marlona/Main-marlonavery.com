@@ -1,0 +1,60 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "maverick-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-08-23",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "preview_urls": false,
+  "upload_source_maps": true,
+  "observability": {
+    "enabled": true,
+    "logs": { "enabled": true, "head_sampling_rate": 1 },
+    "traces": { "enabled": true, "head_sampling_rate": 0.05 }
+  },
+  "env": {
+    "production": {
+      "name": "maverick-api",
+      "vars": {
+        "ENVIRONMENT": "production",
+        "ACCESS_TEAM_DOMAIN": "broad-dust-cbb8.cloudflareaccess.com",
+        "ACCESS_AUD": "PENDING_ACCESS_APPLICATION",
+        "TURNSTILE_HOSTNAMES": "marlonavery.com,www.marlonavery.com"
+      },
+      "ai": { "binding": "AI" },
+      "hyperdrive": [
+        { "binding": "HYPERDRIVE", "id": "6bd6d0943a4b4bb6953645198b376470" }
+      ],
+      "r2_buckets": [
+        { "binding": "MEDIA", "bucket_name": "marlonavery-media" }
+      ],
+      "secrets_store_secrets": [
+        {
+          "binding": "OPENROUTER",
+          "store_id": "c99d038d151c471084a25cd040b0196d",
+          "secret_name": "OPENROUTER_API_KEY"
+        }
+      ],
+      "triggers": {
+        "crons": ["0 11 * * *", "0 8 * * *", "30 8 * * *"]
+      }
+    },
+    "staging": {
+      "name": "maverick-api-staging",
+      "vars": {
+        "ENVIRONMENT": "staging",
+        "ACCESS_TEAM_DOMAIN": "broad-dust-cbb8.cloudflareaccess.com",
+        "ACCESS_AUD": "PENDING_ACCESS_APPLICATION",
+        "TURNSTILE_HOSTNAMES": "staging.marlonavery.com"
+      },
+      "ai": { "binding": "AI" },
+      "hyperdrive": [
+        { "binding": "HYPERDRIVE", "id": "1f606da636374d0597b46feda008ea3a" }
+      ],
+      "r2_buckets": [
+        { "binding": "MEDIA", "bucket_name": "marlonavery-media-staging" }
+      ],
+      "triggers": { "crons": [] }
+    }
+  }
+}

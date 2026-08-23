@@ -8,9 +8,21 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
+    "build:cloudflare": "npm run build && node scripts/prepare-cloudflare-assets.mjs",
     "preview": "astro preview",
     "astro": "astro",
     "check": "astro check",
+    "check:workers": "tsc -p workers/api/tsconfig.json && tsc -p workers/web/tsconfig.json",
+    "check:all": "npm run check && npm run check:workers",
+    "test": "vitest run",
+    "types:workers": "wrangler types --config workers/api/wrangler.jsonc --env production workers/api/worker-configuration.d.ts && wrangler types --config workers/web/wrangler.jsonc --env production workers/web/worker-configuration.d.ts",
+    "deploy:staging:api": "wrangler deploy --config workers/api/wrangler.jsonc --env staging",
+    "deploy:staging:web": "wrangler deploy --config workers/web/wrangler.jsonc --env staging",
+    "deploy:production:api": "wrangler deploy --config workers/api/wrangler.jsonc --env production",
+    "deploy:production:web": "wrangler deploy --config workers/web/wrangler.jsonc --env production",
+    "sync:r2:staging": "node scripts/sync-r2-media.mjs staging",
+    "sync:r2:production": "node scripts/sync-r2-media.mjs production",
+    "reconcile:dry-run": "node scripts/reconcile-postgres.mjs",
     "process-photos": "node scripts/process-photos.mjs"
   },
   "dependencies": {
@@ -18,16 +30,21 @@
     "@astrojs/sitemap": "^3.7.3",
     "@fontsource-variable/fraunces": "^5.2.9",
     "@fontsource-variable/inter": "^5.2.8",
-    "@supabase/supabase-js": "^2.110.0",
     "@tailwindcss/typography": "^0.5.20",
     "@tailwindcss/vite": "^4.3.2",
     "astro": "^5.18.2",
+    "hono": "^4.13.3",
+    "jose": "^6.2.10",
+    "postgres": "^3.4.9",
     "tailwindcss": "^4.3.2"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.9",
+    "@cloudflare/vitest-pool-workers": "^0.22.0",
     "ffmpeg-static": "^5.3.0",
     "typescript": "^5.9.3",
-    "vite": "^6.4.3"
+    "vite": "^6.4.3",
+    "vitest": "^4.1.11",
+    "wrangler": "^4.125.0"
   }
 }

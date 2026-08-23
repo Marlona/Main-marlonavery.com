@@ -1,14 +1,12 @@
 /**
- * Supabase database types — GENERATED, do not hand-edit.
- * Regenerate with the Supabase MCP `generate_typescript_types` tool (or
- * `supabase gen types typescript`) after any migration.
+ * Neon database types — GENERATED, do not hand-edit.
+ * Keep this file aligned with the versioned Neon schema after any migration.
  */
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export type Database = {
-	// Allows to automatically instantiate createClient with right options
-	// instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-	__InternalSupabase: {
+	// Retained in the generated shape used throughout the Maverick UI.
+	__InternalNeon: {
 		PostgrestVersion: '14.5';
 	};
 	public: {
@@ -1004,7 +1002,7 @@ export type Database = {
 	};
 };
 
-type DefaultSchema = Database[Extract<keyof Omit<Database, '__InternalSupabase'>, 'public'>];
+type DefaultSchema = Database[Extract<keyof Omit<Database, '__InternalNeon'>, 'public'>];
 
 export type Tables<T extends keyof DefaultSchema['Tables']> = DefaultSchema['Tables'][T]['Row'];
 export type TablesInsert<T extends keyof DefaultSchema['Tables']> = DefaultSchema['Tables'][T]['Insert'];

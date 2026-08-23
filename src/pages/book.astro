@@ -2,6 +2,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { BOOKING_FLOWS } from '../data/bookingFlows';
 import { SITE_CONFIG } from '../config';
+import TurnstileWidget from '../components/TurnstileWidget.astro';
 ---
 
 <BaseLayout
@@ -121,6 +122,7 @@ import { SITE_CONFIG } from '../config';
 					<label for="bk-website">Website</label>
 					<input id="bk-website" name="website" type="text" tabindex="-1" autocomplete="off" />
 				</div>
+				<TurnstileWidget />
 			</fieldset>
 
 			<div class="mt-10 flex items-center justify-between gap-4">
@@ -149,7 +151,7 @@ import { SITE_CONFIG } from '../config';
 	</div>
 
 	<script>
-		import { submitInquiry } from '../lib/backend';
+		import { inquiryTurnstileToken, renderInquiryTurnstile, submitInquiry } from '../lib/backend';
 
 		const root = document.querySelector<HTMLElement>('[data-book]');
 		if (root) {
@@ -187,6 +189,7 @@ import { SITE_CONFIG } from '../config';
 					}
 				} else {
 					show('contact');
+					renderInquiryTurnstile(root);
 					if (progress) progress.textContent = 'Step 3 of 3 — contact info';
 					if (backBtn) backBtn.hidden = false;
 					if (nextBtn) {
@@ -247,6 +250,7 @@ import { SITE_CONFIG } from '../config';
 						answers,
 						website: root.querySelector<HTMLInputElement>('[name="website"]')?.value || undefined,
 						elapsedMs: Date.now() - startedAt,
+						turnstileToken: inquiryTurnstileToken(root),
 					});
 					root.innerHTML = `
 						<p class="text-eyebrow text-emerald-glow">Sent ✓</p>

@@ -3,7 +3,7 @@ import MaverickLayout from '../../layouts/MaverickLayout.astro';
 
 /**
  * Maverick home, Phase 2A: the chat IS the command center (hybrid layout).
- * Streaming conversation with the maverick-chat edge function (internal tools
+ * Streaming conversation with the Maverick API Worker (internal tools
  * only — see CLAUDE.md guardrail), stats strip up top, check-in / top-3 /
  * affirmation in the side rail. The daily briefing arrives as the first
  * message of each day's conversation (cron at 7:00 AM ET, or on first visit).
@@ -186,7 +186,6 @@ import MaverickLayout from '../../layouts/MaverickLayout.astro';
 		renderMarkdown,
 		PILLAR_LABELS,
 	} from '../../lib/maverick/client';
-	import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from '../../lib/backend';
 	import type { Tables } from '../../lib/maverick/db-types';
 
 	type Conversation = Tables<'chat_conversations'>;
@@ -327,22 +326,16 @@ import MaverickLayout from '../../layouts/MaverickLayout.astro';
 		};
 
 		try {
-			const { data: sessionData } = await db.auth.getSession();
-			const token = sessionData.session?.access_token;
-			if (!token) throw new Error('Session expired — sign in again.');
-
-			const res = await fetch(`${SUPABASE_URL}/functions/v1/maverick-chat`, {
+			const res = await fetch('/maverick/api/chat', {
 				method: 'POST',
 				signal: abortCtl.signal,
-				headers: {
-					Authorization: `Bearer ${token}`,
-					apikey: SUPABASE_PUBLISHABLE_KEY,
-					'Content-Type': 'application/json',
-				},
+				headers: { 'Content-Type': 'application/json' },
+				credentials: 'same-origin',
 				body: JSON.stringify({ conversation_id: activeId, content }),
 			});
 			if (!res.ok || !res.body) {
-				const body = await res.json().catch(() => ({}));
+				const parsed: unknown = await res.json().catch(() => null);
+				const body = parsed && typeof parsed === 'object' ? parsed as { message?: string; error?: string } : {};
 				throw new Error(body.message ?? body.error ?? `Chat failed (${res.status})`);
 			}
 

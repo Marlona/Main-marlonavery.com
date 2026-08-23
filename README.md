@@ -12,7 +12,9 @@ projects, and real workshop content.
 - [Astro 5](https://astro.build) + Content Collections (all content is data, not hardcoded)
 - Tailwind CSS v4 (design tokens in `src/styles/global.css`)
 - TypeScript (strict), zero client frameworks — a few small vanilla scripts
-- GitHub Pages via GitHub Actions (`.github/workflows/deploy.yml`)
+- Cloudflare Workers Assets for the website, plus a service-bound API Worker
+- Neon Postgres through Cloudflare Hyperdrive; R2 for large media; Workers AI for embeddings
+- Cloudflare Access with Google for the private Maverick command center
 
 ## Quick start
 
@@ -20,14 +22,16 @@ projects, and real workshop content.
 npm install
 npm run dev        # local dev server
 npm run check      # astro type/diagnostic check
+npm run check:all  # application + both Workers
+npm test           # migration/security contract tests
 npm run build      # production build → dist/
 ```
 
 ## Deployment flow
 
-- `main` deploys production (marlonavery.com) via `.github/workflows/deploy.yml`.
-- PRs and pushes to `staging` run CI (type check + build) via `.github/workflows/deploy-staging.yml` — no Pages deploy from this repo except `main`.
-- The staging site (staging.marlonavery.com) is served by the separate `Main-marlonavery-staging` repository. Promote staging content to it with: `git push staging-origin staging:main`.
+- Production deploys are manually gated through `.github/workflows/deploy.yml` while migration acceptance is in progress.
+- PRs run CI; pushes to `staging` deploy the isolated `marlonavery-web-staging` and `maverick-api-staging` Workers.
+- Production and staging have distinct Neon branches, Hyperdrive configurations, R2 buckets, Access applications, and secrets.
 - Feature branches open PRs into `staging`, then promote `staging` into `main`.
 - **Always cut feature branches from `staging`, never from `main`.**
 - **Promotion PRs (`staging` → `main`) must use "Create a merge commit", never squash.** Squashing
@@ -36,17 +40,12 @@ npm run build      # production build → dist/
   already conflicts, fix with `git merge -s ours origin/main` on `staging` — it absorbs `main`'s
   history while keeping `staging`'s tree byte-identical.
 
-## Domain cutover (Webflow -> GitHub Pages)
+## Cloudflare migration
 
-1. In GitHub repository settings, set Pages source to **GitHub Actions**.
-2. Configure production custom domain as `marlonavery.com`.
-3. In your DNS provider, point apex `@` to GitHub Pages A records:
-   - `185.199.108.153`
-   - `185.199.109.153`
-   - `185.199.110.153`
-   - `185.199.111.153`
-4. Add `www` as a CNAME to `Marlona.github.io`.
-5. Add `staging` as a CNAME to `Marlona.github.io`.
+Infrastructure source lives under `workers/`. The web Worker serves Astro assets and forwards
+`/maverick/api/*` and `/public/inquiry` to the API Worker over a service binding. Production DNS
+cutover remains gated until the checklist in `docs/cloudflare-migration.md` passes. Do not deploy
+from the Cloudflare dashboard or retire the legacy database before that checklist is complete.
 
 ## Editing content
 

@@ -1,53 +1,44 @@
-name: Deploy to GitHub Pages
+name: Deploy Cloudflare production
 
+# Production stays manually gated until the Access, Turnstile, data-reconciliation,
+# and DNS acceptance checks in docs/cloudflare-migration.md are complete.
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
-  group: pages
-  cancel-in-progress: true
+  group: cloudflare-production
+  cancel-in-progress: false
 
 jobs:
-  build:
+  verify-and-deploy:
     runs-on: ubuntu-latest
+    environment: production
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.PUBLIC_TURNSTILE_SITE_KEY }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-
       - name: Install dependencies
         run: npm ci
-
-      - name: Type check
-        run: npm run check
-
-      - name: Build
-        run: npm run build
-
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: dist
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Verify application and Workers
+        run: npm run check:all
+      - name: Run migration parity tests
+        run: npm test
+      - name: Build Workers Assets
+        run: npm run build:cloudflare
+      - name: Deploy API Worker
+        run: npm run deploy:production:api
+      - name: Sync public video to R2
+        run: npm run sync:r2:production
+      - name: Deploy web Worker
+        run: npm run deploy:production:web

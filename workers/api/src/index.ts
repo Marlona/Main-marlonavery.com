@@ -1,6 +1,7 @@
 import { authorizeAccess, forbidden, privateMutationAllowed } from './auth';
 import { handleDataRequest, openSql } from './db';
 import { handleInquiry } from './inquiry';
+import { isDedicatedBaselineRoute } from './routes';
 import type { AppEnv } from './runtime';
 import productionBaseline from '../baseline/deployed-2026-08-23.js';
 
@@ -49,6 +50,9 @@ export default {
         if (dataMatch) return handleDataRequest(request, runtimeEnv, dataMatch[1]);
         if (url.pathname.startsWith(`${PRIVATE_PREFIX}/db/`)) {
           return Response.json({ data: null, error: { code: 'not_found', message: 'Unknown database route.' } }, { status: 404 });
+        }
+        if (!isDedicatedBaselineRoute(url.pathname, request.method)) {
+          return Response.json({ data: null, error: { code: 'not_found', message: 'Unknown private route.' } }, { status: 404 });
         }
         return productionBaseline.fetch(rewriteForBaseline(request), baselineEnvironment(runtimeEnv), ctx);
       }

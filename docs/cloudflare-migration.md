@@ -139,6 +139,9 @@ The live staging deployment has passed the following checks:
 - All eight Maverick pages load their real staging data without a client or API error.
 - A temporary project completed a create, counted/read-back, update, and delete cycle through the
   UI, same-origin API, Hyperdrive, and the staging Neon branch. The record was removed afterward.
+- A temporary memory completed remember, Workers AI embedding, Neon pgvector similarity recall,
+  and forget/delete. Semantic search returned the record and the staging memory count returned
+  to its original value after cleanup.
 - The staging API and web Workers have `workers.dev` and preview URLs disabled. The API is
   reachable only through the web Worker's service binding.
 - The two legacy staging `/api/*` and `/public/*` routes that still targeted the production API
@@ -147,7 +150,7 @@ The live staging deployment has passed the following checks:
 - The exact PR head passes Astro diagnostics, Worker type-checking, all 20 tests, the Workers
   Assets build, and a source/build scan with no legacy client, project URL, or runtime reference.
 
-Chat, memory, Elevate, inquiry, manual schedule, and live media-range acceptance remain pending
+Chat, Elevate mutation, inquiry, manual schedule, and live media-range acceptance remain pending
 until the distinct staging OpenRouter and Turnstile secrets are installed. Inquiry notification
 delivery also remains pending. Deployment workflows now fail before publishing when their
 environment-specific public Turnstile site key is empty.

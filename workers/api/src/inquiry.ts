@@ -4,6 +4,7 @@ import type { AppEnv } from './runtime';
 const OWNER_EMAIL = 'hi@marlonavery.com';
 const ACTION = 'inquiry';
 const MAX_BODY_BYTES = 65_536;
+const BODY_TOO_LARGE = Symbol('body-too-large');
 
 type InquiryBody = {
   intent: string;
@@ -45,7 +46,7 @@ function allowedOrigins(env: AppEnv): ReadonlySet<string> {
 
 async function boundedInquiryJson(request: Request): Promise<unknown> {
   const declaredLength = Number(request.headers.get('content-length') ?? 0);
-  if (Number.isFinite(declaredLength) && declaredLength > MAX_BODY_BYTES) return null;
+  if (Number.isFinite(declaredLength) && declaredLength > MAX_BODY_BYTES) return BODY_TOO_LARGE;
   const reader = request.body?.getReader();
   if (!reader) return null;
   const chunks: Uint8Array[] = [];
@@ -56,7 +57,7 @@ async function boundedInquiryJson(request: Request): Promise<unknown> {
     length += value.byteLength;
     if (length > MAX_BODY_BYTES) {
       await reader.cancel();
-      return null;
+      return BODY_TOO_LARGE;
     }
     chunks.push(value);
   }
@@ -76,9 +77,16 @@ async function boundedInquiryJson(request: Request): Promise<unknown> {
 function isInquiryBody(value: unknown): value is InquiryBody {
   if (value === null || typeof value !== 'object' || Array.isArray(value)) return false;
   const body = value as Partial<InquiryBody>;
-  return typeof body.intent === 'string' && body.intent.trim().length > 0 &&
-    typeof body.email === 'string' && body.email.includes('@') &&
-    body.answers !== null && typeof body.answers === 'object' && !Array.isArray(body.answers);
+  if (typeof body.intent !== 'string' || body.intent.trim().length === 0 || body.intent.length > 200) return false;
+  if (typeof body.email !== 'string' || !body.email.includes('@') || body.email.length > 320) return false;
+  if (body.name !== undefined && (typeof body.name !== 'string' || body.name.length > 200)) return false;
+  if (body.organization !== undefined && (typeof body.organization !== 'string' || body.organization.length > 200)) return false;
+  if (body.source_page !== undefined && (typeof body.source_page !== 'string' || body.source_page.length > 500)) return false;
+  if (body.website !== undefined && (typeof body.website !== 'string' || body.website.length > 500)) return false;
+  if (body.elapsed_ms !== undefined && (typeof body.elapsed_ms !== 'number' || !Number.isFinite(body.elapsed_ms) || body.elapsed_ms < 0)) return false;
+  if (body.answers === null || typeof body.answers !== 'object' || Array.isArray(body.answers)) return false;
+  const answers = Object.entries(body.answers);
+  return answers.length <= 50 && answers.every(([key, answer]) => key.length <= 100 && typeof answer === 'string' && answer.length <= 5_000);
 }
 
 export async function verifyTurnstile(request: Request, env: AppEnv, token: unknown): Promise<boolean> {
@@ -135,10 +143,14 @@ export async function handleInquiry(request: Request, env: AppEnv, ctx: Executio
   if (!allowedOrigins(env).has(origin)) return Response.json({ error: 'forbidden' }, { status: 403 });
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: responseHeaders(origin) });
   if (request.method !== 'POST') return json(origin, { error: 'method not allowed' }, 405);
+  if (!request.headers.get('Content-Type')?.toLowerCase().startsWith('application/json')) {
+    return json(origin, { error: 'content type must be application/json' }, 415);
+  }
 
   const contentLength = Number(request.headers.get('content-length') ?? 0);
   if (contentLength > MAX_BODY_BYTES) return json(origin, { error: 'request too large' }, 413);
   const parsed = await boundedInquiryJson(request);
+  if (parsed === BODY_TOO_LARGE) return json(origin, { error: 'request too large' }, 413);
   if (!isInquiryBody(parsed)) return json(origin, { error: 'intent, email, and answers are required' }, 400);
   if (typeof parsed.website === 'string' && parsed.website.trim()) return json(origin, { ok: true });
   if (!(await verifyTurnstile(request, env, parsed.turnstile_token))) return json(origin, { error: 'verification failed — reload and try again' }, 403);

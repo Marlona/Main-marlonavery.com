@@ -80,6 +80,30 @@ describe('Maverick API security guards', () => {
     expect(staging.status).toBe(403);
   });
 
+  it('rejects non-JSON and oversized inquiry requests before verification', async () => {
+    const form = await handleInquiry(
+      new Request('https://marlonavery.com/public/inquiry', {
+        method: 'POST',
+        headers: { Origin: 'https://marlonavery.com', 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'email=hello%40example.com',
+      }),
+      { ENVIRONMENT: 'production' } as never,
+      {} as never,
+    );
+    const oversized = await handleInquiry(
+      new Request('https://marlonavery.com/public/inquiry', {
+        method: 'POST',
+        headers: { Origin: 'https://marlonavery.com', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ intent: 'speaking', email: 'hello@example.com', answers: { detail: 'x'.repeat(66_000) } }),
+      }),
+      { ENVIRONMENT: 'production' } as never,
+      {} as never,
+    );
+
+    expect(form.status).toBe(415);
+    expect(oversized.status).toBe(413);
+  });
+
   it('accepts only a successful inquiry Turnstile action on an allowed hostname', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => Response.json({ success: true, action: 'inquiry', hostname: 'staging.marlonavery.com' })));
     const env = { TURNSTILE_SECRET: 'not-a-real-secret', TURNSTILE_HOSTNAMES: 'staging.marlonavery.com' } as never;

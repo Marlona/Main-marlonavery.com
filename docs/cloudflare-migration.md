@@ -73,6 +73,12 @@ The 25 production and staging tables had matching exact row counts at the 2026-0
 rows total. The staging schema was inspected directly and matches the explicit table/column
 allowlist in `workers/api/src/db.ts`.
 
+The repository-owned staging workflow deployed commit `a593bca` successfully. Live Worker
+settings confirm `maverick-api-staging` is bound only to staging Hyperdrive
+`1f606da636374d0597b46feda008ea3a` and `marlonavery-media-staging`; the web Worker reaches that
+API through a service binding. The staging custom domain replaced its former GitHub Pages CNAME,
+and the isolated R2 bucket contains all eight configured video objects.
+
 `workers/api/migrations/0000_schema_migrations.sql` adds only migration tracking. Apply it to
 staging first, verify, then apply to production after a Neon restore point has been recorded.
 
@@ -121,10 +127,10 @@ the `www` CNAME only inside the approved production cutover window.
 - [ ] Create distinct Turnstile widgets, save Worker secrets, and set GitHub public-site-key variables.
 - [ ] Configure and validate Resend without making email delivery authoritative.
 - [ ] Upload `public/video/*` objects to both R2 buckets and verify byte ranges/content types.
-- [ ] Deploy staging from the repository and attach `staging.marlonavery.com`.
+- [x] Deploy staging from the repository and attach `staging.marlonavery.com`.
 - [x] Protect the entire staging hostname with Access.
 - [ ] Run every CRUD, chat, memory, Elevate, media, inquiry, and manual-schedule acceptance test.
-- [ ] Confirm staging cannot access production Neon or R2.
+- [x] Confirm staging cannot access production Neon or R2.
 - [ ] Export legacy schema/data and create a Neon production restore point.
 - [ ] Run dry-run and applied delta reconciliation with zero unresolved conflicts.
 - [ ] Put the legacy Maverick UI into brief read-only mode and run the final delta.

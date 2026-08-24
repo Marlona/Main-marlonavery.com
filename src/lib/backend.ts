@@ -22,6 +22,7 @@ export function inquiryTurnstileToken(root: ParentNode): string | undefined {
 
 type TurnstileApi = {
 	render: (element: HTMLElement, options: { sitekey: string; action: string; theme: 'auto' }) => string;
+	reset: (widgetId: string) => void;
 };
 
 export function renderInquiryTurnstile(root: ParentNode, attempts = 0): void {
@@ -34,8 +35,15 @@ export function renderInquiryTurnstile(root: ParentNode, attempts = 0): void {
 	}
 	const sitekey = element.dataset.sitekey;
 	if (!sitekey) return;
-	turnstile.render(element, { sitekey, action: 'inquiry', theme: 'auto' });
+	element.dataset.widgetId = turnstile.render(element, { sitekey, action: 'inquiry', theme: 'auto' });
 	element.dataset.rendered = 'true';
+}
+
+export function resetInquiryTurnstile(root: ParentNode): void {
+	const element = root.querySelector<HTMLElement>('[data-turnstile-widget]');
+	const widgetId = element?.dataset.widgetId;
+	const turnstile = (window as typeof window & { turnstile?: TurnstileApi }).turnstile;
+	if (widgetId && turnstile) turnstile.reset(widgetId);
 }
 
 /**

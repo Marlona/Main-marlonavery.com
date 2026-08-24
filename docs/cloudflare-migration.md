@@ -147,13 +147,23 @@ The live staging deployment has passed the following checks:
 - The two legacy staging `/api/*` and `/public/*` routes that still targeted the production API
   Worker were removed. No zone-level Worker route remains on the staging hostname, and the
   Access-protected dashboard was rechecked successfully after removal.
+- The staging Turnstile widget is restricted to localhost and the staging hostname, its secret is
+  installed as an encrypted Worker binding, and the public site key is supplied by the staging
+  GitHub environment. The official metadata/secret validator passed, including a dummy-token
+  Siteverify check, and the repository deployment rendered the expected site key on the live form.
+- A fresh managed-challenge token passed through the live form, web Worker service binding, API
+  Worker Siteverify gate, and staging Hyperdrive connection. The resulting non-spam inquiry was
+  confirmed in the isolated staging Neon branch. A shell replay was rejected by the hostname-wide
+  Access policy before reaching the backend, so an authenticated backend replay remains pending.
+- The staging deploy resynced `public/video/*` to the isolated R2 bucket. The live R2-backed
+  `hero-main.mp4` reached ready state with its expected 8.04-second duration and 1664x1248 frame.
 - The exact PR head passes Astro diagnostics, Worker type-checking, all 20 tests, the Workers
   Assets build, and a source/build scan with no legacy client, project URL, or runtime reference.
 
-Chat, Elevate mutation, inquiry, manual schedule, and live media-range acceptance remain pending
-until the distinct staging OpenRouter and Turnstile secrets are installed. Inquiry notification
-delivery also remains pending. Deployment workflows now fail before publishing when their
-environment-specific public Turnstile site key is empty.
+Chat, Elevate mutation, manual schedule, and the remaining live media-range cases remain pending
+until a distinct staging OpenRouter secret is installed. The authenticated Turnstile replay check
+and inquiry notification delivery also remain pending. Deployment workflows now fail before
+publishing when their environment-specific public Turnstile site key is empty.
 
 ## Cutover checklist
 
@@ -173,7 +183,8 @@ the `www` CNAME only inside the approved production cutover window.
 - [x] Apply and verify schema-version tracking on staging, then production.
 - [x] Configure Google as the Access identity provider.
 - [x] Create production and staging Access applications and replace both audience placeholders.
-- [ ] Create distinct Turnstile widgets, save Worker secrets, and set GitHub public-site-key variables.
+- [ ] Complete Turnstile rollout: staging is fully configured and validated; install the
+  already-created production widget secret during the production cutover.
 - [ ] Configure and validate Resend without making email delivery authoritative.
 - [ ] Upload `public/video/*` objects to both R2 buckets and verify byte ranges/content types.
 - [x] Deploy staging from the repository and attach `staging.marlonavery.com`.

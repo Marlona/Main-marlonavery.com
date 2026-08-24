@@ -145,7 +145,12 @@ const defaultType =
 <script>
 	// Submissions are persisted in Neon by the Cloudflare API Worker;
 	// mailto remains an offline fallback.
-	import { inquiryTurnstileToken, renderInquiryTurnstile, submitInquiry } from '../lib/backend';
+	import {
+		inquiryTurnstileToken,
+		renderInquiryTurnstile,
+		resetInquiryTurnstile,
+		submitInquiry,
+	} from '../lib/backend';
 
 	for (const form of document.querySelectorAll<HTMLFormElement>('[data-booking-form]')) {
 		renderInquiryTurnstile(form);
@@ -180,6 +185,7 @@ const defaultType =
 					<h3 class="font-display text-2xl font-semibold">Sent ✓</h3>
 					<p class="mt-2 text-sm text-slate">Your ${type} inquiry is in — expect a personal reply within 2–3 business days.</p>`;
 			} catch {
+				resetInquiryTurnstile(form);
 				const lines = [
 					`Name: ${data.get('name')}`,
 					`Email: ${data.get('email')}`,

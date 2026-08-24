@@ -151,7 +151,12 @@ import TurnstileWidget from '../components/TurnstileWidget.astro';
 	</div>
 
 	<script>
-		import { inquiryTurnstileToken, renderInquiryTurnstile, submitInquiry } from '../lib/backend';
+		import {
+			inquiryTurnstileToken,
+			renderInquiryTurnstile,
+			resetInquiryTurnstile,
+			submitInquiry,
+		} from '../lib/backend';
 
 		const root = document.querySelector<HTMLElement>('[data-book]');
 		if (root) {
@@ -258,6 +263,7 @@ import TurnstileWidget from '../components/TurnstileWidget.astro';
 						<p class="mt-3 text-paper/70">Your ${flowTitle} inquiry is in. Expect a personal reply within 2–3 business days.</p>
 						<a href="/" class="mt-8 inline-block rounded-full bg-emerald px-8 py-3 text-sm font-bold text-ink">Back home →</a>`;
 				} catch {
+					resetInquiryTurnstile(root);
 					// Backend unreachable — fall back to a structured email so nothing is lost
 					const lines = [
 						`Inquiry type: ${flowTitle}`,

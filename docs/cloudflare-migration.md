@@ -151,16 +151,19 @@ The live staging deployment has passed the following checks:
   installed as an encrypted Worker binding, and the public site key is supplied by the staging
   GitHub environment. The official metadata/secret validator passed, including a dummy-token
   Siteverify check, and the repository deployment rendered the expected site key on the live form.
+- A fresh managed-challenge token passed through the live form, web Worker service binding, API
+  Worker Siteverify gate, and staging Hyperdrive connection. The resulting non-spam inquiry was
+  confirmed in the isolated staging Neon branch. A shell replay was rejected by the hostname-wide
+  Access policy before reaching the backend, so an authenticated backend replay remains pending.
 - The staging deploy resynced `public/video/*` to the isolated R2 bucket. The live R2-backed
   `hero-main.mp4` reached ready state with its expected 8.04-second duration and 1664x1248 frame.
 - The exact PR head passes Astro diagnostics, Worker type-checking, all 20 tests, the Workers
   Assets build, and a source/build scan with no legacy client, project URL, or runtime reference.
 
 Chat, Elevate mutation, manual schedule, and the remaining live media-range cases remain pending
-until a distinct staging OpenRouter secret is installed. The real inquiry submission and token
-replay check are ready but not yet recorded as passed. Inquiry notification delivery also remains
-pending. Deployment workflows now fail before publishing when their environment-specific public
-Turnstile site key is empty.
+until a distinct staging OpenRouter secret is installed. The authenticated Turnstile replay check
+and inquiry notification delivery also remain pending. Deployment workflows now fail before
+publishing when their environment-specific public Turnstile site key is empty.
 
 ## Cutover checklist
 
